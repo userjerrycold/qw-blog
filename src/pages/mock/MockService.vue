@@ -102,129 +102,188 @@
       </n-modal>
       
       <!-- 编辑接口弹窗 -->
-      <n-modal v-model:show="showEditModal" preset="card" title="编辑接口" class="edit-modal">
-        <div class="edit-modal-content">
-          <n-form ref="editFormRef" :model="editForm" :rules="editRules" label-placement="left" label-width="80">
-            <!-- 接口路径 (只读) -->
-            <n-form-item label="接口路径" path="endpoint">
-              <div class="endpoint-display">
-                http://10.215.211.31:9090{{ editForm.endpoint.startsWith('/') ? '' : '/' }}{{ editForm.endpoint }}
-              </div>
-            </n-form-item>
-            
-            <!-- 分类 -->
-            <n-form-item label="分类" path="category">
-              <n-select
-                v-model:value="editForm.category"
-                :options="categoryOptions"
-                placeholder="选择分类"
-                class="rounded-input"
-                style="width: 180px"
-              />
-            </n-form-item>
-            
-            <!-- 超时时间 -->
-            <n-form-item label="超时时间" path="timeout">
-              <div class="timeout-input-container">
-                <input
-                  type="number" 
-                  v-model="editForm.timeout"
-                  class="timeout-input-large"
-                  min="0" 
-                  max="10000"
-                  style="width: 120px"
-                />
-                <span class="timeout-suffix-large">ms</span>
-              </div>
-            </n-form-item>
-            
-            <!-- 状态 -->
-            <n-form-item label="状态" path="isActive">
-              <n-switch
-                v-model:value="editForm.isActive"
-                :rail-style="railStyle"
-                class="status-switch"
-              >
-                <template #checked>
-                  <div class="switch-content">
-                    <div class="switch-dot active"></div>
-                    活跃
-                  </div>
-                </template>
-                <template #unchecked>
-                  <div class="switch-content">
-                    <div class="switch-dot inactive"></div>
-                    停用
-                  </div>
-                </template>
-              </n-switch>
-            </n-form-item>
-            
-            <!-- 响应数据 -->
-            <n-form-item label="响应数据" path="response">
-              <div class="editor-header">
-                <div class="editor-status" :class="{ 'editor-status-error': jsonEditError }">
-                  <div class="status-dot" :class="{ 'status-dot-error': jsonEditError }"></div>
-                  {{ jsonEditError ? '格式错误' : '格式正确' }}
+      <n-modal 
+        v-model:show="showEditModal" 
+        preset="dialog" 
+        class="edit-modal-pro" 
+        :show-icon="false"
+        style="width: 1100px; max-width: 98vw;"
+      >
+        <div class="modal-container">
+          <!-- 移除弹窗头部 -->
+
+          <!-- 双栏内容区域 -->
+          <div class="modal-body-pro">
+            <n-form ref="editFormRef" :model="editForm" :rules="editRules" class="edit-form-pro">
+              <!-- 左侧配置区域 -->
+              <div class="left-column">
+                <div class="section-header">
+                  <n-icon class="section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg></n-icon>
+                  <h4>接口配置</h4>
                 </div>
-                <div class="editor-actions">
-                  <n-tooltip trigger="hover" placement="top">
-                    <template #trigger>
-                      <n-button quaternary circle size="small" @click="formatEditJsonResponse" :disabled="!!jsonEditError">
-                        <n-icon>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z" fill="currentColor"/>
-                          </svg>
-                        </n-icon>
-                      </n-button>
-                    </template>
-                    格式化JSON
-                  </n-tooltip>
-                  <n-tooltip trigger="hover" placement="top">
-                    <template #trigger>
-                      <n-button quaternary circle size="small" @click="minifyEditJsonResponse" :disabled="!!jsonEditError">
-                        <n-icon>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19.89 10.105L19.89 10.105C19.9697 10.1842 20.0097 10.2899 20 10.4V17.5C20 19.433 18.433 21 16.5 21H7.5C5.567 21 4 19.433 4 17.5V6.5C4 4.567 5.567 3 7.5 3H16.5C18.433 3 20 4.567 20 6.5V6.6C20.0097 6.71009 19.9697 6.81575 19.89 6.895L15.5 11.295L15.5 11.295C15.3946 11.4004 15.2516 11.4602 15.1 11.46C14.9484 11.4598 14.8054 11.3996 14.7 11.294L12.5 9.095L10.294 11.3C10.1889 11.4058 10.0457 11.4663 9.894 11.4666C9.74228 11.4669 9.59879 11.407 9.493 11.302L9.493 11.302L9.489 11.298L8.995 10.804L8.989 10.798C8.88583 10.6916 8.82669 10.5499 8.8266 10.4008C8.82651 10.2516 8.88547 10.1098 8.989 10.0034L8.989 10.0033L8.995 9.997L11.202 7.79L11.208 7.784C11.3144 7.67839 11.456 7.61925 11.605 7.61916C11.7541 7.61906 11.8958 7.67803 12.002 7.784L12.002 7.784L12.008 7.79L14.2 10L17.982 6.217L17.988 6.211C18.0947 6.10437 18.2366 6.04524 18.386 6.04516C18.5353 6.04507 18.6773 6.104 18.784 6.21L19.89 10.105Z" fill="currentColor" stroke="currentColor" stroke-width="0.1"/>
-                          </svg>
-                        </n-icon>
-                      </n-button>
-                    </template>
-                    压缩JSON
-                  </n-tooltip>
-                  <n-tooltip trigger="hover" placement="top">
-                    <template #trigger>
-                      <n-button quaternary circle size="small" @click="generateEditSampleJson">
-                        <n-icon>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4h2v4zm0-6h-2V7h2v4z" fill="currentColor"/>
-                          </svg>
-                        </n-icon>
-                      </n-button>
-                    </template>
-                    生成示例
-                  </n-tooltip>
+
+                <!-- 接口路径 -->
+                <n-form-item label="接口路径" path="endpoint">
+                  <div class="endpoint-preview-pro">
+                    <div class="endpoint-input-icon">
+                      <n-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14c1.1 0 2-.9 2-2V6a2 2 0 00-2-2zm.5 14c0 .28-.22.5-.5.5H5c-.28 0-.5-.22-.5-.5V6c0-.28.22-.5.5-.5h14c.28 0 .5.22.5.5v12zM7 13h2v2H7zm0-7h10v2H7zm3 4h7v2h-7zm0 4h4v2h-4z" fill="currentColor"/></svg></n-icon>
+                    </div>
+                    <div class="endpoint-content">
+                      <div class="endpoint-url">
+                        <span class="endpoint-base">http://10.215.211.31:9090</span>
+                        <span class="endpoint-path">{{ editForm.endpoint.startsWith('/') ? '' : '/' }}{{ editForm.endpoint }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </n-form-item>
+                
+                <!-- 分类选择 -->
+                <n-form-item label="接口分类" path="category">
+                  <div class="input-wrapper category-wrapper">
+                    <div class="input-icon">
+                      <n-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7a2.5 2.5 0 010-5 2.5 2.5 0 010 5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z" fill="currentColor"/></svg></n-icon>
+                    </div>
+                    <n-select
+                      v-model:value="editForm.category"
+                      :options="categoryOptions"
+                      placeholder="选择分类"
+                      class="category-select-pro"
+                    />
+                  </div>
+                </n-form-item>
+                
+                <!-- 超时时间 -->
+                <n-form-item label="超时时间" path="timeout">
+                  <div class="input-wrapper">
+                    <div class="input-icon">
+                      <n-icon><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" fill="currentColor"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/></svg></n-icon>
+                    </div>
+                    <n-input-number
+                      v-model:value="editForm.timeout"
+                      class="timeout-input-pro"
+                      :min="0"
+                      :max="10000"
+                      placeholder="超时时间"
+                    >
+                      <template #suffix>
+                        <span class="input-suffix">毫秒</span>
+                      </template>
+                    </n-input-number>
+                  </div>
+                </n-form-item>
+                
+                <!-- 状态控制 -->
+                <n-form-item label="接口状态" path="isActive">
+                  <div class="status-container">
+                    <n-switch
+                      v-model:value="editForm.isActive"
+                      :rail-style="simpleRailStyle"
+                      class="status-switch-pro"
+                    >
+                      <template #checked>
+                        <div class="switch-content-pro">
+                          <span>活跃</span>
+                        </div>
+                      </template>
+                      <template #unchecked>
+                        <div class="switch-content-pro">
+                          <span>停用</span>
+                        </div>
+                      </template>
+                    </n-switch>
+                    
+                    <div class="status-badge" :class="{ 'status-active': editForm.isActive, 'status-inactive': !editForm.isActive }">
+                      <div class="status-indicator"></div>
+                      <span>{{ editForm.isActive ? '接口当前可用' : '接口当前已停用' }}</span>
+                    </div>
+                  </div>
+                </n-form-item>
+              </div>
+              
+              <!-- 右侧响应数据编辑区 -->
+              <div class="right-column">
+                <div class="section-header">
+                  <n-icon class="section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" fill="currentColor"/></svg></n-icon>
+                  <h4>响应数据</h4>
                 </div>
+
+                <n-form-item path="response" class="editor-form-item">
+                  <div class="editor-container-pro">
+                    <!-- 编辑器工具栏 -->
+                    <div class="editor-toolbar">
+                      <div class="editor-status-pro" :class="{ 'editor-status-error': jsonEditError }">
+                        <div class="status-dot-pro" :class="{ 'status-dot-error': jsonEditError }"></div>
+                        {{ jsonEditError ? '格式错误' : 'JSON格式正确' }}
+                      </div>
+                      <div class="editor-actions-pro">
+                        <n-tooltip trigger="hover" placement="top">
+                          <template #trigger>
+                            <n-button secondary size="small" @click="formatEditJsonResponse" :disabled="!!jsonEditError">
+                              <template #icon>
+                                <n-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z" fill="currentColor"/></svg></n-icon>
+                              </template>
+                              格式化
+                            </n-button>
+                          </template>
+                          格式化JSON数据
+                        </n-tooltip>
+                        
+                        <n-tooltip trigger="hover" placement="top">
+                          <template #trigger>
+                            <n-button secondary size="small" @click="minifyEditJsonResponse" :disabled="!!jsonEditError">
+                              <template #icon>
+                                <n-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19.89 10.105C19.9697 10.1842 20.0097 10.2899 20 10.4V17.5C20 19.433 18.433 21 16.5 21H7.5C5.567 21 4 19.433 4 17.5V6.5C4 4.567 5.567 3 7.5 3H16.5C18.433 3 20 4.567 20 6.5V6.6C20.0097 6.71009 19.9697 6.81575 19.89 6.895L15.5 11.295C15.3946 11.4004 15.2516 11.4602 15.1 11.46C14.9484 11.4598 14.8054 11.3996 14.7 11.294L12.5 9.095L10.294 11.3C10.1889 11.4058 10.0457 11.4663 9.894 11.4666C9.74228 11.4669 9.59879 11.407 9.493 11.302L9.489 11.298L8.995 10.804L8.989 10.798C8.88583 10.6916 8.82669 10.5499 8.8266 10.4008C8.82651 10.2516 8.88547 10.1098 8.989 10.0034L8.995 9.997L11.202 7.79L11.208 7.784C11.3144 7.67839 11.456 7.61925 11.605 7.61916C11.7541 7.61906 11.8958 7.67803 12.002 7.784L12.008 7.79L14.2 10L17.982 6.217L17.988 6.211C18.0947 6.10437 18.2366 6.04524 18.386 6.04516C18.5353 6.04507 18.6773 6.104 18.784 6.21L19.89 10.105Z" fill="currentColor"/></svg></n-icon>
+                              </template>
+                              压缩
+                            </n-button>
+                          </template>
+                          压缩JSON数据
+                        </n-tooltip>
+                        
+                        <n-tooltip trigger="hover" placement="top">
+                          <template #trigger>
+                            <n-button secondary size="small" @click="generateEditSampleJson">
+                              <template #icon>
+                                <n-icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4h2v4zm0-6h-2V7h2v4z" fill="currentColor"/></svg></n-icon>
+                              </template>
+                              生成示例
+                            </n-button>
+                          </template>
+                          生成示例JSON数据
+                        </n-tooltip>
+                      </div>
+                    </div>
+                    
+                    <!-- Monaco 编辑器 -->
+                    <monaco-editor
+                      v-model:value="editForm.response"
+                      language="json"
+                      :options="editorOptions"
+                      @update:value="validateEditJson"
+                      class="json-editor-pro"
+                    />
+                    
+                    <!-- 错误信息 -->
+                    <div v-if="jsonEditError" class="editor-error">
+                      <n-icon class="error-icon-pro"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg></n-icon>
+                      <span>{{ jsonEditError }}</span>
+                    </div>
+                  </div>
+                </n-form-item>
               </div>
-              <monaco-editor
-                v-model:value="editForm.response"
-                language="json"
-                :options="editorOptions"
-                @update:value="validateEditJson"
-                class="json-editor"
-              />
-              <div class="form-tip" :class="{ 'form-error': jsonEditError }">
-                {{ jsonEditError || '' }}
-              </div>
-            </n-form-item>
-          </n-form>
-          
-          <div class="modal-actions">
-            <n-button class="cancel-btn" @click="closeEditModal" round>
+            </n-form>
+          </div>
+
+          <!-- 底部操作区域 -->
+          <div class="modal-footer-pro">
+            <n-button class="cancel-btn-pro" @click="closeEditModal">
               取消
             </n-button>
-            <n-button type="primary" class="submit-btn" @click="handleEditSubmit" :disabled="!isEditFormValid || isSubmitting" :loading="isSubmitting" round>
-              更新
+            <n-button type="primary" class="submit-btn-pro" @click="handleEditSubmit" :disabled="!isEditFormValid || isSubmitting" :loading="isSubmitting">
+              {{ isSubmitting ? '更新中...' : '保存更新' }}
+              <template #icon>
+                <n-icon v-if="!isSubmitting"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/></svg></n-icon>
+              </template>
             </n-button>
           </div>
         </div>
@@ -237,7 +296,7 @@
 import { ref, reactive, h, computed, watch, nextTick, onMounted } from 'vue'
 import { 
   NButton, NSpace, NPopconfirm, NTag, FormInst, useMessage, 
-  NIcon, NEmpty, NResult, NSelect, NCode, NFormItem, NForm
+  NIcon, NEmpty, NResult, NSelect, NCode, NFormItem, NForm, NInputNumber
 } from 'naive-ui'
 import MonacoEditor from 'monaco-editor-vue3'
 import { debounce } from 'lodash-es'
@@ -973,6 +1032,17 @@ function railStyle({ focused, checked }: { focused: boolean, checked: boolean })
   return style
 }
 
+// 自定义开关样式
+function simpleRailStyle({ focused, checked }: { focused: boolean, checked: boolean }) {
+  const style = {
+    background: checked ? '#4CAF50' : '#9e9e9e',  // 绿色活跃状态，灰色停用状态
+    boxShadow: focused 
+      ? `0 0 0 2px ${checked ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)'}` 
+      : 'none'
+  }
+  return style
+}
+
 // 编辑弹窗相关函数
 const validateEditJson = debounce((value: string) => {
   if (!value.trim()) {
@@ -1496,247 +1566,405 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 编辑弹窗样式 */
-.edit-modal {
-  width: 550px;
-  max-width: 90vw;
+/* 专业版编辑弹窗样式 */
+.edit-modal-pro {
+  width: 1100px;
+  max-width: 98vw;
 }
 
-.edit-modal-content {
-  padding: 0 20px 20px;
+.edit-modal-pro :deep(.n-dialog__icon) {
+  display: none;
 }
 
-.edit-modal :deep(.n-card-header) {
-  padding: 20px 20px 0;
+.edit-modal-pro :deep(.n-dialog__content) {
+  padding: 0;
 }
 
-.edit-modal :deep(.n-card-header__main) {
-  font-size: 18px;
+.modal-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  border-radius: 8px;
+}
+
+.modal-body-pro {
+  padding: 24px 24px 0;
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: calc(90vh - 80px);
+}
+
+.edit-form-pro {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 28px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .edit-modal-pro {
+    width: 98vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .edit-form-pro {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-header-pro {
+    padding: 16px;
+  }
+  
+  .header-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .header-text h3 {
+    font-size: 18px;
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-icon {
+  color: #333;
+}
+
+.section-header h4 {
+  font-size: 16px;
   font-weight: 600;
+  margin: 0;
+  color: #1f2937;
 }
 
-.edit-modal :deep(.n-form-item-label) {
+/* 左侧配置区域样式 */
+.left-column {
+  padding-right: 20px;
+}
+
+.endpoint-preview-pro {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.endpoint-preview-pro:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.endpoint-input-icon {
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.endpoint-content {
+  flex-grow: 1;
+}
+
+.endpoint-url {
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.endpoint-base {
+  color: #6b7280;
+}
+
+.endpoint-path {
+  color: #1f2937;
   font-weight: 500;
-  color: #374151;
 }
 
-.edit-modal :deep(.n-form-item) {
-  margin-bottom: 20px;
-}
-
-.full-url {
+.endpoint-info {
   font-size: 12px;
   color: #6b7280;
   margin-top: 6px;
-  padding: 6px 8px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-  word-break: break-all;
 }
 
-.rounded-input {
-  border-radius: 8px !important;
-  overflow: hidden;
-}
-
-.rounded-input :deep(.n-input__border),
-.rounded-input :deep(.n-input-wrapper) {
-  border-radius: 8px !important;
-}
-
-.rounded-input :deep(.n-base-selection) {
-  border-radius: 8px !important;
-}
-
-.timeout-input-container {
-  position: relative;
-  width: 100%;
+.input-wrapper {
   display: flex;
   align-items: center;
+  gap: 12px;
+  position: relative;
 }
 
-.timeout-input-large {
-  flex: 1;
+.input-icon {
+  color: #6b7280;
+}
+
+.category-wrapper {
+  width: 100%;
+}
+
+.category-select-pro {
+  width: 100%;
+}
+
+.category-select-pro :deep(.n-base-selection) {
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  padding: 6px 8px 6px 10px;
-  font-size: 13px;
-  color: #374151;
-  appearance: none;
-  -moz-appearance: textfield;
-  text-align: right;
-  padding-right: 32px;
-  background-color: #fff;
+  border-color: #d1d5db;
 }
 
-.timeout-input-large::-webkit-outer-spin-button,
-.timeout-input-large::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+.category-select-pro :deep(.n-base-selection:hover) {
+  border-color: #555;
 }
 
-.timeout-suffix-large {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+.timeout-input-pro {
+  width: 100%;
+}
+
+.timeout-input-pro :deep(.n-input) {
+  border-radius: 8px;
+  border-color: #d1d5db;
+}
+
+.timeout-input-pro :deep(.n-input:hover) {
+  border-color: #555;
+}
+
+.input-suffix {
   color: #6b7280;
   font-size: 12px;
 }
 
-.json-editor {
-  height: 300px !important;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 8px;
+.field-helper-text {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
 }
 
-.json-editor :deep(.monaco-editor) {
-  height: 100% !important;
-}
-
-.json-editor :deep(.monaco-editor .margin) {
-  width: 32px !important;
-}
-
-.json-editor :deep(.monaco-editor .margin .line-numbers) {
-  width: 26px !important;
-  text-align: center !important;
-}
-
-/* Fix the content padding to remove extra space */
-.json-editor :deep(.monaco-editor .monaco-scrollable-element) {
-  left: 32px !important;
-}
-
-.json-editor :deep(.monaco-editor .view-lines) {
-  width: calc(100% - 32px) !important;
-  left: 0 !important;
-  padding-left: 0 !important;
-}
-
-.json-editor :deep(.monaco-editor-background) {
-  height: 100% !important;
-}
-
-.editor-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.editor-actions-row {
+.status-container {
   display: flex;
-  gap: 12px;
-  justify-content: flex-start; /* Align buttons to the left */
+  align-items: center;
+  gap: 16px;
 }
 
-.editor-actions-row.center {
-  justify-content: center; /* Center the button in the grid row */
+.status-switch-pro {
+  min-width: 80px;
 }
 
-.action-btn {
-  border-radius: 20px;
-  padding: 6px 16px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+.switch-content-pro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 12px;
+}
+
+.status-badge {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f3f4f6;
 }
 
-.action-btn:hover {
-  background-color: #f3f4f6;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.08);
+.status-active {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4CAF50;
 }
 
-.action-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+.status-inactive {
+  background: rgba(158, 158, 158, 0.1);
+  color: #757575;
 }
 
-.action-btn :deep(.n-button__icon) {
-  margin-right: 4px;
-}
-
-.status-switch {
-  width: 80px;
-}
-
-.switch-content {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.switch-dot {
-  width: 6px;
-  height: 6px;
+.status-indicator {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
-.switch-dot.active {
-  background-color: #fff;
+.status-active .status-indicator {
+  background-color: #4CAF50;
 }
 
-.switch-dot.inactive {
-  background-color: #fff;
+.status-inactive .status-indicator {
+  background-color: #9e9e9e;
 }
 
-.form-tip {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 4px;
+/* 右侧响应编辑区域样式 */
+.right-column {
+  display: flex;
+  flex-direction: column;
 }
 
-.form-error {
-  color: #FF4D4F !important;
+.editor-form-item {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.modal-actions {
+.editor-form-item :deep(.n-form-item-feedback-wrapper) {
+  min-height: 0;
+}
+
+.editor-container-pro {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  flex-grow: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.editor-container-pro:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.editor-status-pro {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+.editor-status-error {
+  color: #d32f2f;
+}
+
+.status-dot-pro {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #333;
+}
+
+.status-dot-error {
+  background-color: #d32f2f;
+}
+
+.editor-actions-pro {
+  display: flex;
+  gap: 8px;
+}
+
+.json-editor-pro {
+  height: 400px !important;
+  border: none;
+  width: 100%;
+}
+
+.json-editor-pro :deep(.monaco-editor) {
+  padding: 8px 0;
+}
+
+.editor-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.03);
+  color: #d32f2f;
+  font-size: 13px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.error-icon-pro {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* 底部操作区域样式 */
+.modal-footer-pro {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0 0 8px 8px;
 }
 
-.submit-btn {
-  min-width: 80px;
-  background-color: #1890FF;
+.cancel-btn-pro {
+  min-width: 100px;
+  font-weight: 500;
+  border-radius: 6px;
 }
 
-.submit-btn:hover {
-  background-color: #40a9ff;
+.submit-btn-pro {
+  min-width: 140px;
+  font-weight: 500;
+  border-radius: 6px;
+  background: #333;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 34px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
 }
 
-.submit-btn:active {
-  background-color: #096dd9;
+.submit-btn-pro:not(:disabled):hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+  background: #444;
 }
 
-.cancel-btn {
-  min-width: 80px;
+.submit-btn-pro:not(:disabled):active {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transform: translateY(0);
+  background: #222;
 }
 
-/* 移动设备适配 */
-@media (max-width: 768px) {
-  .expanded-content {
-    flex-direction: column;
-  }
-  
-  .expanded-metadata {
-    flex: none;
-    border-right: none;
-    border-bottom: 1px solid #e5e7eb;
-    padding-right: 0;
-    padding-bottom: 16px;
-    margin-bottom: 16px;
-  }
+.submit-btn-pro:disabled {
+  opacity: 0.7;
+  background: #999;
+  box-shadow: none;
 }
+
+/* 自定义开关样式 */
+:deep(.n-switch.status-switch-pro .n-switch__rail) {
+  border-radius: 16px;
+  padding: 2px;
+  height: 24px;
+}
+
+:deep(.n-switch.status-switch-pro .n-switch__button) {
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+}
+
+:deep(.n-switch.status-switch-pro.n-switch--active .n-switch__button) {
+  left: calc(100% - 20px - 2px) !important;
+}
+
 </style>

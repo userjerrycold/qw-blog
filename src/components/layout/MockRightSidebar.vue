@@ -1,5 +1,5 @@
 <template>
-  <aside class="mock-sidebar scrollbar-hide w-1/4 max-w-[300px]" style="height:100%; border-left:1px solid var(--color-border);">
+  <aside class="mock-sidebar scrollbar-hide" style="height:100%; border-left:1px solid var(--color-border); width:100%;">
     <div class="config-panel">
       <div class="panel-header">
         <h3 class="panel-title">{{ isEditing ? '编辑接口' : '创建接口' }}</h3>
@@ -452,8 +452,8 @@ defineExpose({
   display: flex;
   flex-direction: column;
   width: 100%;
-  border-left: 1px solid #f0f0f0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .config-panel {
@@ -484,8 +484,10 @@ defineExpose({
 .form-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  max-width: 100%;
 }
 
 .form-container::-webkit-scrollbar {
@@ -494,7 +496,8 @@ defineExpose({
 
 /* 表单样式 */
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  max-width: 100%;
 }
 
 .form-label {
@@ -510,6 +513,7 @@ defineExpose({
   border-radius: 8px !important;
   overflow: hidden;
   width: 100%;
+  max-width: 100%;
 }
 
 .rounded-input :deep(.n-input__border),
@@ -532,6 +536,9 @@ defineExpose({
   border-radius: 8px;
   font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
   word-break: break-all;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .form-tip {
@@ -551,7 +558,6 @@ defineExpose({
 
 .timeout-input-container {
   position: relative;
-  width: 100%;
 }
 
 .timeout-input-large {
@@ -563,9 +569,10 @@ defineExpose({
   appearance: none;
   -moz-appearance: textfield;
   text-align: right;
-  padding-right: 32px;
+  padding-right: 12px;
   background-color: #fff;
   box-sizing: border-box;
+  width: 120px;
 }
 
 .timeout-input-large::-webkit-outer-spin-button,
@@ -590,6 +597,7 @@ defineExpose({
   border: 1px solid #e5e7eb;
   margin-bottom: 8px;
   width: 100%;
+  max-width: 100%;
 }
 
 .json-editor :deep(.monaco-scrollable-element) {
@@ -661,10 +669,11 @@ defineExpose({
 
 .editor-actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
   margin-top: 12px;
   flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .editor-actions-row {
@@ -679,14 +688,15 @@ defineExpose({
 
 .action-btn {
   border-radius: 20px;
-  padding: 6px 16px;
+  padding: 6px 8px;
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  font-size: 12px;
 }
 
 .action-btn:hover {
@@ -775,6 +785,7 @@ defineExpose({
   border-radius: 8px;
   overflow: hidden;
   width: 100%;
+  max-width: 100%;
 }
 
 .editor-overlay {
