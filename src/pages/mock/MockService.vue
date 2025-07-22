@@ -205,10 +205,29 @@
                 <div class="section-header">
                   <n-icon class="section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" fill="currentColor"/></svg></n-icon>
                   <h4>响应数据</h4>
+                  
+                  <!-- 添加JSON/TXT切换开关 -->
+                  <div class="response-type-switch">
+                    <div 
+                      class="switch-option" 
+                      :class="{ active: responseType === 'json' }" 
+                      @click="setResponseType('json')"
+                    >
+                      JSON
+                    </div>
+                    <div 
+                      class="switch-option" 
+                      :class="{ active: responseType === 'text' }" 
+                      @click="setResponseType('text')"
+                    >
+                      TXT
+                    </div>
+                  </div>
                 </div>
 
                 <n-form-item path="response" class="editor-form-item">
-                  <div class="editor-container-pro">
+                  <!-- JSON编辑器 -->
+                  <div v-if="responseType === 'json'" class="editor-container-pro">
                     <!-- 编辑器工具栏 -->
                     <div class="editor-toolbar">
                       <div class="editor-status-pro" :class="{ 'editor-status-error': jsonEditError }">
@@ -269,6 +288,17 @@
                       <span>{{ jsonEditError }}</span>
                     </div>
                   </div>
+                  
+                  <!-- 纯文本编辑器 -->
+                  <div v-else class="editor-container-pro">
+                    <n-input
+                      v-model:value="editForm.response"
+                      type="textarea"
+                      placeholder="在此输入纯文本响应内容"
+                      :autosize="{ minRows: 15, maxRows: 20 }"
+                      class="text-editor"
+                    />
+                  </div>
                 </n-form-item>
               </div>
             </n-form>
@@ -296,7 +326,8 @@
 import { ref, reactive, h, computed, watch, nextTick, onMounted } from 'vue'
 import { 
   NButton, NSpace, NPopconfirm, NTag, FormInst, useMessage, 
-  NIcon, NEmpty, NResult, NSelect, NCode, NFormItem, NForm, NInputNumber
+  NIcon, NEmpty, NResult, NSelect, NCode, NFormItem, NForm, NInputNumber,
+  NInput
 } from 'naive-ui'
 import MonacoEditor from 'monaco-editor-vue3'
 import { debounce } from 'lodash-es'
@@ -675,6 +706,9 @@ const isSubmitting = ref(false)
 const jsonEditError = ref('')
 const editFormRef = ref<FormInst | null>(null)
 
+// 响应类型状态
+const responseType = ref<'json' | 'text'>('json')
+
 // 编辑表单
 const editForm = reactive<MockConfig>({
   id: '',
@@ -714,7 +748,12 @@ const editRules = {
 
 // 计算属性
 const isEditFormValid = computed(() => {
-  return editForm.response.trim() !== '' && !jsonEditError.value
+  // 如果是文本模式，不验证JSON
+  if (responseType.value === 'text') {
+    return editForm.response.trim() !== '';
+  }
+  
+  return editForm.response.trim() !== '' && !jsonEditError.value;
 })
 
 // 表格配置
@@ -943,21 +982,34 @@ function handleExpandChange(keys: string[]) {
 
 // 生成展开行内容
 function expandedRowRender(row: MockConfig) {
+  // 检测响应是否为JSON
+  const isJsonResponse = isJsonFormat(row.response);
+  
   return h('div', { class: 'expanded-row' }, [
     h('div', { class: 'expanded-content simplified' }, [
-      h('div', 
-        { 
-          class: 'json-preview-simple clickable',
-          onClick: () => copyToClipboard(row.response)
-        }, 
-        [
-          h(NCode, {
-            language: 'json',
-            code: formatJson(row.response),
-            class: 'json-code'
-          })
-        ]
-      )
+      isJsonResponse 
+      ? h('div', 
+          { 
+            class: 'json-preview-simple clickable',
+            onClick: () => copyToClipboard(row.response)
+          }, 
+          [
+            h(NCode, {
+              language: 'json',
+              code: formatJson(row.response),
+              class: 'json-code'
+            })
+          ]
+        )
+      : h('div', 
+          { 
+            class: 'text-preview-simple clickable',
+            onClick: () => copyToClipboard(row.response)
+          }, 
+          [
+            h('pre', { class: 'text-content' }, row.response)
+          ]
+        )
     ])
   ])
 }
@@ -979,12 +1031,23 @@ function editMock(mock: MockConfig) {
   // 填充表单数据
   Object.assign(editForm, mock)
   
-  // 格式化JSON
-  try {
-    const obj = JSON.parse(editForm.response)
-    editForm.response = JSON.stringify(obj, null, 2)
-  } catch (e) {
-    // 如果解析失败，保持原样
+  // 检测是否为JSON并设置相应模式
+  if (editForm.response) {
+    try {
+      // 尝试解析JSON
+      JSON.parse(editForm.response);
+      // 如果成功，使用JSON模式
+      responseType.value = 'json';
+      
+      // 格式化JSON
+      const obj = JSON.parse(editForm.response);
+      editForm.response = JSON.stringify(obj, null, 2);
+      jsonEditError.value = '';
+    } catch (e) {
+      // 如果解析失败，使用文本模式
+      responseType.value = 'text';
+      jsonEditError.value = '';
+    }
   }
   
   // 打开弹窗
@@ -1134,14 +1197,16 @@ function handleEditSubmit() {
   
   isSubmitting.value = true
   
-  // 确保 response 是有效的 JSON
-  try {
-    const jsonObj = JSON.parse(editForm.response)
-    editForm.response = JSON.stringify(jsonObj)
-  } catch (e) {
-    jsonEditError.value = '请先修复 JSON 错误'
-    isSubmitting.value = false
-    return
+  // 如果是JSON模式，确保response是有效的JSON
+  if (responseType.value === 'json' && editForm.response.trim() !== '') {
+    try {
+      const jsonObj = JSON.parse(editForm.response)
+      editForm.response = JSON.stringify(jsonObj)
+    } catch (e) {
+      jsonEditError.value = '请先修复 JSON 错误'
+      isSubmitting.value = false
+      return
+    }
   }
   
   // 模拟网络延迟
@@ -1260,6 +1325,45 @@ onMounted(() => {
 watch(mockList, (newVal) => {
   localStorage.setItem('mockConfigs', JSON.stringify(newVal))
 }, { deep: true })
+
+// 设置响应类型
+function setResponseType(type: 'json' | 'text') {
+  // 如果从文本切换到JSON，尝试验证当前内容
+  if (responseType.value === 'text' && type === 'json' && editForm.response.trim() !== '') {
+    try {
+      // 尝试解析为JSON
+      JSON.parse(editForm.response);
+    } catch (e) {
+      // 如果不是有效JSON，清除响应内容防止切换后出错
+      if (!confirm('当前内容不是有效的JSON，切换后将清空内容。是否继续？')) {
+        return; // 用户取消切换
+      }
+      editForm.response = '';
+    }
+  }
+  
+  responseType.value = type;
+  
+  // 切换到JSON模式后验证
+  if (type === 'json' && editForm.response.trim() !== '') {
+    validateEditJson(editForm.response);
+  } else if (type === 'text') {
+    // 切换到文本模式，清除JSON错误
+    jsonEditError.value = '';
+  }
+}
+
+// 辅助函数：检测字符串是否为有效JSON
+function isJsonFormat(str: string) {
+  if (!str) return false;
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 </script>
 
 <style scoped>
@@ -1965,6 +2069,105 @@ body {
 
 :deep(.n-switch.status-switch-pro.n-switch--active .n-switch__button) {
   left: calc(100% - 20px - 2px) !important;
+}
+
+/* JSON/TXT切换开关样式 */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-header h4 {
+  margin-right: auto;
+}
+
+.response-type-switch {
+  display: flex;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.switch-option {
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.switch-option:first-child {
+  border-right: 1px solid #e5e7eb;
+}
+
+.switch-option.active {
+  background: #4CAF50;
+  color: white;
+}
+
+/* 文本编辑器样式 */
+.text-editor {
+  width: 100%;
+  height: 400px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+}
+
+.text-editor :deep(.n-input__textarea) {
+  border-radius: 0;
+  padding: 12px;
+  height: 100%;
+}
+
+/* 纯文本预览样式 */
+.text-preview-simple {
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  max-height: 400px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.text-preview-simple.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.text-preview-simple.clickable:hover {
+  border-color: #1890FF;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+.text-preview-simple.clickable:hover::after {
+  content: "点击复制";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(24, 144, 255, 0.9);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.text-content {
+  background-color: #fff !important;
+  padding: 16px !important;
+  margin: 0 !important;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 </style>

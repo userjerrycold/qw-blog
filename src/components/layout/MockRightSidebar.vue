@@ -75,8 +75,28 @@
         
         <!-- 响应数据 -->
         <div class="form-group">
-          <div class="form-label">响应数据</div>
-          <div class="editor-container-pro">
+          <div class="form-label-with-switch">
+            <span>响应数据</span>
+            <div class="response-type-switch">
+              <div 
+                class="switch-option" 
+                :class="{ active: responseType === 'json' }" 
+                @click="setResponseType('json')"
+              >
+                JSON
+              </div>
+              <div 
+                class="switch-option" 
+                :class="{ active: responseType === 'text' }" 
+                @click="setResponseType('text')"
+              >
+                TXT
+              </div>
+            </div>
+          </div>
+          
+          <!-- JSON编辑器 -->
+          <div v-if="responseType === 'json'" class="editor-container-pro">
             <!-- 编辑器工具栏 - 简化为只显示状态 -->
             <div class="editor-toolbar-simple">
               <div class="editor-status-pro" :class="{ 'editor-status-error': jsonError }">
@@ -101,6 +121,17 @@
               </n-icon>
               <span>{{ jsonError }}</span>
             </div>
+          </div>
+          
+          <!-- 纯文本编辑器 -->
+          <div v-else class="editor-container-pro">
+            <n-input
+              v-model:value="formModel.response"
+              type="textarea"
+              placeholder="在此输入纯文本响应内容"
+              :autosize="{ minRows: 10, maxRows: 15 }"
+              class="text-editor"
+            />
           </div>
         </div>
       </n-form>
@@ -152,6 +183,7 @@ const formRef = ref(null)
 const isEditing = ref(false)
 const isSubmitting = ref(false)
 const originalId = ref<string | null>(null)
+const responseType = ref<'json' | 'text'>('json') // 新增：响应类型状态
 
 const formModel = reactive<MockConfig>({
   endpoint: '',
@@ -225,6 +257,11 @@ const categoryOptions = [
 
 // 计算属性
 const isFormValid = computed(() => {
+  // 如果是文本模式，不验证JSON
+  if (responseType.value === 'text') {
+    return formModel.endpoint.trim() !== '';
+  }
+  
   return formModel.endpoint.trim() !== '' && 
     formModel.response.trim() !== '' && 
     !jsonError.value;
@@ -283,24 +320,26 @@ function railStyle({ focused, checked }: { focused: boolean, checked: boolean })
 
 // 操作函数
 function handleSubmit() {
-  if (!isFormValid.value) return
+  if (!isFormValid.value) return;
   
-  isSubmitting.value = true
+  isSubmitting.value = true;
   
   // 验证接口路径
   if (!validateEndpoint(formModel.endpoint)) {
-    isSubmitting.value = false
-    return
+    isSubmitting.value = false;
+    return;
   }
   
-  // 确保 response 是有效的 JSON
-  try {
-    const jsonObj = JSON.parse(formModel.response)
-    formModel.response = JSON.stringify(jsonObj)
-  } catch (e) {
-    jsonError.value = '请先修复 JSON 错误'
-    isSubmitting.value = false
-    return
+  // 如果是JSON模式，确保response是有效的JSON
+  if (responseType.value === 'json' && formModel.response.trim() !== '') {
+    try {
+      const jsonObj = JSON.parse(formModel.response);
+      formModel.response = JSON.stringify(jsonObj);
+    } catch (e) {
+      jsonError.value = '请先修复 JSON 错误';
+      isSubmitting.value = false;
+      return;
+    }
   }
   
   // 模拟网络延迟
@@ -309,10 +348,10 @@ function handleSubmit() {
     emit('submit', {
       ...formModel,
       id: originalId.value
-    })
+    });
     
-    isSubmitting.value = false
-  }, 300)
+    isSubmitting.value = false;
+  }, 300);
 }
 
 function resetForm() {
@@ -394,25 +433,61 @@ function generateSampleJson() {
   validateJson(formModel.response)
 }
 
+// 新增：设置响应类型
+function setResponseType(type: 'json' | 'text') {
+  // 如果从文本切换到JSON，尝试验证当前内容
+  if (responseType.value === 'text' && type === 'json' && formModel.response.trim() !== '') {
+    try {
+      // 尝试解析为JSON
+      JSON.parse(formModel.response);
+    } catch (e) {
+      // 如果不是有效JSON，清除响应内容防止切换后出错
+      if (!confirm('当前内容不是有效的JSON，切换后将清空内容。是否继续？')) {
+        return; // 用户取消切换
+      }
+      formModel.response = '';
+    }
+  }
+  
+  responseType.value = type;
+  
+  // 切换到JSON模式后验证
+  if (type === 'json' && formModel.response.trim() !== '') {
+    validateJson(formModel.response);
+  } else if (type === 'text') {
+    // 切换到文本模式，清除JSON错误
+    jsonError.value = '';
+  }
+}
+
 // 对外暴露的方法
 function updateForm(mock: MockConfig) {
-  originalId.value = mock.id || null
-  formModel.endpoint = mock.endpoint || ''
-  formModel.response = mock.response || ''
-  formModel.timeout = mock.timeout || 300
-  formModel.isActive = mock.isActive !== undefined ? mock.isActive : true
-  formModel.category = mock.category || 'default'
+  originalId.value = mock.id || null;
+  formModel.endpoint = mock.endpoint || '';
+  formModel.timeout = mock.timeout || 300;
+  formModel.isActive = mock.isActive !== undefined ? mock.isActive : true;
+  formModel.category = mock.category || 'default';
+  formModel.response = mock.response || '';
   
-  isEditing.value = true
-  validateEndpoint(formModel.endpoint)
+  isEditing.value = true;
+  validateEndpoint(formModel.endpoint);
+  
+  // 尝试判断是否为JSON
   if (formModel.response) {
     try {
-      // 尝试格式化 JSON
-      const obj = JSON.parse(formModel.response)
-      formModel.response = JSON.stringify(obj, null, 2)
-      jsonError.value = ''
+      // 尝试解析JSON
+      JSON.parse(formModel.response);
+      // 如果成功，使用JSON模式
+      responseType.value = 'json';
+      
+      // 尝试格式化JSON
+      const obj = JSON.parse(formModel.response);
+      formModel.response = JSON.stringify(obj, null, 2);
+      jsonError.value = '';
     } catch (e) {
-      validateJson(formModel.response)
+      // 如果解析失败，使用文本模式
+      responseType.value = 'text';
+      jsonError.value = '';
     }
   }
 }
@@ -745,5 +820,51 @@ defineExpose({
 
 :deep(.n-switch.status-switch.n-switch--active .n-switch__button) {
   left: calc(100% - 20px - 2px) !important;
+}
+
+.form-label-with-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.response-type-switch {
+  display: flex;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.switch-option {
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.switch-option:first-child {
+  border-right: 1px solid #e5e7eb;
+}
+
+.switch-option.active {
+  background: #4CAF50;
+  color: white;
+}
+
+.text-editor {
+  width: 100%;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+}
+
+.text-editor :deep(.n-input__textarea) {
+  border-radius: 0;
+  padding: 12px;
 }
 </style> 
