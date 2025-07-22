@@ -1,5 +1,5 @@
 <template>
-  <aside class="mock-sidebar scrollbar-hide" style="height:100%; border-left:1px solid var(--color-border);">
+  <aside class="mock-sidebar scrollbar-hide w-1/4 max-w-[300px]" style="height:100%; border-left:1px solid var(--color-border);">
     <div class="config-panel">
       <div class="panel-header">
         <h3 class="panel-title">{{ isEditing ? '编辑接口' : '创建接口' }}</h3>
@@ -15,132 +15,69 @@
       >
         <!-- 接口路径 -->
         <div class="form-group">
-          <div class="form-item">
-            <div class="form-label">接口路径 *</div>
-            <div class="form-content">
-              <n-input 
-                v-model:value="formModel.endpoint" 
-                placeholder="/api/User"
-                :status="endpointStatus"
-                class="rounded-input"
-              />
-              <div class="endpoint-display">
-                http://10.215.211.31:9090{{ formModel.endpoint.startsWith('/') ? '' : '/' }}{{ formModel.endpoint || '/api/path' }}
-              </div>
-            </div>
+          <div class="form-label">接口路径 *</div>
+          <n-input 
+            v-model:value="formModel.endpoint" 
+            placeholder="/api/User"
+            :status="endpointStatus"
+            class="rounded-input"
+          />
+          <div v-if="formModel.endpoint" class="full-url">
+            http://10.215.211.31:9090{{ formModel.endpoint.startsWith('/') ? '' : '/' }}{{ formModel.endpoint }}
           </div>
         </div>
         
         <!-- 分类 -->
         <div class="form-group">
-          <div class="form-item">
-            <div class="form-label">分类</div>
-            <div class="form-content">
-              <n-select
-                v-model:value="formModel.category"
-                :options="categoryOptions"
-                placeholder="选择分类"
-                class="rounded-input"
-                style="width: 180px;"
-              />
-            </div>
-          </div>
+          <div class="form-label">分类</div>
+          <n-select
+            v-model:value="formModel.category"
+            :options="categoryOptions"
+            placeholder="选择分类"
+            class="rounded-input"
+          />
         </div>
         
         <!-- 超时时间 -->
         <div class="form-group">
-          <div class="form-item">
-            <div class="form-label">超时时间</div>
-            <div class="form-content">
-              <div class="timeout-input-container">
-                <input 
-                  type="number" 
-                  v-model="formModel.timeout" 
-                  class="timeout-input-large" 
-                  min="0" 
-                  max="10000"
-                  style="width: 120px;"
-                />
-                <span class="timeout-suffix">ms</span>
-              </div>
-            </div>
+          <div class="form-label">超时时间</div>
+          <div class="timeout-input-container">
+            <input 
+              type="number" 
+              v-model="formModel.timeout" 
+              class="timeout-input-large" 
+              min="0" 
+              max="10000"
+            />&nbsp;&nbsp;&nbsp;ms
           </div>
         </div>
         
         <!-- 状态 -->
         <div class="form-group">
-          <div class="form-item">
-            <div class="form-label">状态</div>
-            <div class="form-content">
-              <n-switch
-                v-model:value="formModel.isActive"
-                :rail-style="railStyle"
-                class="status-switch"
-              >
-                <template #checked>
-                  <div class="switch-content">
-                    <div class="switch-dot active"></div>
-                    活跃
-                  </div>
-                </template>
-                <template #unchecked>
-                  <div class="switch-content">
-                    <div class="switch-dot inactive"></div>
-                    停用
-                  </div>
-                </template>
-              </n-switch>
-            </div>
-          </div>
+          <div class="form-label">状态</div>
+          <n-switch
+            v-model:value="formModel.isActive"
+            :rail-style="railStyle"
+            class="status-switch"
+          >
+            <template #checked>
+              <div class="switch-content">
+                <div class="switch-dot active"></div>
+                活跃
+              </div>
+            </template>
+            <template #unchecked>
+              <div class="switch-content">
+                <div class="switch-dot inactive"></div>
+                停用
+              </div>
+            </template>
+          </n-switch>
         </div>
         
         <!-- 响应数据 -->
         <div class="form-group">
-          <div class="form-label-row">
-            <div class="form-label">响应数据</div>
-            <div class="editor-actions">
-              <n-tooltip trigger="hover" placement="bottom">
-                <template #trigger>
-                  <n-button quaternary @click="formatJsonResponse" :disabled="!!jsonError">
-                    <n-icon>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z" fill="currentColor"/>
-                      </svg>
-                    </n-icon>
-                  </n-button>
-                </template>
-                格式化JSON
-              </n-tooltip>
-              <n-tooltip trigger="hover" placement="bottom">
-                <template #trigger>
-                  <n-button quaternary @click="minifyJsonResponse" :disabled="!!jsonError">
-                    <n-icon>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19.89 10.105L19.89 10.105C19.9697 10.1842 20.0097 10.2899 20 10.4V17.5C20 19.433 18.433 21 16.5 21H7.5C5.567 21 4 19.433 4 17.5V6.5C4 4.567 5.567 3 7.5 3H16.5C18.433 3 20 4.567 20 6.5V6.6C20.0097 6.71009 19.9697 6.81575 19.89 6.895L15.5 11.295L15.5 11.295C15.3946 11.4004 15.2516 11.4602 15.1 11.46C14.9484 11.4598 14.8054 11.3996 14.7 11.294L12.5 9.095L10.294 11.3C10.1889 11.4058 10.0457 11.4663 9.894 11.4666C9.74228 11.4669 9.59879 11.407 9.493 11.302L9.493 11.302L9.489 11.298L8.995 10.804L8.989 10.798C8.88583 10.6916 8.82669 10.5499 8.8266 10.4008C8.82651 10.2516 8.88547 10.1098 8.989 10.0034L8.989 10.0033L8.995 9.997L11.202 7.79L11.208 7.784C11.3144 7.67839 11.456 7.61925 11.605 7.61916C11.7541 7.61906 11.8958 7.67803 12.002 7.784L12.002 7.784L12.008 7.79L14.2 10L17.982 6.217L17.988 6.211C18.0947 6.10437 18.2366 6.04524 18.386 6.04516C18.5353 6.04507 18.6773 6.104 18.784 6.21L19.89 10.105Z" fill="currentColor" stroke="currentColor" stroke-width="0.1"/>
-                      </svg>
-                    </n-icon>
-                  </n-button>
-                </template>
-                压缩JSON
-              </n-tooltip>
-              <n-tooltip trigger="hover" placement="bottom">
-                <template #trigger>
-                  <n-button quaternary @click="generateSampleJson">
-                    <n-icon>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4h2v4zm0-6h-2V7h2v4z" fill="currentColor"/>
-                      </svg>
-                    </n-icon>
-                  </n-button>
-                </template>
-                生成示例
-              </n-tooltip>
-              <div class="editor-status" :class="{ 'editor-status-error': jsonError }">
-                <div class="status-dot" :class="{ 'status-dot-error': jsonError }"></div>
-                {{ jsonError ? '错误' : '正确' }}
-              </div>
-            </div>
-          </div>
+          <div class="form-label">响应数据</div>
           <div class="editor-container">
             <monaco-editor
               v-model:value="formModel.response"
@@ -156,29 +93,63 @@
           <div class="form-tip" :class="{ 'form-error': jsonError }">
             {{ jsonError || '' }}
           </div>
+          <div class="editor-actions-grid">
+            <div class="editor-actions-row">
+              <n-button size="medium" class="action-btn" @click="formatJsonResponse" :disabled="!!jsonError">
+                <template #icon>
+                  <n-icon>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z" fill="currentColor"/>
+                    </svg>
+                  </n-icon>
+                </template>
+                格式化JSON
+              </n-button>
+              <n-button size="medium" class="action-btn" @click="minifyJsonResponse" :disabled="!!jsonError">
+                <template #icon>
+                  <n-icon>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19.89 10.105L19.89 10.105C19.9697 10.1842 20.0097 10.2899 20 10.4V17.5C20 19.433 18.433 21 16.5 21H7.5C5.567 21 4 19.433 4 17.5V6.5C4 4.567 5.567 3 7.5 3H16.5C18.433 3 20 4.567 20 6.5V6.6C20.0097 6.71009 19.9697 6.81575 19.89 6.895L15.5 11.295L15.5 11.295C15.3946 11.4004 15.2516 11.4602 15.1 11.46C14.9484 11.4598 14.8054 11.3996 14.7 11.294L12.5 9.095L10.294 11.3C10.1889 11.4058 10.0457 11.4663 9.894 11.4666C9.74228 11.4669 9.59879 11.407 9.493 11.302L9.493 11.302L9.489 11.298L8.995 10.804L8.989 10.798C8.88583 10.6916 8.82669 10.5499 8.8266 10.4008C8.82651 10.2516 8.88547 10.1098 8.989 10.0034L8.989 10.0033L8.995 9.997L11.202 7.79L11.208 7.784C11.3144 7.67839 11.456 7.61925 11.605 7.61916C11.7541 7.61906 11.8958 7.67803 12.002 7.784L12.002 7.784L12.008 7.79L14.2 10L17.982 6.217L17.988 6.211C18.0947 6.10437 18.2366 6.04524 18.386 6.04516C18.5353 6.04507 18.6773 6.104 18.784 6.21L19.89 10.105Z" fill="currentColor" stroke="currentColor" stroke-width="0.1"/>
+                    </svg>
+                  </n-icon>
+                </template>
+                压缩JSON
+              </n-button>
+            </div>
+            <div class="editor-actions-row center">
+              <n-button size="medium" class="action-btn" @click="generateSampleJson">
+                <template #icon>
+                  <n-icon>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4h2v4zm0-6h-2V7h2v4z" fill="currentColor"/>
+                    </svg>
+                  </n-icon>
+                </template>
+                生成示例
+              </n-button>
+            </div>
+          </div>
         </div>
       </n-form>
       
       <div class="sticky-actions">
-        <div class="action-buttons">
-          <n-button
-            class="reset-btn"
-            @click="resetForm"
-            round
-          >
-            重置
-          </n-button>
-          <n-button
-            type="primary"
-            class="submit-btn"
-            @click="handleSubmit"
-            :disabled="!isFormValid || isSubmitting"
-            :loading="isSubmitting"
-            round
-          >
-            {{ isEditing ? '更新' : '创建' }}
-          </n-button>
-        </div>
+        <n-button
+          class="cancel-btn"
+          @click="resetForm"
+          round
+        >
+          取消
+        </n-button>
+        <n-button
+          type="primary"
+          class="submit-btn"
+          @click="handleSubmit"
+          :disabled="!isFormValid || isSubmitting"
+          :loading="isSubmitting"
+          round
+        >
+          {{ isEditing ? '更新' : '创建' }}
+        </n-button>
       </div>
     </div>
   </aside>
@@ -474,11 +445,14 @@ defineExpose({
 
 <style scoped>
 .mock-sidebar {
+  height: 100%;
   padding: 20px;
   box-sizing: border-box;
   background-color: white;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  border-left: 1px solid #f0f0f0;
   overflow-y: auto;
 }
 
@@ -487,7 +461,7 @@ defineExpose({
   flex-direction: column;
   height: 100%;
   position: relative;
-  padding-bottom: 56px; /* Space for sticky buttons */
+  padding-bottom: 70px; /* Space for sticky buttons */
 }
 
 .panel-header {
@@ -530,20 +504,7 @@ defineExpose({
   margin-bottom: 8px;
 }
 
-.form-item {
-  display: flex;
-  align-items: flex-start;
-}
-
-.form-label {
-  width: 80px;
-  flex-shrink: 0;
-  padding-top: 6px;
-}
-
-.form-content {
-  flex: 1;
-}
+/* 移除自定义表单项布局 */
 
 .rounded-input {
   border-radius: 8px !important;
@@ -590,8 +551,7 @@ defineExpose({
 
 .timeout-input-container {
   position: relative;
-  display: flex;
-  align-items: center;
+  width: 100%;
 }
 
 .timeout-input-large {
@@ -614,20 +574,13 @@ defineExpose({
   margin: 0;
 }
 
-.timeout-suffix {
-  margin-left: 8px;
+.timeout-suffix-large {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #6b7280;
-}
-
-.endpoint-display {
   font-size: 12px;
-  color: #6b7280;
-  margin-top: 6px;
-  padding: 6px 8px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-  word-break: break-all;
 }
 
 .json-editor {
@@ -707,14 +660,17 @@ defineExpose({
 }
 
 .editor-actions-grid {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
   margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .editor-actions-row {
   display: flex;
-  justify-content: center;
+  gap: 12px;
+  justify-content: flex-start; /* Align buttons to the left */
 }
 
 .editor-actions-row.center {
@@ -723,7 +679,7 @@ defineExpose({
 
 .action-btn {
   border-radius: 20px;
-  padding: 6px 20px;
+  padding: 6px 16px;
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
@@ -731,7 +687,6 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 140px;
 }
 
 .action-btn:hover {
@@ -779,21 +734,16 @@ defineExpose({
   left: 0;
   right: 0;
   display: flex;
-  justify-content: center;
-  padding: 12px 0;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 0;
   background-color: white;
   border-top: 1px solid #f0f0f0;
   z-index: 10;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 12px;
-  width: 90%;
-}
-
 .submit-btn {
-  flex: 1;
+  min-width: 80px;
   background-color: #1890FF;
 }
 
@@ -805,8 +755,8 @@ defineExpose({
   background-color: #096dd9;
 }
 
-.reset-btn {
-  flex: 1;
+.cancel-btn {
+  min-width: 80px;
 }
 
 .scrollbar-hide {
@@ -818,43 +768,7 @@ defineExpose({
   display: none;
 }
 
-/* 新增样式 */
-.form-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.editor-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.editor-status {
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  color: #52C41A;
-  gap: 4px;
-  margin-left: 4px;
-}
-
-.editor-status-error {
-  color: #FF4D4F;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #52C41A;
-}
-
-.status-dot-error {
-  background-color: #FF4D4F;
-}
+/* 移除不需要的样式 */
 
 .editor-container {
   position: relative;
