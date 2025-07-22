@@ -1,0 +1,1 @@
+export const mockTags = ['商业', '运动', '技术', '旅游'] 

@@ -1,0 +1,38 @@
+:root {
+  --color-border: #eee;
+  --color-bg: #fff;
+}
+
+body {
+  background-color: #f7f7f8;
+  color: #333;
+}
+
+.main {
+  position: fixed;
+  top: 20px;
+  bottom: 20px;
+  left: 270px;
+  right: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-bg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: left 0.3s ease;
+}
+.sidebar-collapsed .main {
+  left: 140px;
+}
+
+/* utility: hide scrollbar */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Safari and Chrome */
+} 

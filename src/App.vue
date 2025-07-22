@@ -1,15 +1,15 @@
 <template>
   <n-config-provider :theme="theme" :theme-overrides="themeOverrides">
-    <n-layout has-sider class="h-screen">
+    <n-message-provider>
       <AppSidebar />
-      <n-layout>
+      <main class="main">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
-      </n-layout>
-    </n-layout>
+      </main>
+    </n-message-provider>
   </n-config-provider>
 </template>
 
@@ -18,7 +18,7 @@ import { ref } from 'vue'
 import { darkTheme } from 'naive-ui'
 import AppSidebar from './components/layout/AppSidebar.vue'
 
-const theme = ref(null) // 可通过 Pinia 切换 darkTheme
+const theme = ref(null)
 const themeOverrides = {
   common: {
     primaryColor: '#f56a47',
