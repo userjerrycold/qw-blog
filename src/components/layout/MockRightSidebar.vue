@@ -1,5 +1,5 @@
 <template>
-  <aside class="mock-sidebar scrollbar-hide" style="height:100%; border-left:1px solid var(--color-border); width:100%;">
+  <aside class="mock-sidebar" style="height:100%; border-left:1px solid var(--color-border); width:100%;">
     <div class="config-panel">
       <div class="panel-header">
         <h3 class="panel-title">{{ isEditing ? '编辑接口' : '创建接口' }}</h3>
@@ -57,18 +57,16 @@
           <div class="form-label">状态</div>
           <n-switch
             v-model:value="formModel.isActive"
-            :rail-style="railStyle"
+            :rail-style="simpleRailStyle"
             class="status-switch"
           >
             <template #checked>
               <div class="switch-content">
-                <div class="switch-dot active"></div>
                 活跃
               </div>
             </template>
             <template #unchecked>
               <div class="switch-content">
-                <div class="switch-dot inactive"></div>
                 停用
               </div>
             </template>
@@ -78,61 +76,36 @@
         <!-- 响应数据 -->
         <div class="form-group">
           <div class="form-label">响应数据</div>
-          <div class="editor-container">
+          <div class="editor-container-pro">
+            <!-- 编辑器工具栏 - 简化为只显示状态 -->
+            <div class="editor-toolbar-simple">
+              <div class="editor-status-pro" :class="{ 'editor-status-error': jsonError }">
+                <div class="status-dot-pro" :class="{ 'status-dot-error': jsonError }"></div>
+                {{ jsonError ? '格式错误' : 'JSON格式正确' }}
+              </div>
+            </div>
+            
+            <!-- Monaco 编辑器 -->
             <monaco-editor
               v-model:value="formModel.response"
               language="json"
               :options="editorOptions"
               @update:value="validateJson"
-              class="json-editor"
+              class="json-editor-pro"
             />
-            <div class="editor-overlay" v-if="!formModel.response">
-              <div class="editor-placeholder">在此处输入JSON响应数据</div>
-            </div>
-          </div>
-          <div class="form-tip" :class="{ 'form-error': jsonError }">
-            {{ jsonError || '' }}
-          </div>
-          <div class="editor-actions-grid">
-            <div class="editor-actions-row">
-              <n-button size="medium" class="action-btn" @click="formatJsonResponse" :disabled="!!jsonError">
-                <template #icon>
-                  <n-icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z" fill="currentColor"/>
-                    </svg>
-                  </n-icon>
-                </template>
-                格式化JSON
-              </n-button>
-              <n-button size="medium" class="action-btn" @click="minifyJsonResponse" :disabled="!!jsonError">
-                <template #icon>
-                  <n-icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M19.89 10.105L19.89 10.105C19.9697 10.1842 20.0097 10.2899 20 10.4V17.5C20 19.433 18.433 21 16.5 21H7.5C5.567 21 4 19.433 4 17.5V6.5C4 4.567 5.567 3 7.5 3H16.5C18.433 3 20 4.567 20 6.5V6.6C20.0097 6.71009 19.9697 6.81575 19.89 6.895L15.5 11.295L15.5 11.295C15.3946 11.4004 15.2516 11.4602 15.1 11.46C14.9484 11.4598 14.8054 11.3996 14.7 11.294L12.5 9.095L10.294 11.3C10.1889 11.4058 10.0457 11.4663 9.894 11.4666C9.74228 11.4669 9.59879 11.407 9.493 11.302L9.493 11.302L9.489 11.298L8.995 10.804L8.989 10.798C8.88583 10.6916 8.82669 10.5499 8.8266 10.4008C8.82651 10.2516 8.88547 10.1098 8.989 10.0034L8.989 10.0033L8.995 9.997L11.202 7.79L11.208 7.784C11.3144 7.67839 11.456 7.61925 11.605 7.61916C11.7541 7.61906 11.8958 7.67803 12.002 7.784L12.002 7.784L12.008 7.79L14.2 10L17.982 6.217L17.988 6.211C18.0947 6.10437 18.2366 6.04524 18.386 6.04516C18.5353 6.04507 18.6773 6.104 18.784 6.21L19.89 10.105Z" fill="currentColor" stroke="currentColor" stroke-width="0.1"/>
-                    </svg>
-                  </n-icon>
-                </template>
-                压缩JSON
-              </n-button>
-            </div>
-            <div class="editor-actions-row center">
-              <n-button size="medium" class="action-btn" @click="generateSampleJson">
-                <template #icon>
-                  <n-icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4h2v4zm0-6h-2V7h2v4z" fill="currentColor"/>
-                    </svg>
-                  </n-icon>
-                </template>
-                生成示例
-              </n-button>
+            
+            <!-- 错误信息 -->
+            <div v-if="jsonError" class="editor-error">
+              <n-icon class="error-icon-pro">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg>
+              </n-icon>
+              <span>{{ jsonError }}</span>
             </div>
           </div>
         </div>
       </n-form>
       
-      <div class="sticky-actions">
+      <div class="sticky-actions" v-if="isFormValid">
         <n-button
           class="cancel-btn"
           @click="resetForm"
@@ -144,7 +117,7 @@
           type="primary"
           class="submit-btn"
           @click="handleSubmit"
-          :disabled="!isFormValid || isSubmitting"
+          :disabled="isSubmitting"
           :loading="isSubmitting"
           round
         >
@@ -288,7 +261,18 @@ const validateJson = debounce((value: string) => {
   }
 }, 300)
 
-// 样式函数
+// 自定义开关样式 - 添加与编辑框一致的状态颜色
+function simpleRailStyle({ focused, checked }: { focused: boolean, checked: boolean }) {
+  const style = {
+    background: checked ? '#4CAF50' : '#9e9e9e',  // 绿色活跃状态，灰色停用状态
+    boxShadow: focused 
+      ? `0 0 0 2px ${checked ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)'}` 
+      : 'none'
+  }
+  return style
+}
+
+// 原来的railStyle函数保留但不使用
 function railStyle({ focused, checked }: { focused: boolean, checked: boolean }) {
   const style = {
     background: checked ? '#52C41A' : '#FF4D4F',
@@ -454,6 +438,12 @@ defineExpose({
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.mock-sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .config-panel {
@@ -483,15 +473,8 @@ defineExpose({
 
 .form-container {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* 移除滚动属性，让父容器控制滚动 */
   max-width: 100%;
-}
-
-.form-container::-webkit-scrollbar {
-  display: none;
 }
 
 /* 表单样式 */
@@ -506,8 +489,6 @@ defineExpose({
   color: #374151;
   margin-bottom: 8px;
 }
-
-/* 移除自定义表单项布局 */
 
 .rounded-input {
   border-radius: 8px !important;
@@ -524,8 +505,6 @@ defineExpose({
 .rounded-input :deep(.n-base-selection) {
   border-radius: 8px !important;
 }
-
-/* 移除自定义输入框内边距，使用默认样式 */
 
 .full-url {
   font-size: 12px;
@@ -548,11 +527,11 @@ defineExpose({
 }
 
 .form-error {
-  color: #FF4D4F !important;
-  background-color: rgba(255, 77, 79, 0.05);
+  color: #d32f2f !important;
+  background-color: rgba(211, 47, 47, 0.05);
   padding: 6px 10px;
   border-radius: 6px;
-  border-left: 3px solid #FF4D4F;
+  border-left: 3px solid #d32f2f;
   font-weight: 500;
 }
 
@@ -590,128 +569,9 @@ defineExpose({
   font-size: 12px;
 }
 
+/* 删除旧的编辑器样式 */
 .json-editor {
-  height: 300px !important;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 8px;
-  width: 100%;
-  max-width: 100%;
-}
-
-.json-editor :deep(.monaco-scrollable-element) {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.json-editor :deep(.monaco-scrollable-element::-webkit-scrollbar) {
   display: none;
-}
-
-.json-editor :deep(.monaco-editor) {
-  height: 100% !important;
-}
-
-/* 行号区域优化 */
-.json-editor :deep(.monaco-editor .margin) {
-  width: 40px !important; /* 增加行号区域宽度 */
-  background-color: #f9fafb; /* 行号区域背景色 */
-  border-right: 1px solid #f0f0f0; /* 添加右侧边框 */
-}
-
-.json-editor :deep(.monaco-editor .margin .line-numbers) {
-  width: 34px !important;
-  text-align: right !important;
-  padding-right: 8px !important; /* 行号右侧内边距 */
-  color: #6b7280; /* 默认行号颜色 */
-}
-
-/* 当前行号高亮 */
-.json-editor :deep(.monaco-editor .current-line ~ .line-numbers) {
-  color: #1890FF !important; /* 当前行号使用蓝色 */
-  font-weight: 600 !important; /* 当前行号加粗 */
-}
-
-/* 内容区域优化 */
-.json-editor :deep(.monaco-editor .monaco-scrollable-element) {
-  left: 40px !important; /* 匹配行号区域宽度 */
-}
-
-.json-editor :deep(.monaco-editor .view-lines) {
-  width: calc(100% - 40px) !important; /* 匹配行号区域宽度 */
-  left: 0 !important;
-}
-
-.json-editor :deep(.monaco-editor .cursor) {
-  /* 移除固定左侧位置，让光标随文字移动 */
-}
-
-/* 当前行高亮样式 */
-.json-editor :deep(.monaco-editor .current-line) {
-  background-color: rgba(24, 144, 255, 0.05) !important; /* 淡蓝色背景 */
-  border: none !important;
-}
-
-/* 移除滚动装饰阴影 */
-.json-editor :deep(.monaco-editor .scrollbar .slider) {
-  background: rgba(100, 100, 100, 0.2) !important;
-  border-radius: 3px !important;
-}
-
-.json-editor :deep(.monaco-editor .decorationsOverviewRuler) {
-  display: none !important;
-}
-
-.json-editor :deep(.monaco-editor-background) {
-  height: 100% !important;
-}
-
-.editor-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 8px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-  max-width: 100%;
-}
-
-.editor-actions-row {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-start; /* Align buttons to the left */
-}
-
-.editor-actions-row.center {
-  justify-content: center; /* Center the button in the grid row */
-}
-
-.action-btn {
-  border-radius: 20px;
-  padding: 6px 8px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-}
-
-.action-btn:hover {
-  background-color: #f3f4f6;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.08);
-}
-
-.action-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.action-btn :deep(.n-button__icon) {
-  margin-right: 4px;
 }
 
 .status-switch {
@@ -721,21 +581,29 @@ defineExpose({
 .switch-content {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 100%;
+  font-size: 12px;
 }
 
-.switch-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+/* 简化版工具栏 */
+.editor-toolbar-simple {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.switch-dot.active {
-  background-color: #fff;
+/* 确保编辑器没有自己的滚动条 */
+.json-editor-pro :deep(.monaco-editor .overflow-guard) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-.switch-dot.inactive {
-  background-color: #fff;
+.json-editor-pro :deep(.monaco-editor .overflow-guard::-webkit-scrollbar) {
+  display: none !important;
 }
 
 .sticky-actions {
@@ -750,109 +618,133 @@ defineExpose({
   background-color: white;
   border-top: 1px solid #f0f0f0;
   z-index: 10;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .submit-btn {
   min-width: 80px;
-  background-color: #1890FF;
+  background-color: #4CAF50;
+  border: none;
 }
 
 .submit-btn:hover {
-  background-color: #40a9ff;
+  background-color: #43A047;
 }
 
 .submit-btn:active {
-  background-color: #096dd9;
+  background-color: #388E3C;
 }
 
 .cancel-btn {
   min-width: 80px;
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-/* 移除不需要的样式 */
-
-.editor-container {
-  position: relative;
+/* 新的编辑器样式，匹配编辑弹窗的样式 */
+.editor-container-pro {
+  display: flex;
+  flex-direction: column;
   border-radius: 8px;
   overflow: hidden;
-  width: 100%;
-  max-width: 100%;
+  border: 1px solid #e5e7eb;
+  flex-grow: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
 }
 
-.editor-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.editor-container-pro:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.editor-status-pro {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background-color: rgba(249, 250, 251, 0.8);
-  pointer-events: none;
+  gap: 6px;
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
 }
 
-.editor-placeholder {
-  color: #9CA3AF;
-  font-size: 14px;
+.editor-status-error {
+  color: #d32f2f;
 }
 
-.editor-actions-container {
+.status-dot-pro {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4CAF50;
+}
+
+.status-dot-error {
+  background-color: #d32f2f;
+}
+
+.editor-actions-pro {
   display: flex;
-  justify-content: center;
-  margin-top: 8px;
+  gap: 8px;
 }
 
-.editor-shortcuts {
+.json-editor-pro {
+  height: 300px !important;
+  border: none;
+  width: 100%;
+}
+
+.json-editor-pro :deep(.monaco-editor) {
+  padding: 8px 0;
+}
+
+.editor-error {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 4px;
-  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.03);
+  color: #d32f2f;
+  font-size: 13px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.shortcut-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #6b7280;
+.error-icon-pro {
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
-.shortcut-desc {
-  margin-left: 2px;
+/* 自定义开关样式 */
+:deep(.n-switch.status-switch .n-switch__rail) {
+  border-radius: 16px;
+  padding: 2px;
+  height: 24px;
 }
 
-kbd {
-  background-color: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 3px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-  color: #374151;
-  display: inline-block;
-  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-  font-size: 11px;
-  line-height: 1;
-  padding: 2px 4px;
+:deep(.n-switch.status-switch .n-switch__button) {
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
 }
 
-.action-btn-primary {
-  background-color: #e6f7ff;
-  border-color: #91d5ff;
-  color: #1890ff;
-}
-
-.action-btn-primary:hover {
-  background-color: #bae7ff;
-  border-color: #69c0ff;
+:deep(.n-switch.status-switch.n-switch--active .n-switch__button) {
+  left: calc(100% - 20px - 2px) !important;
 }
 </style> 
