@@ -547,11 +547,10 @@ defineExpose({
   color: #374151;
   appearance: none;
   -moz-appearance: textfield;
-  text-align: right;
+  text-align: center;
   padding-right: 12px;
   background-color: #fff;
   box-sizing: border-box;
-  width: 120px;
 }
 
 .timeout-input-large::-webkit-outer-spin-button,
