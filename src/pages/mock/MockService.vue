@@ -1081,9 +1081,50 @@ function formatJson(jsonString: string) {
 }
 
 function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text)
-    .then(() => message.success('已复制到剪贴板'))
-    .catch(() => message.error('复制失败'))
+  // 优先使用现代Clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => message.success('已复制到剪贴板'))
+      .catch(() => {
+        // 如果API调用失败，使用备选方案
+        fallbackCopyToClipboard(text);
+      });
+  } else {
+    // 对不支持Clipboard API的浏览器使用备选方案
+    fallbackCopyToClipboard(text);
+  }
+}
+
+// 备选复制方法
+function fallbackCopyToClipboard(text: string) {
+  try {
+    // 创建一个临时textarea元素
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // 确保元素不可见
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    // 执行复制命令
+    const successful = document.execCommand('copy');
+    
+    // 删除临时元素
+    document.body.removeChild(textArea);
+    
+    if (successful) {
+      message.success('已复制到剪贴板');
+    } else {
+      message.error('复制失败');
+    }
+  } catch (err) {
+    message.error('复制失败: ' + err);
+  }
 }
 
 // 监听表格变化，添加动画效果
