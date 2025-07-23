@@ -12,10 +12,6 @@ export default defineConfig({
   plugins: [
     vue(), 
     UnoCSS(),
-    // @ts-ignore - 类型定义可能存在问题，但插件可以正确工作
-    monacoEditorPlugin({
-      languageWorkers: ['json']
-    })
   ],
   // 添加代理配置解决跨域问题
   server: {
@@ -38,7 +34,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           // 将Monaco编辑器的代码单独打包
-          'monaco-editor': ['monaco-editor']
+          'monaco-editor': ['monaco-editor'],
+          'json-worker': ['monaco-editor/esm/vs/language/json/json.worker'],
         }
       }
     }

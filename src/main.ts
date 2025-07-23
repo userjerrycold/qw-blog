@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import naive from 'naive-ui'
+import './monaco-config' // 导入Monaco编辑器配置
 
 import 'uno.css'
 import '@/styles/main.css'

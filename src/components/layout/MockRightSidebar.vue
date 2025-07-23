@@ -200,36 +200,9 @@ const rules = {
   ]
 }
 
-// Monaco Editor配置
-const editorOptions = {
-  theme: 'vs',
-  minimap: { enabled: false },
-  automaticLayout: true,
-  scrollBeyondLastLine: false,
-  lineNumbers: 'on',
-  tabSize: 2,
-  fontSize: 14,
-  renderLineHighlight: 'all',
-  formatOnPaste: true,
-  wordWrap: 'on',
-  folding: true,
-  autoIndent: true,
-  fixedOverflowWidgets: true,
-  contextmenu: false,
-  roundedSelection: true,
-  scrollbar: {
-    verticalScrollbarSize: 8,
-    horizontalScrollbarSize: 8,
-    useShadows: false
-  },
-  overviewRulerLanes: 0,
-  hideCursorInOverviewRuler: true,
-  renderIndentGuides: true,
-  lineDecorationsWidth: 0,
-  lineNumbersMinChars: 3,
-  cursorBlinking: 'smooth',
-  cursorSmoothCaretAnimation: 'on'
-}
+// 引入统一配置的Monaco Editor选项
+import { getEditorOptions } from '@/monaco-config'
+const editorOptions = getEditorOptions('json')
 
 // 分类选项
 const categoryOptions = [

@@ -376,23 +376,9 @@ const editForm = reactive<MockConfig>({
   lastModified: 0
 })
 
-// Monaco Editor配置
-const editorOptions = {
-  theme: 'vs',
-  minimap: { enabled: false },
-  automaticLayout: true,
-  scrollBeyondLastLine: false,
-  lineNumbers: 'on',
-  tabSize: 2,
-  fontSize: 14,
-  renderLineHighlight: 'all',
-  formatOnPaste: true,
-  wordWrap: 'on',
-  folding: true,
-  autoIndent: true,
-  fixedOverflowWidgets: true,
-  contextmenu: false
-}
+// 引入统一配置的Monaco Editor选项
+import { getEditorOptions } from '@/monaco-config'
+const editorOptions = getEditorOptions('json')
 
 // 编辑表单验证规则
 const editRules = {
