@@ -18,13 +18,13 @@
           <div class="form-label">接口路径 *</div>
           <n-input 
             v-model:value="formModel.endpoint" 
-            placeholder="/bestv/User"
+            placeholder="/OttService/orderStatus"
             :status="endpointStatus"
             class="rounded-input"
             name="endpoint"
           />
           <div v-if="formModel.endpoint" class="full-url">
-            http://10.215.211.31:9010{{ formModel.endpoint.startsWith('/') ? '' : '/' }}{{ formModel.endpoint }}
+            http://10.215.211.31:9090{{ formModel.endpoint.startsWith('/') ? '' : '/' }}{{ formModel.endpoint }}
           </div>
         </div>
         

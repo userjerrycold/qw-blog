@@ -125,7 +125,7 @@
                     </div>
                     <div class="endpoint-content">
                       <div class="endpoint-url">
-                        <span class="endpoint-base">http://10.215.211.31:9010</span>
+                        <span class="endpoint-base">http://10.215.211.31:9090</span>
                         <span class="endpoint-path">{{ editForm.endpoint.startsWith('/') ? '' : '/' }}{{ editForm.endpoint }}</span>
                       </div>
                     </div>
@@ -496,7 +496,7 @@ const columns = [
     key: 'endpoint',
     render(row: MockConfig) {
       return h('div', { class: 'endpoint-cell' }, [
-        h('span', { class: 'base-url' }, 'http://10.215.211.31:9010'),
+        h('span', { class: 'base-url' }, 'http://10.215.211.31:9090'),
         h('span', { 
           class: `endpoint-path ${!row.isActive ? 'inactive-api' : ''}` 
         }, row.endpoint)
@@ -694,7 +694,7 @@ function editMock(mock: MockConfig) {
 }
 
 function copyMock(mock: MockConfig) {
-  const mockUrl = `http://10.215.211.31:9010${mock.endpoint.startsWith('/') ? '' : '/'}${mock.endpoint}`
+  const mockUrl = `http://10.215.211.31:9090${mock.endpoint.startsWith('/') ? '' : '/'}${mock.endpoint}`
   copyToClipboard(mockUrl)
 }
 
@@ -1039,7 +1039,7 @@ async function handleSubmitFromSidebar(formData: Partial<MockConfig> & { success
         mockList.value.unshift(newMock)
         
         // 显示成功对话框
-        currentMockUrl.value = `http://10.215.211.31:9010${newMock.endpoint.startsWith('/') ? '' : '/'}${newMock.endpoint}`
+        currentMockUrl.value = `http://10.215.211.31:9090${newMock.endpoint.startsWith('/') ? '' : '/'}${newMock.endpoint}`
         showSuccessModal.value = true
         
         // 生成二维码
