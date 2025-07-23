@@ -518,7 +518,7 @@ const columns = [
     width: 220,
     fixed: 'right',
     render(row: MockConfig) {
-      return h(NSpace, { justify: 'center' }, [
+      return h(NSpace, { justify: 'center' }, () => [
         h(
           NButton,
           {

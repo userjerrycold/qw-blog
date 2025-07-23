@@ -25,4 +25,26 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  // 添加Monaco编辑器worker配置
+  worker: {
+    format: 'es',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          jsonWorker: ['monaco-editor/esm/vs/language/json/json.worker'],
+          editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
+        },
+      },
+    },
+  },
+  // 优化依赖预构建
+  optimizeDeps: {
+    include: [
+      'monaco-editor',
+      'monaco-editor-vue3'
+    ],
+    exclude: []
+  }
 }) 

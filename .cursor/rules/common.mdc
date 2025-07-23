@@ -1,0 +1,5 @@
+---
+description: 每次回答请用中文回答问题。
+globs:
+alwaysApply: false
+---
