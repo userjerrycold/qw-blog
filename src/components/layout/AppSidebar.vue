@@ -3,8 +3,8 @@
     <div class="profile">
       <img :src="avatar" alt="avatar" />
       <div class="profile-info">
-        <h1>Leo Johns</h1>
-        <p>开发者</p>
+        <h1>Redmine</h1>
+        <p>开发/测试</p>
       </div>
     </div>
 
@@ -36,7 +36,7 @@ import toolsSvg from '@/assets/tools.svg'
 import docsSvg from '@/assets/docs.svg'
 import serverSvg from '@/assets/server.svg'
 
-const collapsed = ref(false)
+const collapsed = ref(true)
 
 watch(collapsed, (val) => {
   document.body.classList.toggle('sidebar-collapsed', val)
@@ -46,21 +46,6 @@ const router = useRouter()
 const route = useRoute()
 
 const menuOptions: MenuOption[] = [
-  {
-    label: '博客',
-    key: '/blog',
-    icon: () => h('img', { src: blogSvg, class: 'w-4 h-4' }),
-  },
-  {
-    label: '工具',
-    key: '/tools',
-    icon: () => h('img', { src: toolsSvg, class: 'w-4 h-4' }),
-  },
-  {
-    label: '文档',
-    key: '/docs',
-    icon: () => h('img', { src: docsSvg, class: 'w-4 h-4' }),
-  },
   {
     label: '服务模拟',
     key: '/mock',
@@ -78,10 +63,7 @@ const menuThemeOverrides = {
 }
 
 const activeKey = computed(() => {
-  if (route.path.startsWith('/tools')) return '/tools'
-  if (route.path.startsWith('/docs')) return '/docs'
-  if (route.path.startsWith('/mock')) return '/mock'
-  return '/blog'
+  return '/mock'
 })
 
 function handleUpdate(key: string) {

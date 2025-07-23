@@ -12,11 +12,11 @@ export default defineConfig({
   // 添加代理配置解决跨域问题
   server: {
     proxy: {
-      // 将所有/api开头的请求代理到目标服务器
-      '/api': {
-        target: 'http://localhost:9090',
+      // 将所有/bestv开头的请求代理到目标服务器
+      '/bestv': {
+        target: 'http://10.215.211.31:9010',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''), // 去掉路径中的/api前缀
+        rewrite: (path) => path.replace(/^\/bestv/, ''), // 去掉路径中的/bestv前缀
       }
     }
   },

@@ -125,7 +125,7 @@
                     </div>
                     <div class="endpoint-content">
                       <div class="endpoint-url">
-                        <span class="endpoint-base">http://10.215.211.31:9090</span>
+                        <span class="endpoint-base">http://10.215.211.31:9010</span>
                         <span class="endpoint-path">{{ editForm.endpoint.startsWith('/') ? '' : '/' }}{{ editForm.endpoint }}</span>
                       </div>
                     </div>
@@ -342,7 +342,7 @@ interface CategoryColorMap {
 const message = useMessage()
 
 // 服务器地址配置 - 通过import.meta.env可以访问环境变量，便于不同环境使用不同地址
-const SERVER_BASE_URL = import.meta.env.VITE_MOCK_API_URL || 'http://localhost:9090'
+const SERVER_BASE_URL = import.meta.env.VITE_MOCK_API_URL || 'http://10.215.211.31:9010'
 
 // 状态管理
 const mockList = ref<MockConfig[]>([])
@@ -496,7 +496,7 @@ const columns = [
     key: 'endpoint',
     render(row: MockConfig) {
       return h('div', { class: 'endpoint-cell' }, [
-        h('span', { class: 'base-url' }, 'http://10.215.211.31:9090'),
+        h('span', { class: 'base-url' }, 'http://10.215.211.31:9010'),
         h('span', { 
           class: `endpoint-path ${!row.isActive ? 'inactive-api' : ''}` 
         }, row.endpoint)
@@ -694,7 +694,7 @@ function editMock(mock: MockConfig) {
 }
 
 function copyMock(mock: MockConfig) {
-  const mockUrl = `http://10.215.211.31:9090${mock.endpoint.startsWith('/') ? '' : '/'}${mock.endpoint}`
+  const mockUrl = `http://10.215.211.31:9010${mock.endpoint.startsWith('/') ? '' : '/'}${mock.endpoint}`
   copyToClipboard(mockUrl)
 }
 
@@ -705,7 +705,7 @@ async function deleteMock(id: string) {
     const keyword = extractKeywordFromEndpoint(mock.endpoint)
     
     try {
-      const response = await axios.post('/api/prepare/remove', {
+      const response = await axios.post('/bestv/prepare/remove', {
         keyword: keyword,
         data: "",
         timeout: 0
@@ -745,7 +745,7 @@ async function fetchMockData() {
   isLoading.value = true
   try {
     // 使用相对路径，由Vite代理处理
-    const response = await axios.get('/api/prepare/queryAll')
+    const response = await axios.get('/bestv/prepare/queryAll')
     const { code, msg, data } = response.data
     
     if (code === 200 && Array.isArray(data)) {
@@ -928,7 +928,7 @@ async function handleEditSubmit() {
     // 准备API请求参数
     const keyword = extractKeywordFromEndpoint(editForm.endpoint)
     
-         const response = await axios.post('/api/prepare/update', {
+         const response = await axios.post('/bestv/prepare/update', {
       keyword: keyword,
       data: editForm.response,
       timeout: editForm.timeout, // 直接使用毫秒值
@@ -1013,7 +1013,7 @@ async function handleSubmitFromSidebar(formData: Partial<MockConfig> & { success
       const categoryLabel = categoryOptions.find(opt => opt.value === category)?.label || '默认'
       
       // 调用API
-      const response = await axios.post('/api/prepare/save', {
+      const response = await axios.post('/bestv/prepare/save', {
         keyword: keyword,
         data: formData.response || '',
         timeout: formData.timeout || 0, // 直接使用毫秒值
@@ -1039,7 +1039,7 @@ async function handleSubmitFromSidebar(formData: Partial<MockConfig> & { success
         mockList.value.unshift(newMock)
         
         // 显示成功对话框
-        currentMockUrl.value = `http://10.215.211.31:9090${newMock.endpoint.startsWith('/') ? '' : '/'}${newMock.endpoint}`
+        currentMockUrl.value = `http://10.215.211.31:9010${newMock.endpoint.startsWith('/') ? '' : '/'}${newMock.endpoint}`
         showSuccessModal.value = true
         
         // 生成二维码

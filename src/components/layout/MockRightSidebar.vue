@@ -18,13 +18,13 @@
           <div class="form-label">接口路径 *</div>
           <n-input 
             v-model:value="formModel.endpoint" 
-            placeholder="/api/User"
+            placeholder="/bestv/User"
             :status="endpointStatus"
             class="rounded-input"
             name="endpoint"
           />
           <div v-if="formModel.endpoint" class="full-url">
-            http://10.215.211.31:9090{{ formModel.endpoint.startsWith('/') ? '' : '/' }}{{ formModel.endpoint }}
+            http://10.215.211.31:9010{{ formModel.endpoint.startsWith('/') ? '' : '/' }}{{ formModel.endpoint }}
           </div>
         </div>
         
@@ -321,7 +321,7 @@ async function handleSubmit() {
     const categoryLabel = categoryOptions.find(opt => opt.value === formModel.category)?.label || '默认';
     
     // 调用API创建接口
-    const response = await axios.post('/api/prepare/set', {
+    const response = await axios.post('/bestv/prepare/set', {
       keyword: keyword,
       data: formModel.response,
       timeout: formModel.timeout,
