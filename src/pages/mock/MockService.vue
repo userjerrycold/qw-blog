@@ -36,14 +36,9 @@
                 :options="categoryOptions"
                 style="width: 120px"
                 clearable
+                class="category-filter"
               />
-              <n-select
-                v-model:value="statusFilter"
-                placeholder="状态"
-                :options="statusOptions"
-                style="width: 100px"
-                clearable
-              />
+
               <n-button quaternary size="small" @click="refreshList">
                 <template #icon>
                   <n-icon>
@@ -69,10 +64,10 @@
           @update:expanded-row-keys="handleExpandChange"
           class="interface-table"
           virtual-scroll
+          empty-text="暂无接口配置"
         />
 
-        <!-- 空状态 -->
-        <n-empty v-if="filteredMockList.length === 0" class="empty-state" description="暂无接口配置" />
+
       </n-card>
       
       <!-- 操作成功提示 -->
@@ -172,32 +167,7 @@
                   </div>
                 </n-form-item>
                 
-                <!-- 状态控制 -->
-                <n-form-item label="接口状态" path="isActive">
-                  <div class="status-container">
-                    <n-switch
-                      v-model:value="editForm.isActive"
-                      :rail-style="simpleRailStyle"
-                      class="status-switch-pro"
-                    >
-                      <template #checked>
-                        <div class="switch-content-pro">
-                          <span>活跃</span>
-                        </div>
-                      </template>
-                      <template #unchecked>
-                        <div class="switch-content-pro">
-                          <span>停用</span>
-                        </div>
-                      </template>
-                    </n-switch>
-                    
-                    <div class="status-badge" :class="{ 'status-active': editForm.isActive, 'status-inactive': !editForm.isActive }">
-                      <div class="status-indicator"></div>
-                      <span>{{ editForm.isActive ? '接口当前可用' : '接口当前已停用' }}</span>
-                    </div>
-                  </div>
-                </n-form-item>
+
               </div>
               
               <!-- 右侧响应数据编辑区 -->
@@ -335,6 +305,7 @@ import PageLayout from '@/components/layout/PageLayout.vue'
 // @ts-ignore - 解决MockRightSidebar没有默认导出的问题
 import MockRightSidebar from '@/components/layout/MockRightSidebar.vue'
 import QRCode from 'qrcode'
+import axios from 'axios'
 
 interface MockConfig {
   id: string
@@ -342,10 +313,21 @@ interface MockConfig {
   response: string
   timeout: number
   isActive: boolean
-  category?: string
+  category?: number
   createdAt: number
   lastModified: number
   callCount?: number
+}
+
+// API返回的数据接口
+interface ApiMockData {
+  keyword: string
+  mockUrl: string
+  mockBody: string
+  timeout: number // 秒为单位
+  updateDt: string
+  statusString: string
+  typeString: string
 }
 
 interface CategoryColor {
@@ -359,342 +341,15 @@ interface CategoryColorMap {
 
 const message = useMessage()
 
+// 服务器地址配置 - 通过import.meta.env可以访问环境变量，便于不同环境使用不同地址
+const SERVER_BASE_URL = import.meta.env.VITE_MOCK_API_URL || 'http://localhost:9090'
+
 // 状态管理
-const mockList = ref<MockConfig[]>([
-  {
-    id: '1',
-    endpoint: '/api/doOrder',
-    response: JSON.stringify({ code: 200, message: 'success', data: { orderId: '12345' } }),
-    timeout: 500,
-    isActive: true,
-    category: 'order',
-    createdAt: Date.now() - 1000000,
-    lastModified: Date.now() - 500000,
-    callCount: 24
-  },
-  {
-    id: '2',
-    endpoint: '/api/getUser',
-    response: JSON.stringify({ code: 200, message: 'success', data: { name: 'John', age: 30 } }),
-    timeout: 200,
-    isActive: true,
-    category: 'user',
-    createdAt: Date.now() - 2000000,
-    lastModified: Date.now() - 300000,
-    callCount: 36
-  },
-  {
-    id: '3',
-    endpoint: '/api/getProducts',
-    response: JSON.stringify({ code: 200, message: 'success', data: { products: [] } }),
-    timeout: 300,
-    isActive: false,
-    category: 'product',
-    createdAt: Date.now() - 3000000,
-    lastModified: Date.now() - 100000,
-    callCount: 12
-  },
-  {
-    id: '4',
-    endpoint: '/api/loginUser',
-    response: JSON.stringify({ code: 200, message: 'success', data: { token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' } }),
-    timeout: 150,
-    isActive: true,
-    category: 'user',
-    createdAt: Date.now() - 800000,
-    lastModified: Date.now() - 400000,
-    callCount: 58
-  },
-  {
-    id: '5',
-    endpoint: '/api/getProductDetails',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        id: 123,
-        name: 'Premium Widget',
-        price: 59.99,
-        description: 'High quality widget with advanced features',
-        inStock: true
-      } 
-    }),
-    timeout: 250,
-    isActive: true,
-    category: 'product',
-    createdAt: Date.now() - 1200000,
-    lastModified: Date.now() - 600000,
-    callCount: 42
-  },
-  {
-    id: '6',
-    endpoint: '/api/submitPayment',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        transactionId: 'tx_56789',
-        status: 'completed',
-        amount: 299.50
-      } 
-    }),
-    timeout: 350,
-    isActive: true,
-    category: 'payment',
-    createdAt: Date.now() - 1500000,
-    lastModified: Date.now() - 700000,
-    callCount: 19
-  },
-  {
-    id: '7',
-    endpoint: '/api/getUserOrders',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        orders: [
-          { id: 'ord-1001', date: '2023-10-15', total: 129.99 },
-          { id: 'ord-982', date: '2023-09-28', total: 59.99 }
-        ]
-      } 
-    }),
-    timeout: 280,
-    isActive: true,
-    category: 'order',
-    createdAt: Date.now() - 1700000,
-    lastModified: Date.now() - 900000,
-    callCount: 31
-  },
-  {
-    id: '8',
-    endpoint: '/api/logoutUser',
-    response: JSON.stringify({ code: 200, message: 'User logged out successfully', data: null }),
-    timeout: 100,
-    isActive: true,
-    category: 'user',
-    createdAt: Date.now() - 1800000,
-    lastModified: Date.now() - 1000000,
-    callCount: 27
-  },
-  {
-    id: '9',
-    endpoint: '/api/validateCoupon',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        valid: true,
-        discount: 15,
-        expiry: '2023-12-31'
-      } 
-    }),
-    timeout: 180,
-    isActive: false,
-    category: 'order',
-    createdAt: Date.now() - 2100000,
-    lastModified: Date.now() - 1200000,
-    callCount: 15
-  },
-  {
-    id: '10',
-    endpoint: '/api/getProductReviews',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        reviews: [
-          { user: 'Alice', rating: 5, comment: 'Great product!' },
-          { user: 'Bob', rating: 4, comment: 'Very good, but could be better' }
-        ],
-        average: 4.5
-      } 
-    }),
-    timeout: 320,
-    isActive: true,
-    category: 'product',
-    createdAt: Date.now() - 2300000,
-    lastModified: Date.now() - 1500000,
-    callCount: 22
-  },
-  {
-    id: '11',
-    endpoint: '/api/trackOrder',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        status: 'shipped',
-        trackingNumber: '1Z999AA10123456784',
-        estimatedDelivery: '2023-11-05',
-        currentLocation: 'Distribution Center'
-      } 
-    }),
-    timeout: 270,
-    isActive: true,
-    category: 'order',
-    createdAt: Date.now() - 2500000,
-    lastModified: Date.now() - 1800000,
-    callCount: 17
-  },
-  {
-    id: '12',
-    endpoint: '/api/cancelOrder',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        cancelled: true,
-        refundId: 'ref_12345',
-        refundAmount: 129.99
-      } 
-    }),
-    timeout: 230,
-    isActive: false,
-    category: 'order',
-    createdAt: Date.now() - 2700000,
-    lastModified: Date.now() - 2000000,
-    callCount: 9
-  },
-  {
-    id: '13',
-    endpoint: '/api/resetPassword',
-    response: JSON.stringify({ code: 200, message: 'Password reset email sent', data: null }),
-    timeout: 150,
-    isActive: true,
-    category: 'user',
-    createdAt: Date.now() - 2900000,
-    lastModified: Date.now() - 2200000,
-    callCount: 13
-  },
-  {
-    id: '14',
-    endpoint: '/api/getCategories',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        categories: [
-          { id: 1, name: 'Electronics' },
-          { id: 2, name: 'Clothing' },
-          { id: 3, name: 'Books' },
-          { id: 4, name: 'Home & Garden' }
-        ]
-      } 
-    }),
-    timeout: 180,
-    isActive: true,
-    category: 'product',
-    createdAt: Date.now() - 3100000,
-    lastModified: Date.now() - 2400000,
-    callCount: 40
-  },
-  {
-    id: '15',
-    endpoint: '/api/updateShippingAddress',
-    response: JSON.stringify({ code: 200, message: 'Address updated successfully', data: { success: true } }),
-    timeout: 200,
-    isActive: true,
-    category: 'user',
-    createdAt: Date.now() - 3300000,
-    lastModified: Date.now() - 2600000,
-    callCount: 7
-  },
-  {
-    id: '16',
-    endpoint: '/api/getNotifications',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        notifications: [
-          { id: 1, type: 'order', message: 'Your order has shipped', read: false },
-          { id: 2, type: 'promo', message: 'New sale starts tomorrow!', read: true }
-        ],
-        unreadCount: 1
-      } 
-    }),
-    timeout: 160,
-    isActive: true,
-    category: 'user',
-    createdAt: Date.now() - 3500000,
-    lastModified: Date.now() - 2800000,
-    callCount: 25
-  },
-  {
-    id: '17',
-    endpoint: '/api/verifyPayment',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        verified: true,
-        paymentMethod: 'credit_card',
-        last4: '4242'
-      } 
-    }),
-    timeout: 250,
-    isActive: false,
-    category: 'payment',
-    createdAt: Date.now() - 3700000,
-    lastModified: Date.now() - 3000000,
-    callCount: 18
-  },
-  {
-    id: '18',
-    endpoint: '/api/submitFeedback',
-    response: JSON.stringify({ code: 200, message: 'Feedback submitted successfully', data: { ticketId: 'FB-12345' } }),
-    timeout: 220,
-    isActive: true,
-    category: 'default',
-    createdAt: Date.now() - 3900000,
-    lastModified: Date.now() - 3200000,
-    callCount: 6
-  },
-  {
-    id: '19',
-    endpoint: '/api/applyDiscount',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        applied: true,
-        newTotal: 89.99,
-        savings: 10.00
-      } 
-    }),
-    timeout: 190,
-    isActive: true,
-    category: 'order',
-    createdAt: Date.now() - 4100000,
-    lastModified: Date.now() - 3400000,
-    callCount: 14
-  },
-  {
-    id: '20',
-    endpoint: '/api/getWishlist',
-    response: JSON.stringify({ 
-      code: 200, 
-      message: 'success', 
-      data: { 
-        wishlist: [
-          { id: 101, name: 'Wireless Headphones', price: 89.99 },
-          { id: 203, name: 'Smart Watch', price: 159.99 },
-          { id: 305, name: 'Portable Charger', price: 29.99 }
-        ]
-      } 
-    }),
-    timeout: 210,
-    isActive: true,
-    category: 'user',
-    createdAt: Date.now() - 4300000,
-    lastModified: Date.now() - 3600000,
-    callCount: 11
-  }
-])
+const mockList = ref<MockConfig[]>([])
+const isLoading = ref(false)
 
 // UI状态
 const searchQuery = ref('')
-const statusFilter = ref(null)
 const categoryFilter = ref(null)
 const expandedRowKeys = ref<string[]>([])
 const editingApiId = ref<string | null>(null)
@@ -714,9 +369,9 @@ const editForm = reactive<MockConfig>({
   id: '',
   endpoint: '',
   response: '',
-  timeout: 300,
+  timeout: 0,
   isActive: true,
-  category: 'default',
+  category: 0,
   createdAt: 0,
   lastModified: 0
 })
@@ -757,26 +412,30 @@ const isEditFormValid = computed(() => {
 })
 
 // 表格配置
-const statusOptions = [
-  { label: '活跃', value: 'active' },
-  { label: '停用', value: 'inactive' }
-]
 
 // 分类配置及颜色映射
 const categoryOptions = [
-  { label: '默认', value: 'default' },
-  { label: '用户', value: 'user' },
-  { label: '订单', value: 'order' },
-  { label: '产品', value: 'product' },
-  { label: '支付', value: 'payment' }
+  { label: '默认', value: 0 },
+  { label: 'OrderAuth', value: 1 },
+  { label: 'AAA', value: 2 },
+  { label: 'WAG', value: 3 },
+  { label: 'PS', value: 4 },
+  { label: 'SA', value: 5 },
+  { label: 'TMS', value: 6 },
+  { label: '第三方', value: 7 },
+  { label: 'others', value: 8 }
 ]
 
 const categoryColorMap: CategoryColorMap = {
-  'default': { color: '#8B5CF6', bgColor: 'rgba(139, 92, 246, 0.1)' },
-  'user': { color: '#3B82F6', bgColor: 'rgba(59, 130, 246, 0.1)' },
-  'order': { color: '#F97316', bgColor: 'rgba(249, 115, 22, 0.1)' },
-  'product': { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)' },
-  'payment': { color: '#F43F5E', bgColor: 'rgba(244, 63, 94, 0.1)' }
+  0: { color: '#8B5CF6', bgColor: 'rgba(139, 92, 246, 0.1)' },
+  1: { color: '#3B82F6', bgColor: 'rgba(59, 130, 246, 0.1)' },
+  2: { color: '#F97316', bgColor: 'rgba(249, 115, 22, 0.1)' },
+  3: { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)' },
+  4: { color: '#F43F5E', bgColor: 'rgba(244, 63, 94, 0.1)' },
+  5: { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)' },
+  6: { color: '#14B8A6', bgColor: 'rgba(20, 184, 166, 0.1)' },
+  7: { color: '#F59E0B', bgColor: 'rgba(245, 158, 11, 0.1)' },
+  8: { color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.1)' }
 }
 
 // 分页配置 - 无分页
@@ -793,15 +452,11 @@ const filteredMockList = computed(() => {
     )
   }
 
-  // 状态过滤
-  if (statusFilter.value === 'active') {
+  // 默认只显示活跃状态
     result = result.filter(mock => mock.isActive)
-  } else if (statusFilter.value === 'inactive') {
-    result = result.filter(mock => !mock.isActive)
-  }
   
   // 分类过滤
-  if (categoryFilter.value) {
+  if (categoryFilter.value !== null && categoryFilter.value !== undefined) {
     result = result.filter(mock => mock.category === categoryFilter.value)
   }
 
@@ -820,8 +475,8 @@ const columns = [
     key: 'category',
     width: 100,
     render(row: MockConfig) {
-      const category = row.category || 'default'
-      const colors = categoryColorMap[category] || categoryColorMap.default
+      const category = row.category !== undefined ? row.category : 0
+      const colors = categoryColorMap[category] || categoryColorMap[0]
       
       return h(NTag, {
         bordered: false,
@@ -831,7 +486,7 @@ const columns = [
           color: colors.color
         }
       }, { default: () => {
-        const label = categoryOptions.find(opt => opt.value === category)?.label || category
+        const label = categoryOptions.find(opt => opt.value === category)?.label || category.toString()
         return label
       }})
     }
@@ -848,29 +503,11 @@ const columns = [
       ])
     }
   },
-  {
-    title: '状态',
-    key: 'isActive',
-    width: 100,
-    render(row: MockConfig) {
-      return h(NTag, {
-        type: row.isActive ? 'success' : 'error',
-        bordered: false,
-        size: 'small',
-        style: {
-          backgroundColor: row.isActive ? 'rgba(82, 196, 26, 0.15)' : 'rgba(255, 77, 79, 0.15)',
-          color: row.isActive ? '#52C41A' : '#FF4D4F',
-          fontWeight: '600',
-          padding: '2px 10px',
-          borderRadius: '12px'
-        }
-      }, { default: () => row.isActive ? '活跃' : '停用' })
-    }
-  },
+
   {
     title: '超时',
     key: 'timeout',
-    width: 100,
+    width: 140,
     render(row: MockConfig) {
       return `${row.timeout}ms`
     }
@@ -933,7 +570,9 @@ const columns = [
         h(
           NPopconfirm,
           {
-            onPositiveClick: () => deleteMock(row.id)
+            onPositiveClick: () => deleteMock(row.id),
+            positiveText: '确认',
+            negativeText: '取消'
           },
           {
             trigger: () => h(NButton, { 
@@ -1059,31 +698,113 @@ function copyMock(mock: MockConfig) {
   copyToClipboard(mockUrl)
 }
 
-function deleteMock(id: string) {
+async function deleteMock(id: string) {
   const index = mockList.value.findIndex(item => item.id === id)
   if (index !== -1) {
-    mockList.value.splice(index, 1)
-    message.success('已删除')
+    const mock = mockList.value[index]
+    const keyword = extractKeywordFromEndpoint(mock.endpoint)
     
-    // 如果正在编辑，关闭编辑
-    if (editingApiId.value === id) {
-      editingApiId.value = null
-      const sidebarInstance = MockRightSidebar
-      if (typeof sidebarInstance.resetForm === 'function') {
-        sidebarInstance.resetForm()
+    try {
+      const response = await axios.post('/api/prepare/remove', {
+        keyword: keyword,
+        data: "",
+        timeout: 0
+      })
+      
+      const { code, msg } = response.data
+      
+      if (code === 200) {
+        mockList.value.splice(index, 1)
+        message.success('已成功删除')
+        
+        // 如果正在编辑，关闭编辑
+        if (editingApiId.value === id) {
+          editingApiId.value = null
+          const sidebarInstance = MockRightSidebar
+          if (typeof sidebarInstance.resetForm === 'function') {
+            sidebarInstance.resetForm()
+          }
+        }
+      } else {
+        message.error(`删除失败: ${msg || '未知错误'}`)
       }
+    } catch (error) {
+      console.error('删除失败:', error)
+      message.error(`删除失败: ${error instanceof Error ? error.message : '网络错误'}`)
     }
   }
 }
 
-function refreshList() {
-  // 重置过滤条件
-  searchQuery.value = ''
-  categoryFilter.value = null
-  statusFilter.value = null
-  
-  // 刷新列表（这里可以添加从服务器重新获取数据的逻辑）
-  message.success('已刷新接口列表')
+// 从endpoint提取keyword (不包含服务器地址部分)
+function extractKeywordFromEndpoint(endpoint: string): string {
+  return endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+}
+
+// 从API加载Mock数据
+async function fetchMockData() {
+  isLoading.value = true
+  try {
+    // 使用相对路径，由Vite代理处理
+    const response = await axios.get('/api/prepare/queryAll')
+    const { code, msg, data } = response.data
+    
+    if (code === 200 && Array.isArray(data)) {
+      // 将API数据转换为应用内部格式
+      mockList.value = data.map((item: ApiMockData, index: number) => {
+        // 将接口路径从完整URL中提取
+        const endpoint = item.keyword || extractEndpointFromUrl(item.mockUrl)
+        
+        // 转换状态
+        const isActive = item.statusString === '活跃'
+        
+        // 转换分类
+        let category = 0 // 默认
+        switch (item.typeString) {
+          case 'OrderAuth': category = 1; break
+          case 'AAA': category = 2; break
+          case 'WAG': category = 3; break
+          case 'PS': category = 4; break
+          case 'SA': category = 5; break
+          case 'TMS': category = 6; break
+          case '第三方': category = 7; break
+          case 'others': category = 8; break
+        }
+        
+        // 解析更新时间
+        const updateTime = new Date(item.updateDt).getTime() || Date.now()
+        
+        return {
+          id: (index + 1).toString(), // 生成临时ID
+          endpoint,
+          response: item.mockBody || '',
+          timeout: item.timeout, // 直接使用毫秒值
+          isActive,
+          category,
+          createdAt: updateTime,
+          lastModified: updateTime,
+          callCount: 0 // API没有提供调用次数，默认为0
+        }
+      })
+    } else {
+      message.error(`加载失败: ${msg || '未知错误'}`)
+    }
+  } catch (error) {
+    console.error('加载Mock数据失败:', error)
+    message.error(`加载失败: ${error instanceof Error ? error.message : '网络错误'}`)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 从URL中提取接口路径
+function extractEndpointFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    return urlObj.pathname
+  } catch (e) {
+    // 如果URL格式不正确，直接返回原始字符串
+    return url
+  }
 }
 
 // 样式函数
@@ -1095,16 +816,7 @@ function railStyle({ focused, checked }: { focused: boolean, checked: boolean })
   return style
 }
 
-// 自定义开关样式
-function simpleRailStyle({ focused, checked }: { focused: boolean, checked: boolean }) {
-  const style = {
-    background: checked ? '#4CAF50' : '#9e9e9e',  // 绿色活跃状态，灰色停用状态
-    boxShadow: focused 
-      ? `0 0 0 2px ${checked ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)'}` 
-      : 'none'
-  }
-  return style
-}
+
 
 // 编辑弹窗相关函数
 const validateEditJson = debounce((value: string) => {
@@ -1192,7 +904,7 @@ function closeEditModal() {
   editingApiId.value = null
 }
 
-function handleEditSubmit() {
+async function handleEditSubmit() {
   if (!isEditFormValid.value) return
   
   isSubmitting.value = true
@@ -1209,57 +921,56 @@ function handleEditSubmit() {
     }
   }
   
-  // 模拟网络延迟
-  setTimeout(() => {
-    // 更新接口数据
-    const index = mockList.value.findIndex(item => item.id === editingApiId.value)
-    if (index !== -1) {
-      // 只更新允许编辑的字段
-      mockList.value[index].response = editForm.response
-      mockList.value[index].timeout = editForm.timeout
-      mockList.value[index].category = editForm.category
-      mockList.value[index].isActive = editForm.isActive
-      mockList.value[index].lastModified = Date.now()
+  try {
+    // 获取分类显示名称
+    const categoryLabel = categoryOptions.find(opt => opt.value === editForm.category)?.label || '默认'
+    
+    // 准备API请求参数
+    const keyword = extractKeywordFromEndpoint(editForm.endpoint)
+    
+         const response = await axios.post('/api/prepare/update', {
+      keyword: keyword,
+      data: editForm.response,
+      timeout: editForm.timeout, // 直接使用毫秒值
+      typeString: categoryLabel
+    })
+    
+    const { code, msg } = response.data
+    
+    if (code === 200) {
+      // 更新接口数据
+      const index = mockList.value.findIndex(item => item.id === editingApiId.value)
+      if (index !== -1) {
+        // 只更新允许编辑的字段
+        mockList.value[index].response = editForm.response
+        mockList.value[index].timeout = editForm.timeout
+        mockList.value[index].category = editForm.category
+        mockList.value[index].isActive = true // 总是设为活跃状态
+        mockList.value[index].lastModified = Date.now()
+      }
       
       message.success('接口更新成功')
       closeEditModal()
+      
+      // 刷新列表数据
+      refreshList()
+    } else {
+      message.error(`更新失败: ${msg || '未知错误'}`)
     }
-    
+  } catch (error) {
+    console.error('更新失败:', error)
+    message.error(`更新失败: ${error instanceof Error ? error.message : '网络错误'}`)
+  } finally {
     isSubmitting.value = false
-  }, 300)
+  }
 }
 
 // 处理右侧面板提交的表单
-function handleSubmitFromSidebar(formData: Partial<MockConfig>) {
-  if (editingApiId.value) {
-    // 编辑现有接口
-    const index = mockList.value.findIndex(item => item.id === editingApiId.value)
-    if (index !== -1) {
-      mockList.value[index] = {
-        ...mockList.value[index],
-        ...formData,
-        lastModified: Date.now()
-      }
-      message.success('接口更新成功')
-    }
-  } else {
-    // 创建新接口
-    const newMock: MockConfig = {
-      id: Date.now().toString(),
-      endpoint: formData.endpoint || '',
-      response: formData.response || '',
-      timeout: formData.timeout || 0,
-      isActive: formData.isActive !== undefined ? formData.isActive : true,
-      category: formData.category || 'default',
-      createdAt: Date.now(),
-      lastModified: Date.now(),
-      callCount: 0
-    }
-    
-    mockList.value.unshift(newMock)
-    
+async function handleSubmitFromSidebar(formData: Partial<MockConfig> & { success?: boolean, url?: string }) {
+  // 如果表单提交已经由子组件调用API并成功，直接刷新列表和显示成功
+  if (formData.success && formData.url) {
     // 显示成功对话框
-    currentMockUrl.value = `http://10.215.211.31:9090${newMock.endpoint.startsWith('/') ? '' : '/'}${newMock.endpoint}`
+    currentMockUrl.value = formData.url
     showSuccessModal.value = true
     
     // 生成二维码
@@ -1275,6 +986,85 @@ function handleSubmitFromSidebar(formData: Partial<MockConfig>) {
         )
       }
     })
+    
+    // 刷新列表以显示最新数据
+    refreshList()
+    return
+  }
+
+  if (editingApiId.value) {
+    // 编辑现有接口 - 这里不会进入，因为编辑通过弹窗处理
+    const index = mockList.value.findIndex(item => item.id === editingApiId.value)
+    if (index !== -1) {
+      mockList.value[index] = {
+        ...mockList.value[index],
+        ...formData,
+        lastModified: Date.now()
+      }
+      message.success('接口更新成功')
+    }
+  } else {
+    // 创建新接口
+    try {
+      // 准备数据
+      const endpoint = formData.endpoint || ''
+      const keyword = extractKeywordFromEndpoint(endpoint)
+      const category = typeof formData.category === 'number' ? formData.category : 0
+      const categoryLabel = categoryOptions.find(opt => opt.value === category)?.label || '默认'
+      
+      // 调用API
+      const response = await axios.post('/api/prepare/save', {
+        keyword: keyword,
+        data: formData.response || '',
+        timeout: formData.timeout || 0, // 直接使用毫秒值
+        typeString: categoryLabel
+      })
+      
+      const { code, msg } = response.data
+      
+      if (code === 200) {
+        // 创建新接口对象
+        const newMock: MockConfig = {
+          id: Date.now().toString(),
+          endpoint: endpoint,
+          response: formData.response || '',
+          timeout: formData.timeout || 0,
+          isActive: true, // 默认都是活跃状态
+          category: category,
+          createdAt: Date.now(),
+          lastModified: Date.now(),
+          callCount: 0
+        }
+        
+        mockList.value.unshift(newMock)
+        
+        // 显示成功对话框
+        currentMockUrl.value = `http://10.215.211.31:9090${newMock.endpoint.startsWith('/') ? '' : '/'}${newMock.endpoint}`
+        showSuccessModal.value = true
+        
+        // 生成二维码
+        nextTick(() => {
+          if (qrcodeContainer.value) {
+            QRCode.toCanvas(
+              qrcodeContainer.value,
+              currentMockUrl.value,
+              { width: 150, margin: 0, color: { dark: "#1890FF", light: "#ffffff" } },
+              (error: Error | null) => {
+                if (error) console.error('QR Code error:', error)
+              }
+            )
+          }
+        })
+        
+        // 刷新列表
+        refreshList()
+      } else {
+        message.error(`创建失败: ${msg || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('创建失败:', error)
+      message.error(`创建失败: ${error instanceof Error ? error.message : '网络错误'}`)
+    }
   }
   
   // 重置编辑状态
@@ -1307,18 +1097,8 @@ watch(mockList, () => {
 
 // 本地存储
 onMounted(() => {
-  // 加载本地存储的接口配置
-  const savedMocks = localStorage.getItem('mockConfigs')
-  if (savedMocks) {
-    try {
-      const parsedMocks = JSON.parse(savedMocks)
-      if (Array.isArray(parsedMocks) && parsedMocks.length > 0) {
-        mockList.value = parsedMocks
-      }
-    } catch (e) {
-      console.error('Failed to load saved mocks:', e)
-    }
-  }
+  // 直接从服务器加载数据
+  fetchMockData()
 })
 
 // 自动保存草稿
@@ -1362,6 +1142,16 @@ function isJsonFormat(str: string) {
   } catch (e) {
     return false;
   }
+}
+
+// 修改refreshList函数，添加从服务器刷新功能
+function refreshList() {
+  // 重置过滤条件
+  searchQuery.value = ''
+  categoryFilter.value = null
+  
+  // 从服务器重新加载数据
+  fetchMockData()
 }
 
 </script>
@@ -1437,6 +1227,11 @@ body {
 
 .search-input:focus-within {
   width: 260px;
+}
+
+/* 圆角分类过滤选择框 */
+.category-filter :deep(.n-base-selection) {
+  border-radius: 16px;
 }
 
 .interface-table {
@@ -2168,6 +1963,15 @@ body {
   line-height: 1.5 !important;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* 新增服务器配置样式 */
+.server-config {
+  width: 400px;
+}
+
+.server-input {
+  border-radius: 8px;
 }
 
 </style>

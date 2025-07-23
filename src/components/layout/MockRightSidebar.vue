@@ -21,6 +21,7 @@
             placeholder="/api/User"
             :status="endpointStatus"
             class="rounded-input"
+            name="endpoint"
           />
           <div v-if="formModel.endpoint" class="full-url">
             http://10.215.211.31:9090{{ formModel.endpoint.startsWith('/') ? '' : '/' }}{{ formModel.endpoint }}
@@ -52,26 +53,7 @@
           </div>
         </div>
         
-        <!-- 状态 -->
-        <div class="form-group">
-          <div class="form-label">状态</div>
-          <n-switch
-            v-model:value="formModel.isActive"
-            :rail-style="simpleRailStyle"
-            class="status-switch"
-          >
-            <template #checked>
-              <div class="switch-content">
-                活跃
-              </div>
-            </template>
-            <template #unchecked>
-              <div class="switch-content">
-                停用
-              </div>
-            </template>
-          </n-switch>
-        </div>
+
         
         <!-- 响应数据 -->
         <div class="form-group">
@@ -136,7 +118,7 @@
         </div>
       </n-form>
       
-      <div class="sticky-actions" v-if="isFormValid">
+      <div class="sticky-actions">
         <n-button
           class="cancel-btn"
           @click="resetForm"
@@ -148,7 +130,7 @@
           type="primary"
           class="submit-btn"
           @click="handleSubmit"
-          :disabled="isSubmitting"
+          :disabled="!isFormValid || isSubmitting"
           :loading="isSubmitting"
           round
         >
@@ -160,14 +142,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, h } from 'vue'
 import { 
   NIcon, NButton, NAlert, NSelect, 
-  NInput, NForm, NSlider, NSwitch,
-  NTooltip
+  NInput, NForm, NSlider, NTooltip,
+  useMessage
 } from 'naive-ui'
 import MonacoEditor from 'monaco-editor-vue3'
 import { debounce } from 'lodash-es'
+import axios from 'axios'
 
 interface MockConfig {
   id?: string
@@ -175,22 +158,24 @@ interface MockConfig {
   response: string
   timeout: number
   isActive: boolean
-  category?: string
+  category?: number
 }
 
 // 表单状态
+const message = useMessage()
 const formRef = ref(null)
 const isEditing = ref(false)
 const isSubmitting = ref(false)
 const originalId = ref<string | null>(null)
 const responseType = ref<'json' | 'text'>('json') // 新增：响应类型状态
+const countdownSeconds = ref(3)
 
 const formModel = reactive<MockConfig>({
   endpoint: '',
   response: '',
-  timeout: 300,
-  isActive: true,
-  category: 'default'
+  timeout: 0,
+  isActive: true, // 总是设为活跃状态
+  category: 0 // 默认分类
 })
 
 const endpointStatus = ref<'success' | 'error' | undefined>(undefined)
@@ -248,11 +233,15 @@ const editorOptions = {
 
 // 分类选项
 const categoryOptions = [
-  { label: '默认', value: 'default' },
-  { label: '用户', value: 'user' },
-  { label: '订单', value: 'order' },
-  { label: '产品', value: 'product' },
-  { label: '支付', value: 'payment' }
+  { label: '默认', value: 0 },
+  { label: 'OrderAuth', value: 1 },
+  { label: 'AAA', value: 2 },
+  { label: 'WAG', value: 3 },
+  { label: 'PS', value: 4 },
+  { label: 'SA', value: 5 },
+  { label: 'TMS', value: 6 },
+  { label: '第三方', value: 7 },
+  { label: 'others', value: 8 }
 ]
 
 // 计算属性
@@ -298,28 +287,10 @@ const validateJson = debounce((value: string) => {
   }
 }, 300)
 
-// 自定义开关样式 - 添加与编辑框一致的状态颜色
-function simpleRailStyle({ focused, checked }: { focused: boolean, checked: boolean }) {
-  const style = {
-    background: checked ? '#4CAF50' : '#9e9e9e',  // 绿色活跃状态，灰色停用状态
-    boxShadow: focused 
-      ? `0 0 0 2px ${checked ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)'}` 
-      : 'none'
-  }
-  return style
-}
 
-// 原来的railStyle函数保留但不使用
-function railStyle({ focused, checked }: { focused: boolean, checked: boolean }) {
-  const style = {
-    background: checked ? '#52C41A' : '#FF4D4F',
-    boxShadow: focused ? `0 0 0 2px ${checked ? 'rgba(82, 196, 26, 0.2)' : 'rgba(255, 77, 79, 0.2)'}` : 'none'
-  }
-  return style
-}
 
 // 操作函数
-function handleSubmit() {
+async function handleSubmit() {
   if (!isFormValid.value) return;
   
   isSubmitting.value = true;
@@ -342,30 +313,71 @@ function handleSubmit() {
     }
   }
   
-  // 模拟网络延迟
-  setTimeout(() => {
-    // 将数据提交到父组件
-    emit('submit', {
-      ...formModel,
-      id: originalId.value
+  try {
+    // 准备API请求参数
+    const keyword = formModel.endpoint.startsWith('/') ? formModel.endpoint : `/${formModel.endpoint}`;
+    
+    // 获取分类显示名称
+    const categoryLabel = categoryOptions.find(opt => opt.value === formModel.category)?.label || '默认';
+    
+    // 调用API创建接口
+    const response = await axios.post('/api/prepare/set', {
+      keyword: keyword,
+      data: formModel.response,
+      timeout: formModel.timeout,
+      typeString: categoryLabel
     });
     
+    const { code, msg, data } = response.data;
+    
+    if (code === 200) {
+      // 将数据提交到父组件，通知成功并传递返回的数据
+      emit('submit', {
+        ...formModel,
+        id: originalId.value,
+        url: data?.url,
+        success: true
+      });
+      
+      // 如果不是编辑模式，清空表单
+      if (!isEditing.value) {
+        resetForm();
+      }
+
+      // 显示倒计时通知
+      showCountdownNotification(data?.url || '', 3);
+    } else {
+      message.error(`创建失败: ${msg || '未知错误'}`);
+    }
+  } catch (error) {
+    console.error('接口创建失败:', error);
+    message.error(`创建失败: ${error instanceof Error ? error.message : '网络错误'}`);
+  } finally {
     isSubmitting.value = false;
-  }, 300);
+  }
 }
 
 function resetForm() {
   formModel.endpoint = ''
   formModel.response = ''
-  formModel.timeout = 300
-  formModel.isActive = true
-  formModel.category = 'default'
+  formModel.timeout = 0
+  formModel.isActive = true // 总是为true
+  formModel.category = 0 // 默认分类
   
   originalId.value = null
   isEditing.value = false
   endpointStatus.value = undefined
   endpointMessage.value = ''
   jsonError.value = ''
+  
+  // 解锁endpoint，允许编辑
+  const endpointElement = document.querySelector('input[name="endpoint"]');
+  if (endpointElement instanceof HTMLInputElement) {
+    endpointElement.readOnly = false;
+  }
+  
+  // 重置响应类型为JSON
+  responseType.value = 'json'
 }
 
 function formatJsonResponse() {
@@ -465,9 +477,15 @@ function updateForm(mock: MockConfig) {
   originalId.value = mock.id || null;
   formModel.endpoint = mock.endpoint || '';
   formModel.timeout = mock.timeout || 300;
-  formModel.isActive = mock.isActive !== undefined ? mock.isActive : true;
-  formModel.category = mock.category || 'default';
+  formModel.isActive = true; // 总是为true，忽略传入值
+  formModel.category = typeof mock.category === 'number' ? mock.category : 0; // 默认分类为0
   formModel.response = mock.response || '';
+  
+  // 锁定endpoint，编辑模式下不允许修改路径
+  const endpointElement = document.querySelector('input[name="endpoint"]');
+  if (endpointElement instanceof HTMLInputElement) {
+    endpointElement.readOnly = true;
+  }
   
   isEditing.value = true;
   validateEndpoint(formModel.endpoint);
@@ -490,6 +508,60 @@ function updateForm(mock: MockConfig) {
       jsonError.value = '';
     }
   }
+}
+
+// 倒计时刷新通知
+function showCountdownNotification(url: string, seconds: number) {
+  // 创建倒计时变量
+  let countDown = seconds;
+  
+  // 创建一个自定义倒计时弹窗
+  const countdownDiv = document.createElement('div');
+  countdownDiv.style.position = 'fixed';
+  countdownDiv.style.top = '20px';
+  countdownDiv.style.left = '50%';
+  countdownDiv.style.transform = 'translateX(-50%)';
+  countdownDiv.style.padding = '12px 24px';
+  countdownDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+  countdownDiv.style.color = 'white';
+  countdownDiv.style.borderRadius = '8px';
+  countdownDiv.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.25)';
+  countdownDiv.style.zIndex = '1001';
+  countdownDiv.style.transition = 'opacity 0.3s';
+  countdownDiv.style.fontSize = '16px';
+  countdownDiv.style.fontWeight = '500';
+  
+  // 添加倒计时消息
+  const textSpan = document.createElement('span');
+  textSpan.innerText = `接口创建成功，${countDown}秒后自动刷新`;
+  countdownDiv.appendChild(textSpan);
+  
+  // 添加到页面
+  document.body.appendChild(countdownDiv);
+  
+  // 创建倒计时函数
+  const updateCountdown = () => {
+    countDown--;
+    
+    if (countDown >= 0) {
+      // 只更新秒数部分
+      textSpan.innerText = `接口创建成功，${countDown}秒后自动刷新`;
+    } else {
+      // 倒计时结束，淡出弹窗
+      countdownDiv.style.opacity = '0';
+      
+      // 清除弹窗并刷新页面
+      setTimeout(() => {
+        if (countdownDiv.parentNode) {
+          document.body.removeChild(countdownDiv);
+        }
+        window.location.reload();
+      }, 300);
+    }
+  };
+  
+  // 开始倒计时
+  const timer = setInterval(updateCountdown, 1000);
 }
 
 // 事件
@@ -526,7 +598,7 @@ defineExpose({
   flex-direction: column;
   height: 100%;
   position: relative;
-  padding-bottom: 70px; /* Space for sticky buttons */
+  padding-bottom: 70px; /* Space for fixed buttons */
 }
 
 .panel-header {
@@ -648,17 +720,7 @@ defineExpose({
   display: none;
 }
 
-.status-switch {
-  width: 80px;
-}
 
-.switch-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  font-size: 12px;
-}
 
 /* 简化版工具栏 */
 .editor-toolbar-simple {
@@ -692,18 +754,6 @@ defineExpose({
   background-color: white;
   border-top: 1px solid #f0f0f0;
   z-index: 10;
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .submit-btn {
@@ -804,23 +854,7 @@ defineExpose({
   flex-shrink: 0;
 }
 
-/* 自定义开关样式 */
-:deep(.n-switch.status-switch .n-switch__rail) {
-  border-radius: 16px;
-  padding: 2px;
-  height: 24px;
-}
 
-:deep(.n-switch.status-switch .n-switch__button) {
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-}
-
-:deep(.n-switch.status-switch.n-switch--active .n-switch__button) {
-  left: calc(100% - 20px - 2px) !important;
-}
 
 .form-label-with-switch {
   display: flex;
