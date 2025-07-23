@@ -36,7 +36,7 @@ import toolsSvg from '@/assets/tools.svg'
 import docsSvg from '@/assets/docs.svg'
 import serverSvg from '@/assets/server.svg'
 
-const collapsed = ref(true)
+const collapsed = ref(false)
 
 watch(collapsed, (val) => {
   document.body.classList.toggle('sidebar-collapsed', val)
