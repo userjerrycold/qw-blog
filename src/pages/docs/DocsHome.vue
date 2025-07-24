@@ -199,6 +199,7 @@ import { NTag, NButton, NModal, NInput, NSelect, NSpace, NMessageProvider, useMe
 import PageLayout from '@/components/layout/PageLayout.vue'
 import DocsRightSidebar from '@/components/layout/DocsRightSidebar.vue'
 import { Document, DocumentSearchParams, searchDocuments, createDocument, updateDocument, deleteDocument } from '@/services/api'
+import { copyToClipboard } from '@/utils/clipboard'
 
 // 创建全局message实例
 const message = useMessage();
@@ -379,12 +380,18 @@ function formatUrl(url: string): string {
 }
 
 // 复制URL到剪贴板
-function copyUrl(url: string): void {
-  navigator.clipboard.writeText(url).then(() => {
-    message.success('链接已复制到剪贴板');
-  }).catch(() => {
+async function copyUrl(url: string): Promise<void> {
+  try {
+    const success = await copyToClipboard(url);
+    if (success) {
+      message.success('链接已复制到剪贴板');
+    } else {
+      message.error('复制失败，请手动复制');
+    }
+  } catch (error) {
+    console.error('复制失败:', error);
     message.error('复制失败，请手动复制');
-  });
+  }
 }
 
 // 从侧边栏接收新文档

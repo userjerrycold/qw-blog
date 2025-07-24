@@ -64,7 +64,8 @@
           @update:expanded-row-keys="handleExpandChange"
           class="interface-table"
           virtual-scroll
-          empty-text="暂无接口配置"
+          :loading="isLoading"
+          :empty="renderEmpty()"
         />
 
 
@@ -461,6 +462,19 @@ const filteredMockList = computed(() => {
   }
 
   return result
+})
+
+// 添加watch监听搜索和分类筛选变化
+watch([searchQuery, categoryFilter], () => {
+  // 当用户实际在搜索或筛选时，添加短暂的loading效果
+  if (searchQuery.value || categoryFilter.value !== null) {
+    isLoading.value = true
+    
+    // 使用短暂的延迟来模拟加载效果，改善用户体验
+    setTimeout(() => {
+      isLoading.value = false
+    }, 300)
+  }
 })
 
 // 表格列配置
@@ -1151,7 +1165,38 @@ function refreshList() {
   categoryFilter.value = null
   
   // 从服务器重新加载数据
+  isLoading.value = true
   fetchMockData()
+}
+
+// 自定义表格空状态
+function renderEmpty() {
+  return h('div', { class: 'empty-state' }, [
+    h('div', { class: 'empty-icon' }, [
+      h('svg', {
+        width: '64',
+        height: '64',
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        xmlns: 'http://www.w3.org/2000/svg'
+      }, [
+        h('path', {
+          d: 'M19.5 3.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2 4.5 3.5 3 2v20l1.5-1.5L6 22l1.5-1.5L9 22l1.5-1.5L12 22l1.5-1.5L15 22l1.5-1.5L18 22l1.5-1.5L21 22V2l-1.5 1.5z',
+          fill: '#e5e7eb'
+        }),
+        h('path', {
+          d: 'M9 17h6v2H9v-2zm0-4h10v2H9v-2zm0-4h10v2H9V9zm-3 2H5V9h1v2zm0 4H5v-2h1v2zm0 4H5v-2h1v2z',
+          fill: '#e5e7eb'
+        })
+      ])
+    ]),
+    h('p', { class: 'empty-text' }, searchQuery.value || categoryFilter.value !== null 
+      ? '没有找到匹配的接口配置' 
+      : '暂无接口配置'),
+    searchQuery.value || categoryFilter.value !== null 
+      ? h('p', { class: 'empty-subtext' }, '尝试调整搜索条件或清除筛选')
+      : h('p', { class: 'empty-subtext' }, '点击右侧创建接口来添加新配置')
+  ])
 }
 
 </script>
@@ -1423,7 +1468,29 @@ body {
 }
 
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 40px 0;
+}
+
+.empty-icon {
+  margin-bottom: 16px;
+  color: #d1d5db;
+}
+
+.empty-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+
+.empty-subtext {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
 }
 
 .success-modal {

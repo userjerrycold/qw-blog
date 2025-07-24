@@ -48,7 +48,12 @@
         <div v-if="recentDocuments.length === 0" class="empty-recent">
           暂无文档
         </div>
-        <div v-for="doc in recentDocuments" :key="doc.id" class="recent-doc-card">
+        <div 
+          v-for="doc in recentDocuments" 
+          :key="doc.id" 
+          class="recent-doc-card"
+          @click="openDocUrl(doc.url)"
+        >
           <div class="doc-icon" :style="{ backgroundColor: getTagColor(doc.tagCode).color, color: getTagColor(doc.tagCode).textColor }">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
@@ -58,6 +63,18 @@
             <h4 class="doc-title">{{ doc.title }}</h4>
             <p class="doc-meta">{{ getTagName(doc.tagCode) }} • {{ formatDate(doc.createdAt) }}</p>
           </div>
+          <div class="doc-actions">
+            <div class="doc-link-icon" title="访问链接">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="doc-copy-icon" @click.stop="copyDocUrl(doc.url)" title="复制链接">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -66,7 +83,11 @@
 
 <script setup lang="ts">
 import { defineProps, computed, defineEmits, withDefaults, reactive } from 'vue';
-import { NInput, NSelect } from 'naive-ui';
+import { NInput, NSelect, useMessage } from 'naive-ui';
+import { copyToClipboard } from '@/utils/clipboard';
+
+// 创建消息实例
+const message = useMessage();
 
 interface Document {
   id: number;
@@ -181,6 +202,28 @@ function getTagColor(code: number): { color: string, textColor: string } {
   };
   
   return colors[code] || colors[5];
+}
+
+// 打开文档URL
+function openDocUrl(url: string): void {
+  if (url) {
+    window.open(url, '_blank');
+  }
+}
+
+// 复制文档URL
+async function copyDocUrl(url: string): Promise<void> {
+  try {
+    const success = await copyToClipboard(url);
+    if (success) {
+      message.success('链接已复制到剪贴板');
+    } else {
+      message.error('复制失败，请手动复制');
+    }
+  } catch (error) {
+    console.error('复制失败:', error);
+    message.error('复制失败，请手动复制');
+  }
 }
 
 // 格式化日期
@@ -372,6 +415,8 @@ export default {
   transition: all 0.2s;
   border: none;
   border-bottom: 1px solid rgba(230, 230, 230, 0.3);
+  cursor: pointer;
+  position: relative;
 }
 
 .recent-doc-card:last-child {
@@ -379,9 +424,42 @@ export default {
 }
 
 .recent-doc-card:hover {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0.03);
   border-color: transparent;
-  opacity: 0.8;
+}
+
+.recent-doc-card:hover .doc-title {
+  color: #1976D2;
+}
+
+.doc-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.recent-doc-card:hover .doc-actions {
+  opacity: 0.7;
+}
+
+.doc-link-icon,
+.doc-copy-icon {
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.doc-link-icon:hover,
+.doc-copy-icon:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #1976D2;
 }
 
 .doc-icon {
