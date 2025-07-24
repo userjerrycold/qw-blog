@@ -35,6 +35,7 @@ import blogSvg from '@/assets/blog.svg'
 import toolsSvg from '@/assets/tools.svg'
 import docsSvg from '@/assets/docs.svg'
 import serverSvg from '@/assets/server.svg'
+import beiwangluSvg from '@/assets/beiwanglu.svg'
 
 const collapsed = ref(false)
 
@@ -55,6 +56,11 @@ const menuOptions: MenuOption[] = [
     label: '文档管理',
     key: '/docs',
     icon: () => h('img', { src: docsSvg, class: 'w-4 h-4' }),
+  },
+  {
+    label: '备忘录',
+    key: '/memo',
+    icon: () => h('img', { src: beiwangluSvg, class: 'w-4 h-4' }),
   },
   // 隐藏博客和工具菜单，保留代码但不显示
   /*
@@ -84,6 +90,7 @@ const activeKey = computed(() => {
   if (route.path.startsWith('/tools')) return '/tools'
   if (route.path.startsWith('/docs')) return '/docs'
   if (route.path.startsWith('/mock')) return '/mock'
+  if (route.path.startsWith('/memo')) return '/memo'
   return '/blog'
 })
 

@@ -29,6 +29,10 @@ const routes: RouteRecordRaw[] = [
     path: '/mock',
     component: () => import('@/pages/mock/MockService.vue'),
   },
+  {
+    path: '/memo',
+    component: () => import('@/pages/memo/MemoHome.vue'),
+  },
   // 以下路由暂未实现
   /* 
   {
