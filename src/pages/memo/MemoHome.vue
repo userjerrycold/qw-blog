@@ -1,5 +1,8 @@
 <template>
   <div class="memo-page">
+    <!-- 添加FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <PageLayout>
       <div class="memo-container">
         <div class="page-header">
@@ -38,16 +41,18 @@
             <!-- 标签筛选 -->
             <div class="tags-container">
               <div class="tag-filters">
-                <n-tag 
+                <div 
                   v-for="tag in memoTags" 
                   :key="tag.code"
-                  :bordered="false"
-                  :color="activeTagCode === tag.code ? getTagColor(tag.code) : { color: 'rgba(244, 244, 245, 0.8)', textColor: '#666' }"
-                  class="tag-filter"
+                  class="tag"
+                  :class="[
+                    { 'active': activeTagCode === tag.code },
+                    `tag-${tag.code}`
+                  ]"
                   @click="setActiveTag(tag.code)"
                 >
-                  {{ tag.name }}
-                </n-tag>
+                  <i :class="getTagIcon(tag.code)"></i> {{ tag.name }}
+                </div>
               </div>
             </div>
           </div>
@@ -65,102 +70,31 @@
             </div>
             <p>暂无备忘录，点击 + 按钮添加</p>
           </div>
-          <div v-else class="memos-list">
+          <div v-else class="memo-list">
             <div 
               v-for="memo in filteredMemos" 
               :key="memo.id" 
-              class="memo-row"
-              :class="{'todo-memo': memo.isTodo && !memo.completed, 'completed-memo': memo.isTodo && memo.completed}"
+              class="memo-card"
+              :class="[`memo-card-${memo.tagCode}`, {'todo-memo': memo.isTodo && !memo.completed, 'completed-memo': memo.isTodo && memo.completed}]"
+              @click="viewMemo(memo)"
             >
-              <div class="memo-content-preview" @click="viewMemo(memo)">
-                <div class="memo-row-header">
-                  <div class="memo-title-container">
-                    <div class="memo-icon" :style="{ backgroundColor: getRandomColor(memo) }">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="white"/>
-                      </svg>
-                    </div>
-                    <h3 class="memo-title">{{ memo.title }}</h3>
-                  </div>
-                  <n-tag 
-                    :bordered="false"
-                    size="small"
-                    :color="getTagColor(memo.tagCode)"
-                    class="memo-tag"
-                  >
-                    {{ getTagName(memo.tagCode) }}
-                  </n-tag>
-                </div>
-                
-                <div class="memo-content-snippet">
-                  {{ getContentSnippet(memo.content) }}
-                </div>
-                
-                <div v-if="memo.isTodo" class="memo-todo-info" :class="{'completed': memo.completed}">
-                  <div class="todo-status">
-                    <div class="todo-checkbox" @click.stop="toggleTodoStatus(memo)">
-                      <svg v-if="memo.completed" width="12" height="12" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
-                      </svg>
-                    </div>
-                    <span>{{ memo.completed ? '已完成' : '待办事项' }}</span>
-                  </div>
-                  <div v-if="memo.dueDate" class="due-date" :class="{'overdue': isOverdue(memo.dueDate)}">
-                    {{ formatDueDate(memo.dueDate) }}
-                  </div>
-                </div>
-                
-                <div class="memo-meta">
-                  <div class="memo-date">{{ formatFullDate(memo.createdAt) }}</div>
-                  <div class="memo-time">{{ formatTimeAgo(memo.createdAt) }}</div>
+              <div class="memo-header">
+                <div class="memo-title">{{ memo.title }}</div>
+                <div class="memo-category">
+                  <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
                 </div>
               </div>
-
-              <div class="memo-actions">
-                <n-button
-                  size="small"
-                  text
-                  class="action-btn view-btn"
-                  @click="viewMemo(memo)"
-                  title="预览"
-                >
-                  <n-icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  </n-icon>
-                </n-button>
-                <n-button
-                  size="small"
-                  text
-                  class="action-btn edit-btn"
-                  @click="editMemo(memo)"
-                  title="编辑"
-                >
-                  <n-icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                  </n-icon>
-                </n-button>
-                <n-button
-                  size="small"
-                  text
-                  class="action-btn delete-btn"
-                  @click.stop="confirmDelete(memo)"
-                  title="删除"
-                >
-                  <n-icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </n-icon>
-                </n-button>
+              
+              <div class="memo-content">
+                {{ getContentSnippet(memo.content) }}
+              </div>
+              
+              <div class="memo-footer">
+                <div class="memo-date"><i class="far fa-clock"></i> {{ formatFullDate(memo.createdAt) }}</div>
+                <div class="memo-actions">
+                  <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
+                  <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
+                </div>
               </div>
             </div>
           </div>
@@ -180,9 +114,9 @@
       <div class="modal-inner">
         <div class="modal-header">
           <div class="modal-title">
-            <n-tag v-if="currentMemo" :bordered="false" :color="getTagColor(currentMemo.tagCode)" class="view-tag" size="small">
-              {{ currentMemo ? getTagName(currentMemo.tagCode) : '' }}
-            </n-tag>
+            <div v-if="currentMemo" class="view-tag">
+              <i :class="getTagIcon(currentMemo.tagCode)"></i> {{ currentMemo ? getTagName(currentMemo.tagCode) : '' }}
+            </div>
             <span>{{ currentMemo ? currentMemo.title : '' }}</span>
           </div>
           <n-button quaternary circle class="close-btn" @click="showViewModal = false">
@@ -719,6 +653,19 @@ function editCurrentMemo(): void {
   }
 }
 
+// 获取标签图标
+function getTagIcon(code: number): string {
+  const icons: Record<number, string> = {
+    0: 'fas fa-star',       // 所有
+    1: 'fas fa-briefcase',  // 工作
+    2: 'fas fa-book',       // 学习
+    3: 'fas fa-heart',      // 生活
+    4: 'fas fa-lightbulb',  // 其他
+  };
+  
+  return icons[code] || 'fas fa-tag';
+}
+
 // 初始化
 onMounted(() => {
   // 实际项目中应该从API获取备忘录数据
@@ -856,28 +803,75 @@ onMounted(() => {
 
 /* 标签栏 */
 .tags-container {
-  margin-top: 4px;
+  margin-top: 16px;
   width: 100%;
+  overflow-x: auto;
 }
 
 .tag-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
-.tag-filter {
+.tag {
   cursor: pointer;
+  padding: 6px 14px;
+  background: rgba(244, 244, 245, 0.8);
+  color: #666;
+  font-size: 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   transition: all 0.2s ease;
-  font-size: 13px;
-  padding: 4px 12px;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
 }
 
-.tag-filter:hover {
+.tag i {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.tag:hover {
+  background: rgba(234, 234, 235, 0.9);
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.tag.active {
+  color: white;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 所有标签激活样式 */
+.tag-0.active {
+  background: linear-gradient(135deg, #5e72e4, #825ee4);
+}
+
+/* 工作标签激活样式 - 对应工作卡片渐变色 */
+.tag-1.active {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+/* 学习标签激活样式 - 对应学习卡片渐变色 */
+.tag-2.active {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+}
+
+/* 生活标签激活样式 - 对应生活卡片渐变色 */
+.tag-3.active {
+  background: linear-gradient(135deg, #fa709a, #fee140);
+}
+
+/* 其他标签激活样式 - 对应其他卡片渐变色 */
+.tag-4.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.tag.active i {
+  opacity: 1;
 }
 
 /* 空备忘录状态 */
@@ -900,463 +894,186 @@ onMounted(() => {
 }
 
 /* 备忘录列表 */
-.memos-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.memo-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
   padding: 16px 4px;
   min-height: 50vh;
 }
 
-.memo-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-radius: 10px;
-  background-color: #f8f9fa;
-  border: 1px solid rgba(230, 230, 230, 0.7);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
+.memo-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
   cursor: pointer;
-}
-
-.memo-row:hover {
-  background-color: #f9fafb;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
-  transform: translateY(-1px);
-}
-
-.todo-memo {
-  background-color: #f0f7ff;
-  border-color: #dbeafe;
-}
-
-.completed-memo {
-  background-color: #f0fdf4;
-  border-color: #dcfce7;
-}
-
-.memo-content-preview {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  height: 220px;
+  position: relative;
 }
 
-.memo-row-header {
+.memo-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+  z-index: 0;
+}
+
+.memo-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.memo-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* 工作类别 - 蓝色渐变 */
+.memo-card-1 {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* 学习类别 - 绿色渐变 */
+.memo-card-2 {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+/* 生活类别 - 橙色渐变 */
+.memo-card-3 {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* 其他类别 - 紫色渐变 */
+.memo-card-4 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.todo-memo.memo-card::before {
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.7) 100%);
+}
+
+.completed-memo.memo-card::before {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.9) 0%, rgba(220, 252, 231, 0.7) 100%);
+}
+
+.memo-header {
+  padding: 16px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-}
-
-.memo-title-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .memo-title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: #333;
   margin: 0;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
 }
 
-.memo-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+.memo-category {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.memo-tag {
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.15);
   margin-left: 8px;
-  flex-shrink: 0;
-  font-weight: 500;
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-size: 11px;
 }
 
-.memo-content-snippet {
+.memo-card-1 .memo-category {
+  background: rgba(79, 172, 254, 0.4);
+}
+
+.memo-card-2 .memo-category {
+  background: rgba(67, 233, 123, 0.4);
+}
+
+.memo-card-3 .memo-category {
+  background: rgba(250, 112, 154, 0.4);
+}
+
+.memo-card-4 .memo-category {
+  background: rgba(102, 126, 234, 0.4);
+}
+
+.memo-content {
+  padding: 16px;
   font-size: 14px;
   color: #555;
   line-height: 1.5;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   flex-grow: 1;
 }
 
-.memo-todo-info {
+.memo-footer {
+  padding: 12px 16px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background-color: rgba(0, 0, 0, 0.02);
-  margin: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   font-size: 12px;
   color: #666;
 }
 
-.todo-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.todo-checkbox {
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid #ccc;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  background-color: rgba(255, 255, 255, 0.8);
-}
-
-.todo-checkbox:hover {
-  border-color: #333;
-}
-
-.completed .todo-checkbox {
-  border-color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.1);
-}
-
-.due-date {
-  font-size: 11px;
-  color: #777;
-  background-color: rgba(0, 0, 0, 0.03);
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.overdue {
-  color: #f56c6c;
-  background-color: rgba(245, 108, 108, 0.1);
-}
-
-.memo-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: #888;
-}
-
-.memo-actions {
-  display: flex;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.memo-row:hover .memo-actions {
-  opacity: 1;
-}
-
-.action-btn {
-  width: 32px !important;
-  height: 32px !important;
-  min-width: 32px !important;
-  background-color: rgba(255, 255, 255, 0.6) !important;
-  border-radius: 6px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  opacity: 0.8;
-  transition: all 0.2s;
-}
-
-.action-btn:hover {
-  opacity: 1;
-  background-color: #fff !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.view-btn:hover {
-  color: #3B82F6;
-}
-
-.edit-btn:hover {
-  color: #10B981;
-}
-
-.delete-btn:hover {
-  color: #EF4444;
-}
-
-/* 模态框样式 */
-.memo-modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-inner {
-  width: 100%;
-  max-width: 500px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.edit-modal-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.modal-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.view-tag {
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-size: 11px;
-}
-
-.close-btn {
-  margin-right: -8px;
-  color: #666;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  color: #333;
-  background-color: rgba(0, 0, 0, 0.05) !important;
-}
-
-.modal-content {
-  padding: 20px 24px;
-  text-align: left;
-}
-
-.edit-modal-content {
-  padding: 24px;
-}
-
-.view-content {
-  padding: 20px 24px;
-}
-
-.form-group {
-  margin-bottom: 24px;
-  text-align: left;
-  width: 100%;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #444;
-  font-weight: 500;
-  text-align: left;
-}
-
-.form-control {
-  width: 100%;
-  border-radius: 8px !important;
-}
-
-.todo-switch-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px 24px 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  gap: 12px;
-}
-
-.edit-modal-footer {
-  background-color: #f8f9fa;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.edit-view-button {
-  min-width: 80px;
-  color: #333 !important;
-  border-radius: 6px !important;
-  font-weight: 500;
-}
-
-.save-button {
-  min-width: 80px;
-  background-color: #3B82F6 !important;
-  border-color: #3B82F6 !important;
-  border-radius: 6px !important;
-  font-weight: 500;
-}
-
-.save-button:hover {
-  background-color: #2563EB !important;
-  border-color: #2563EB !important;
-}
-
-.cancel-button {
-  min-width: 80px;
-  color: #555 !important;
-  border-radius: 6px !important;
-  font-weight: 500;
-}
-
-.todo-status-view {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.03);
-  margin-bottom: 14px;
-  font-size: 12px;
-  color: #666;
-}
-
-.todo-status-view.completed {
-  background-color: rgba(240, 255, 244, 0.8);
-  border-color: rgba(220, 255, 228, 0.8);
-}
-
-.todo-checkbox.large {
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid #ccc;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  background-color: rgba(255, 255, 255, 0.8);
-}
-
-.todo-checkbox.large:hover {
-  border-color: #333;
-}
-
-.completed .todo-checkbox.large {
-  border-color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.1);
-}
-
-.due-date-view {
-  font-size: 11px;
-  color: #777;
-  background-color: rgba(0, 0, 0, 0.03);
-  padding: 2px 8px;
-  border-radius: 4px;
+.memo-date {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.due-date-view.overdue {
-  color: #f56c6c;
-  background-color: rgba(245, 108, 108, 0.1);
+.memo-actions {
+  display: flex;
+  gap: 12px;
 }
 
-.overdue-label {
-  font-size: 10px;
-  color: #f56c6c;
-  background-color: rgba(245, 108, 108, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.memo-view-content {
+.memo-actions i {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.7;
   font-size: 14px;
-  color: #444;
-  line-height: 1.6;
-  margin-bottom: 16px;
-  white-space: pre-line;
 }
 
-.memo-view-meta {
-  font-size: 11px;
-  color: #888;
-  text-align: right;
+.memo-actions i:hover {
+  opacity: 1;
 }
 
-/* 响应式样式调整 */
+.fa-edit:hover {
+  color: #3B82F6;
+}
+
+.fa-trash-alt:hover {
+  color: #EF4444;
+}
+
+/* 响应式调整 */
 @media (max-width: 768px) {
-  .memo-container {
-    padding: 0 12px;
-  }
-  
-  .page-header {
-    padding: 16px 0 12px 0;
-  }
-  
-  .search-box {
-    width: 100%;
-    max-width: 100%;
-  }
-  
-  .search-and-add {
-    width: 100%;
-  }
-  
-  .memo-row {
-    padding: 12px 16px;
-  }
-  
-  .memo-actions {
-    opacity: 1;
+  .memo-list {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 }
 
 @media (max-width: 480px) {
-  .memos-list {
-    gap: 10px;
-  }
-  
-  .modal-inner {
-    margin: 0 16px;
-  }
-  
-  .search-and-add {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .add-button {
-    width: 100%;
+  .memo-list {
+    grid-template-columns: 1fr;
   }
 }
 </style> 
