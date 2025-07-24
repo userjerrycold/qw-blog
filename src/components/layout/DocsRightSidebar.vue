@@ -63,18 +63,6 @@
             <h4 class="doc-title">{{ doc.title }}</h4>
             <p class="doc-meta">{{ getTagName(doc.tagCode) }} • {{ formatDate(doc.createdAt) }}</p>
           </div>
-          <div class="doc-actions">
-            <div class="doc-link-icon" title="访问链接">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" fill="currentColor"/>
-              </svg>
-            </div>
-            <div class="doc-copy-icon" @click.stop="copyDocUrl(doc.url)" title="复制链接">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" fill="currentColor"/>
-              </svg>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -202,28 +190,6 @@ function getTagColor(code: number): { color: string, textColor: string } {
   };
   
   return colors[code] || colors[5];
-}
-
-// 打开文档URL
-function openDocUrl(url: string): void {
-  if (url) {
-    window.open(url, '_blank');
-  }
-}
-
-// 复制文档URL
-async function copyDocUrl(url: string): Promise<void> {
-  try {
-    const success = await copyToClipboard(url);
-    if (success) {
-      message.success('链接已复制到剪贴板');
-    } else {
-      message.error('复制失败，请手动复制');
-    }
-  } catch (error) {
-    console.error('复制失败:', error);
-    message.error('复制失败，请手动复制');
-  }
 }
 
 // 格式化日期
@@ -426,40 +392,7 @@ export default {
 .recent-doc-card:hover {
   background-color: rgba(0, 0, 0, 0.03);
   border-color: transparent;
-}
-
-.recent-doc-card:hover .doc-title {
-  color: #1976D2;
-}
-
-.doc-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 8px;
-  opacity: 0;
-  transition: all 0.2s;
-}
-
-.recent-doc-card:hover .doc-actions {
-  opacity: 0.7;
-}
-
-.doc-link-icon,
-.doc-copy-icon {
-  color: #666;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-}
-
-.doc-link-icon:hover,
-.doc-copy-icon:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #1976D2;
+  opacity: 0.8;
 }
 
 .doc-icon {
