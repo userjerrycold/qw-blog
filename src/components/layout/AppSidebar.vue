@@ -3,7 +3,7 @@
     <div class="profile">
       <img :src="avatar" alt="avatar" />
       <div class="profile-info">
-        <h1>Leo Johns</h1>
+        <h1>QH DevOS</h1>
         <p>开发者</p>
       </div>
     </div>
@@ -47,6 +47,18 @@ const route = useRoute()
 
 const menuOptions: MenuOption[] = [
   {
+    label: '服务模拟',
+    key: '/mock',
+    icon: () => h('img', { src: serverSvg, class: 'w-4 h-4' }),
+  },
+  {
+    label: '文档管理',
+    key: '/docs',
+    icon: () => h('img', { src: docsSvg, class: 'w-4 h-4' }),
+  },
+  // 隐藏博客和工具菜单，保留代码但不显示
+  /*
+  {
     label: '博客',
     key: '/blog',
     icon: () => h('img', { src: blogSvg, class: 'w-4 h-4' }),
@@ -56,16 +68,7 @@ const menuOptions: MenuOption[] = [
     key: '/tools',
     icon: () => h('img', { src: toolsSvg, class: 'w-4 h-4' }),
   },
-  {
-    label: '文档',
-    key: '/docs',
-    icon: () => h('img', { src: docsSvg, class: 'w-4 h-4' }),
-  },
-  {
-    label: '服务模拟',
-    key: '/mock',
-    icon: () => h('img', { src: serverSvg, class: 'w-4 h-4' }),
-  },
+  */
 ]
 
 const menuThemeOverrides = {

@@ -15,6 +15,32 @@ export interface Post {
   tag: string
 }
 
+export interface Document {
+  id: number
+  name: string
+  type: number
+  url: string
+  author: string
+  status: boolean
+  createDt: string
+  updateDt: string
+  typeStr: string
+}
+
+export interface DocumentSearchParams {
+  username: string
+  type: number
+  fileUrl: string
+  fileName: string
+  id: number
+}
+
+export interface ApiResponse<T> {
+  code: number
+  data: T
+  msg: string
+}
+
 export interface Pagination<T> {
   list: T[]
   total: number
@@ -32,6 +58,38 @@ export function fetchPostById(id: number) {
 
 export function fetchTags() {
   return http.get<string[]>('/tags')
+}
+
+// 文档管理API
+export function searchDocuments(params: DocumentSearchParams) {
+  return http.post<ApiResponse<Document[]>>('/myfile/search', params)
+}
+
+export function createDocument(document: Omit<Document, 'id' | 'createDt' | 'updateDt' | 'status' | 'typeStr'>) {
+  return http.post<ApiResponse<boolean>>('/myfile/save', {
+    username: document.author,
+    type: document.type,
+    fileUrl: document.url,
+    fileName: document.name,
+    id: 0
+  })
+}
+
+export function updateDocument(document: Partial<Document>) {
+  return http.post<ApiResponse<boolean>>('/myfile/save', {
+    username: document.author,
+    type: document.type,
+    fileUrl: document.url,
+    fileName: document.name,
+    id: document.id
+  })
+}
+
+export function deleteDocument(id: number) {
+  return http.post<ApiResponse<boolean>>('/myfile/deleteById', { 
+    username: 'qianhu',
+    id: id
+  })
 }
 
 export default http 

@@ -1,110 +1,393 @@
 <template>
-  <aside class="w-1/4 max-w-[300px] overflow-y-auto pl-3 pr-2 scrollbar-hide" style="height:100%; border-left:1px solid var(--color-border);">
-    <!-- Recent Documents section -->
-    <div class="mb-4">
-      <h3 class="text-sm font-semibold mb-2">最近浏览</h3>
-      <div class="space-y-2">
-        <div class="doc-card">
-          <div class="doc-icon bg-blue-100 text-blue-500">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
-            </svg>
-          </div>
-          <div class="doc-content">
-            <h4 class="text-sm font-medium">Spring Boot 配置指南</h4>
-            <p class="text-xs text-gray-500">Java • 5分钟前</p>
-          </div>
+  <aside class="sidebar-container">
+    <!-- 创建文档表单 -->
+    <div class="sidebar-section">
+      <h3 class="section-title">创建文档</h3>
+      <div class="create-form">
+        <div class="form-item">
+          <label>文档名称</label>
+          <n-input v-model:value="newDoc.title" placeholder="输入文档名称" size="small" />
         </div>
-
-        <div class="doc-card">
-          <div class="doc-icon bg-purple-100 text-purple-500">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
-            </svg>
-          </div>
-          <div class="doc-content">
-            <h4 class="text-sm font-medium">React Hooks 最佳实践</h4>
-            <p class="text-xs text-gray-500">前端 • 昨天</p>
-          </div>
+        <div class="form-item">
+          <label>文档类型</label>
+          <n-select 
+            v-model:value="newDoc.tagCode" 
+            :options="tagOptions" 
+            placeholder="选择类型"
+            size="small"
+          />
         </div>
-
-        <div class="doc-card">
-          <div class="doc-icon bg-green-100 text-green-500">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
-            </svg>
-          </div>
-          <div class="doc-content">
-            <h4 class="text-sm font-medium">Docker 容器化部署</h4>
-            <p class="text-xs text-gray-500">DevOps • 3天前</p>
-          </div>
+        <div class="form-item">
+          <label>文档URL</label>
+          <n-input v-model:value="newDoc.url" placeholder="输入文档URL" size="small" />
+        </div>
+        <div class="form-actions">
+          <button class="action-btn cancel-btn" @click="resetForm">取消</button>
+          <button class="action-btn create-btn" @click="createDocument">创建</button>
         </div>
       </div>
     </div>
-
-    <!-- Popular Tags section -->
-    <div class="mb-4">
-      <h3 class="text-sm font-semibold mb-2">热门标签</h3>
-      <div class="flex flex-wrap gap-2">
-        <span class="tag">Java</span>
-        <span class="tag">Spring</span>
-        <span class="tag">前端</span>
-        <span class="tag">Vue</span>
-        <span class="tag">React</span>
-        <span class="tag">DevOps</span>
-        <span class="tag">数据库</span>
-        <span class="tag">Git</span>
-      </div>
-    </div>
-
-    <!-- Quick Add section -->
-    <div class="mb-4">
-      <h3 class="text-sm font-semibold mb-2">快速添加</h3>
-      <div class="quick-add">
-        <button class="quick-add-btn">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
-          </svg>
-          <span>添加文档</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Statistics section -->
-    <div>
-      <h3 class="text-sm font-semibold mb-2">文档统计</h3>
+    
+    <!-- 文档分类统计 -->
+    <div class="sidebar-section">
+      <h3 class="section-title">文档分类统计</h3>
       <div class="stats">
-        <div class="stat-item">
-          <span class="stat-label">总文档数</span>
-          <span class="stat-value">42</span>
+        <div class="stat-item" v-for="(tag, index) in docTags" :key="index">
+          <span class="stat-tag" :style="{ backgroundColor: getTagColor(tag.code).color, color: getTagColor(tag.code).textColor }">
+            {{ tag.name }}
+          </span>
+          <span class="stat-value">{{ getTagCount(tag.code) }}</span>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">标签数</span>
-          <span class="stat-value">12</span>
+      </div>
+    </div>
+    
+    <!-- 最近添加 -->
+    <div class="sidebar-section">
+      <h3 class="section-title">最近添加</h3>
+      <div class="recent-docs">
+        <div v-if="recentDocuments.length === 0" class="empty-recent">
+          暂无文档
         </div>
-        <div class="stat-item">
-          <span class="stat-label">本月新增</span>
-          <span class="stat-value">8</span>
+        <div v-for="doc in recentDocuments" :key="doc.id" class="recent-doc-card">
+          <div class="doc-icon" :style="{ backgroundColor: getTagColor(doc.tagCode).color, color: getTagColor(doc.tagCode).textColor }">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="doc-content">
+            <h4 class="doc-title">{{ doc.title }}</h4>
+            <p class="doc-meta">{{ getTagName(doc.tagCode) }} • {{ formatDate(doc.createdAt) }}</p>
+          </div>
         </div>
       </div>
     </div>
   </aside>
 </template>
 
+<script setup lang="ts">
+import { defineProps, computed, defineEmits, withDefaults, reactive } from 'vue';
+import { NInput, NSelect } from 'naive-ui';
+
+interface Document {
+  id: number;
+  title: string;
+  url: string;
+  tagCode: number;
+  createdAt: number;
+  author?: string;
+  status?: boolean;
+  typeStr?: string;
+  updateDt?: string;
+}
+
+interface TagType {
+  code: number;
+  name: string;
+}
+
+const props = withDefaults(defineProps<{
+  documents: Document[]
+}>(), {
+  documents: () => []
+});
+
+const emit = defineEmits<{
+  (e: 'add-document', doc: Omit<Document, 'id' | 'createdAt'>): void;
+}>();
+
+// 文档类型枚举
+const DocTypeEnum: Record<string, TagType> = {
+  ALL: { code: 0, name: '所有' },
+  FEISHU: { code: 1, name: '飞书' },
+  GITLAB: { code: 2, name: 'Gitlab' },
+  CODE: { code: 3, name: 'Code' },
+  REDMINE: { code: 4, name: 'Redmine' },
+  OTHER: { code: 5, name: 'Other' }
+};
+
+// 所有标签
+const docTags: TagType[] = [
+  DocTypeEnum.FEISHU,
+  DocTypeEnum.GITLAB,
+  DocTypeEnum.CODE,
+  DocTypeEnum.REDMINE,
+  DocTypeEnum.OTHER
+];
+
+// 标签选项
+const tagOptions = computed(() => {
+  return docTags.map(tag => ({
+    label: tag.name,
+    value: tag.code
+  }));
+});
+
+// 新文档表单
+const newDoc = reactive({
+  title: '',
+  url: '',
+  tagCode: 1 // 默认飞书
+});
+
+// 创建文档
+function createDocument() {
+  if (!newDoc.title || !newDoc.url) {
+    return; // 简单验证
+  }
+  
+  emit('add-document', {
+    title: newDoc.title,
+    url: newDoc.url,
+    tagCode: newDoc.tagCode
+  });
+  
+  resetForm();
+}
+
+// 重置表单
+function resetForm() {
+  newDoc.title = '';
+  newDoc.url = '';
+  newDoc.tagCode = 1;
+}
+
+// 最近添加的文档
+const recentDocuments = computed(() => {
+  return [...props.documents]
+    .sort((a: Document, b: Document) => b.createdAt - a.createdAt)
+    .slice(0, 3); // 显示最近添加的3篇
+});
+
+// 获取标签名称
+function getTagName(code: number): string {
+  const tag = Object.values(DocTypeEnum).find(t => t.code === code);
+  return tag ? tag.name : 'Unknown';
+}
+
+// 获取标签数量
+function getTagCount(code: number): number {
+  return props.documents.filter(doc => doc.tagCode === code).length;
+}
+
+// 获取标签颜色
+function getTagColor(code: number): { color: string, textColor: string } {
+  const colors: Record<number, { color: string, textColor: string }> = {
+    0: { color: '#f5f5f5', textColor: '#333' }, // 所有
+    1: { color: '#E8F5E9', textColor: '#2E7D32' }, // 飞书
+    2: { color: '#FFF3E0', textColor: '#E65100' }, // 码云
+    3: { color: '#E3F2FD', textColor: '#1565C0' }, // Code
+    4: { color: '#F3E5F5', textColor: '#6A1B9A' }, // Redmine
+    5: { color: '#ECEFF1', textColor: '#546E7A' }, // Other
+  };
+  
+  return colors[code] || colors[5];
+}
+
+// 格式化日期
+function formatDate(timestamp: number): string {
+  const now = new Date();
+  const date = new Date(timestamp);
+  
+  const diff = now.getTime() - date.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  
+  if (days === 0) {
+    return '今天';
+  } else if (days === 1) {
+    return '昨天';
+  } else if (days < 7) {
+    return `${days}天前`;
+  } else {
+    return date.toLocaleDateString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit'
+    });
+  }
+}
+</script>
+
+<script lang="ts">
+export default {
+  name: 'DocsRightSidebar'
+}
+</script>
+
 <style scoped>
-.doc-card {
+.sidebar-container {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 24px;
+  padding-right: 12px;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto; /* 启用垂直滚动 */
+  overscroll-behavior: contain;
+  padding-bottom: 60px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  /* 移除边框样式，由PageLayout提供 */
+}
+
+.sidebar-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.sidebar-section {
+  background: transparent;
+  backdrop-filter: none;
+  border-radius: 0;
+  padding: 0 0 16px 0;
+  box-shadow: none;
+  border: none;
+  margin-bottom: 8px;
+}
+
+.sidebar-section:last-child {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 14px;
+  color: #333;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(230, 230, 230, 0.7);
+}
+
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  padding: 4px 5px;
+  margin-bottom: 8px;
+}
+
+.form-item label {
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-btn {
+  padding: 6px 0;
   border-radius: 4px;
-  background-color: #f9f9f9;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  flex: 1;
+  text-align: center;
+  min-width: 70px;
+}
+
+.cancel-btn {
+  background-color: #f0f0f0;
+  color: #555;
+  min-width: 70px;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.create-btn {
+  background-color: #333;
+  color: white;
+  min-width: 70px;
+}
+
+.create-btn:hover {
+  background-color: #555;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(230, 230, 230, 0.3);
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-tag {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-weight: 500;
+  background-color: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #555;
+}
+
+.recent-docs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.empty-recent {
+  text-align: center;
+  padding: 20px 0;
+  color: #888;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.recent-doc-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-radius: 0;
+  transition: all 0.2s;
+  border: none;
+  border-bottom: 1px solid rgba(230, 230, 230, 0.3);
+}
+
+.recent-doc-card:last-child {
+  border-bottom: none;
+}
+
+.recent-doc-card:hover {
+  background-color: transparent;
+  border-color: transparent;
+  opacity: 0.8;
 }
 
 .doc-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,76 +396,36 @@
 
 .doc-content {
   flex: 1;
-  min-width: 0; /* 防止内容溢出 */
+  min-width: 0;
 }
 
-.doc-content h4 {
+.doc-title {
+  margin: 0 0 2px 0;
+  font-size: 13px;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.doc-meta {
+  margin: 0;
   font-size: 11px;
-  margin-bottom: 1px;
-}
-
-.doc-content p {
-  font-size: 10px;
-  line-height: 1.2;
-}
-
-.tag {
-  display: inline-block;
-  padding: 2px 6px;
-  background-color: #f0f0f0;
-  border-radius: 12px;
-  font-size: 10px;
-  color: #555;
-}
-
-.quick-add-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  border: none;
-  font-size: 11px;
-  color: #333;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.quick-add-btn:hover {
-  background-color: #e0e0e0;
-}
-
-.stats {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  padding: 4px 0;
-}
-
-.stat-label {
   color: #666;
 }
 
-.stat-value {
-  font-weight: 500;
+.create-form .form-item:last-child {
+  margin-bottom: 8px;
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+:deep(.n-input__input-el),
+:deep(.n-base-selection) {
+  min-height: 32px;
+  height: 32px;
+  font-size: 13px;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+:deep(.n-base-selection-tags) {
+  min-height: 32px;
 }
 </style> 

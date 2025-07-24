@@ -4,28 +4,40 @@
     <div class="flex-[7] overflow-y-auto pr-2 scrollbar-hide min-w-0">
       <slot />
     </div>
+    
     <template v-if="!hideSidebar">
-      <component :is="rightSidebar" v-if="rightSidebar" class="hidden lg:block flex-[2] overflow-hidden w-full" style="max-width: 300px;" />
-      <RightSidebar v-else class="hidden lg:block flex-[2] overflow-hidden w-full" style="max-width: 300px;" />
+      <div class="hidden lg:block flex-[2] overflow-y-auto scrollbar-hide w-full sidebar-content" style="min-width: 280px; max-height: calc(100vh - 60px); border-left:1px solid var(--color-border);">
+        <!-- 支持两种方式：1. 命名插槽 2. 通过props传递组件 -->
+        <slot name="rightSidebar">
+          <component v-if="rightSidebar" :is="rightSidebar" v-bind="rightSidebarProps" v-on="rightSidebarEvents" />
+        </slot>
+      </div>
     </template>
     <template v-else>
-      <!-- 分隔线 + 占位 -->
-      <div class="hidden lg:flex flex-[2] items-stretch">
-        <div class="w-[1px] bg-gray-200" />
-      </div>
+      <!-- 占位 -->
+      <div class="hidden lg:flex flex-[2] items-stretch"></div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
-// @ts-ignore
-import RightSidebar from '@/components/layout/RightSidebar.vue'
+import { defineProps, defineEmits } from 'vue'
 
-const { hideSidebar = false, rightSidebar = null } = defineProps<{ 
+const props = defineProps<{ 
   hideSidebar?: boolean,
-  rightSidebar?: any
+  rightSidebar?: any,
+  rightSidebarProps?: any
 }>()
+
+const emit = defineEmits(['submit'])
+
+// 向上传递rightSidebar中的事件
+const rightSidebarEvents = {
+  submit: (val: any) => emit('submit', val)
+}
+
+// 默认值
+const { hideSidebar = false, rightSidebarProps = {} } = props
 </script>
 
 <script lang="ts">
@@ -42,5 +54,9 @@ export default {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+.sidebar-content {
+  padding-left: 24px;
 }
 </style> 

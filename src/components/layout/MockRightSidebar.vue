@@ -1,5 +1,5 @@
 <template>
-  <aside class="mock-sidebar" style="height:100%; border-left:1px solid var(--color-border); width:100%;">
+  <aside class="mock-sidebar" style="height:100%; width:100%;">
     <div class="config-panel">
       <div class="panel-header">
         <h3 class="panel-title">{{ isEditing ? '编辑接口' : '创建接口' }}</h3>
@@ -587,6 +587,7 @@ defineExpose({
   overflow-x: hidden;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
+  /* 移除边框样式，由PageLayout提供 */
 }
 
 .mock-sidebar::-webkit-scrollbar {

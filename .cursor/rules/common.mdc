@@ -1,5 +1,5 @@
 ---
-description: 每次回答请用中文回答问题。
+description: 每次回答请用中文回答问题，同时每次回答带上你的模型
 globs:
 alwaysApply: false
 ---
