@@ -70,30 +70,77 @@
             </div>
             <p>暂无备忘录，点击 + 按钮添加</p>
           </div>
-          <div v-else class="memo-list">
-            <div 
-              v-for="memo in filteredMemos" 
-              :key="memo.id" 
-              class="memo-card"
-              :class="[`memo-card-${memo.tagCode}`, {'todo-memo': memo.isTodo && !memo.completed, 'completed-memo': memo.isTodo && memo.completed}]"
-              @click="viewMemo(memo)"
-            >
-              <div class="memo-header">
-                <div class="memo-title">{{ memo.title }}</div>
-                <div class="memo-category">
-                  <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
+          <div v-else>
+            <!-- 今日备忘录 -->
+            <div v-if="todayMemos.length > 0" class="memo-group">
+              <h2 class="group-title today-title">
+                <span class="title-icon"><i class="fas fa-sun"></i></span>
+                <span class="title-text">今日</span>
+              </h2>
+              <div class="memo-list">
+                <div 
+                  v-for="memo in todayMemos" 
+                  :key="memo.id" 
+                  class="memo-card"
+                  :class="[`memo-card-${memo.tagCode}`, {'todo-memo': memo.isTodo && !memo.completed, 'completed-memo': memo.isTodo && memo.completed}]"
+                  @click="viewMemo(memo)"
+                >
+                  <div class="memo-header">
+                    <div class="memo-title">{{ memo.title }}</div>
+                    <div class="memo-category">
+                      <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
+                    </div>
+                  </div>
+                  
+                  <div class="memo-content">
+                    {{ getContentSnippet(memo.content) }}
+                  </div>
+                  
+                  <div class="memo-footer">
+                    <div class="memo-date"><i class="far fa-clock"></i> {{ formatFullDate(memo.createdAt) }}</div>
+                    <div class="memo-actions">
+                      <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
+                      <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <div class="memo-content">
-                {{ getContentSnippet(memo.content) }}
-              </div>
-              
-              <div class="memo-footer">
-                <div class="memo-date"><i class="far fa-clock"></i> {{ formatFullDate(memo.createdAt) }}</div>
-                <div class="memo-actions">
-                  <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
-                  <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
+            </div>
+            
+            <div class="group-divider" v-if="todayMemos.length > 0 && pastMemos.length > 0"></div>
+            
+            <!-- 过去备忘录 -->
+            <div v-if="pastMemos.length > 0" class="memo-group">
+              <h2 class="group-title history-title">
+                <span class="title-icon"><i class="fas fa-history"></i></span>
+                <span class="title-text">早期时间</span>
+              </h2>
+              <div class="memo-list">
+                <div 
+                  v-for="memo in pastMemos" 
+                  :key="memo.id" 
+                  class="memo-card"
+                  :class="[`memo-card-${memo.tagCode}`, {'todo-memo': memo.isTodo && !memo.completed, 'completed-memo': memo.isTodo && memo.completed}]"
+                  @click="viewMemo(memo)"
+                >
+                  <div class="memo-header">
+                    <div class="memo-title">{{ memo.title }}</div>
+                    <div class="memo-category">
+                      <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
+                    </div>
+                  </div>
+                  
+                  <div class="memo-content">
+                    {{ getContentSnippet(memo.content) }}
+                  </div>
+                  
+                  <div class="memo-footer">
+                    <div class="memo-date"><i class="far fa-clock"></i> {{ formatFullDate(memo.createdAt) }}</div>
+                    <div class="memo-actions">
+                      <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
+                      <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -319,9 +366,9 @@ const memos = ref<Memo[]>([
   {
     id: 1,
     title: '完成Vue项目开发',
-    content: '需要实现备忘录功能，包括添加、编辑和删除备忘录等功能。',
+    content: '需要实现备忘录功能，包括添加、编辑和删除备忘录等功能。实现标签筛选、搜索和按日期排序等高级功能。',
     tagCode: 1,
-    createdAt: Date.now() - 3600000,
+    createdAt: Date.now(), // 今天
     isTodo: true,
     dueDate: Date.now() + 86400000,
     completed: false
@@ -329,18 +376,18 @@ const memos = ref<Memo[]>([
   {
     id: 2,
     title: '学习TypeScript高级特性',
-    content: '学习泛型、类型推断、类型守卫等高级特性，提升代码类型安全性。',
+    content: '学习泛型、类型推断、类型守卫等高级特性，提升代码类型安全性。阅读官方文档并完成相关练习。',
     tagCode: 2,
-    createdAt: Date.now() - 86400000,
+    createdAt: Date.now() - 1800000, // 今天，半小时前
     isTodo: false,
     completed: false
   },
   {
     id: 3,
     title: '购物清单',
-    content: '牛奶、面包、鸡蛋、蔬菜、水果',
+    content: '牛奶、面包、鸡蛋、蔬菜、水果、咖啡豆、洗衣液、牙膏、洗发水',
     tagCode: 3,
-    createdAt: Date.now() - 172800000,
+    createdAt: Date.now() - 172800000, // 2天前
     isTodo: true,
     dueDate: Date.now() + 172800000,
     completed: true
@@ -348,9 +395,9 @@ const memos = ref<Memo[]>([
   {
     id: 4,
     title: '阅读《设计模式》',
-    content: '学习常用设计模式，包括单例模式、工厂模式、观察者模式等',
+    content: '学习常用设计模式，包括单例模式、工厂模式、观察者模式等。注重理解每种模式的适用场景和实现方式。',
     tagCode: 2,
-    createdAt: Date.now() - 259200000,
+    createdAt: Date.now() - 259200000, // 3天前
     isTodo: false,
     completed: false
   },
@@ -359,9 +406,76 @@ const memos = ref<Memo[]>([
     title: '每周健身计划',
     content: '周一：上肢\n周三：下肢\n周五：核心\n周日：有氧',
     tagCode: 3,
-    createdAt: Date.now() - 432000000,
+    createdAt: Date.now() - 432000000, // 5天前
     isTodo: true,
     dueDate: Date.now() + 259200000,
+    completed: false
+  },
+  {
+    id: 6,
+    title: '新产品创意brainstorm',
+    content: '针对年轻用户群体，设计一款更加用户友好的社交应用，关注隐私保护和个性化推荐。考虑AR/VR集成的可能性。',
+    tagCode: 1,
+    createdAt: Date.now(), // 今天
+    isTodo: false,
+    completed: false
+  },
+  {
+    id: 7,
+    title: 'React vs Vue对比分析',
+    content: '比较两个框架的优缺点、生态系统、性能和开发体验。整理成技术博客分享给团队成员。重点关注Hooks和Composition API。',
+    tagCode: 2,
+    createdAt: Date.now() - 86400000, // 1天前
+    isTodo: false,
+    completed: false
+  },
+  {
+    id: 8,
+    title: '旅行计划 - 日本',
+    content: '研究东京、京都、大阪的景点和美食。预订机票和住宿。准备行程安排和预算规划。了解当地文化和礼仪。',
+    tagCode: 3,
+    createdAt: Date.now() - 345600000, // 4天前
+    isTodo: true,
+    dueDate: Date.now() + 2592000000, // 30天后
+    completed: false
+  },
+  {
+    id: 9,
+    title: '团队会议安排',
+    content: '讨论项目进度、资源分配和下一阶段计划。解决团队成员遇到的技术问题。准备演示材料。',
+    tagCode: 1,
+    createdAt: Date.now(), // 今天
+    isTodo: true,
+    dueDate: Date.now() + 86400000, // 明天
+    completed: false
+  },
+  {
+    id: 10,
+    title: '学习Docker容器化',
+    content: '掌握Docker基础概念、镜像构建和容器编排。尝试将现有项目容器化并部署到云服务。',
+    tagCode: 2,
+    createdAt: Date.now() - 518400000, // 6天前
+    isTodo: true,
+    dueDate: Date.now() + 604800000, // 7天后
+    completed: false
+  },
+  {
+    id: 11,
+    title: '家庭聚会准备',
+    content: '准备食物和饮料、装饰房间、制作播放列表、规划活动和游戏。联系家人确认时间。',
+    tagCode: 3,
+    createdAt: Date.now() - 1800000, // 今天，半小时前
+    isTodo: true,
+    dueDate: Date.now() + 432000000, // 5天后
+    completed: false
+  },
+  {
+    id: 12,
+    title: '创业点子记录',
+    content: '在线教育平台、健康追踪应用、远程工作协作工具、可持续发展产品。分析市场需求和竞争情况。',
+    tagCode: 4,
+    createdAt: Date.now() - 691200000, // 8天前
+    isTodo: false,
     completed: false
   }
 ]);
@@ -383,6 +497,25 @@ const filteredMemos = computed(() => {
   
   // 3. 按创建时间排序
   return tagFiltered.sort((a, b) => b.createdAt - a.createdAt);
+});
+
+// 按时间分组的备忘录
+const todayMemos = computed(() => {
+  // 获取今天的起始时间
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTimestamp = today.getTime();
+  
+  return filteredMemos.value.filter(memo => memo.createdAt >= todayTimestamp);
+});
+
+const pastMemos = computed(() => {
+  // 获取今天的起始时间
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTimestamp = today.getTime();
+  
+  return filteredMemos.value.filter(memo => memo.createdAt < todayTimestamp);
 });
 
 // 设置活动标签
@@ -893,13 +1026,115 @@ onMounted(() => {
   color: #bbc3cd;
 }
 
+/* 分组样式 */
+.memo-group {
+  margin-bottom: 40px;
+}
+
+/* 分组标题样式 */
+.group-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  margin: 28px 0 20px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.title-icon {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.title-text {
+  position: relative;
+  letter-spacing: 0.5px;
+}
+
+.title-text::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.title-decoration {
+  flex: 1;
+  height: 1px;
+  margin-left: 15px;
+  background: rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.today-title .title-icon {
+  background: linear-gradient(135deg, #ffd34e, #ff9b44);
+  color: white;
+}
+
+.today-title .title-text {
+  background: linear-gradient(to right, #ff9a44, #ff3d77);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.today-title .title-text::after {
+  background: linear-gradient(to right, #ff9a44, #ff3d77);
+}
+
+.history-title .title-icon {
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  color: white;
+}
+
+.history-title .title-text {
+  background: linear-gradient(to right, #6e8efb, #a777e3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.history-title .title-text::after {
+  background: linear-gradient(to right, #6e8efb, #a777e3);
+}
+
+.group-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 30px 0;
+  position: relative;
+}
+
+.group-divider::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, rgba(110, 142, 251, 0.4), rgba(167, 119, 227, 0.4));
+}
+
 /* 备忘录列表 */
 .memo-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
-  padding: 16px 4px;
-  min-height: 50vh;
+  padding: 4px 0;
 }
 
 .memo-card {
@@ -1068,6 +1303,11 @@ onMounted(() => {
 @media (max-width: 768px) {
   .memo-list {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .group-title {
+    font-size: 18px;
+    margin: 20px 0 12px;
   }
 }
 
