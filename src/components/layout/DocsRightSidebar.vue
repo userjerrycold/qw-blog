@@ -63,6 +63,18 @@
             <h4 class="doc-title">{{ doc.title }}</h4>
             <p class="doc-meta">{{ getTagName(doc.tagCode) }} • {{ formatDate(doc.createdAt) }}</p>
           </div>
+          <div class="doc-actions">
+            <div class="doc-link-icon" title="访问链接" @click.stop="openDocUrl(doc.url)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 19H5V5H12V3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V12H19V19ZM14 3V5H17.59L7.76 14.83L9.17 16.24L19 6.41V10H21V3H14Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="doc-copy-icon" @click.stop="copyDocUrl(doc.url)" title="复制链接">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -76,6 +88,21 @@ import { copyToClipboard } from '@/utils/clipboard';
 
 // 创建消息实例
 const message = useMessage();
+
+// 打开文档链接
+function openDocUrl(url: string) {
+  if (url) {
+    window.open(url, '_blank');
+  }
+}
+
+// 复制文档链接
+function copyDocUrl(url: string) {
+  if (url) {
+    copyToClipboard(url);
+    message.success('文档链接已复制');
+  }
+}
 
 interface Document {
   id: number;
@@ -423,6 +450,26 @@ export default {
   margin: 0;
   font-size: 11px;
   color: #666;
+}
+
+.doc-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.doc-link-icon,
+.doc-copy-icon {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.doc-link-icon:hover,
+.doc-copy-icon:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .create-form .form-item:last-child {
