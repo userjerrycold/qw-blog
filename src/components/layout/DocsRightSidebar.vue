@@ -48,7 +48,12 @@
         <div v-if="recentDocuments.length === 0" class="empty-recent">
           暂无文档
         </div>
-        <div v-for="doc in recentDocuments" :key="doc.id" class="recent-doc-card">
+        <div 
+          v-for="doc in recentDocuments" 
+          :key="doc.id" 
+          class="recent-doc-card"
+          @click="openDocUrl(doc.url)"
+        >
           <div class="doc-icon" :style="{ backgroundColor: getTagColor(doc.tagCode).color, color: getTagColor(doc.tagCode).textColor }">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
@@ -57,6 +62,11 @@
           <div class="doc-content">
             <h4 class="doc-title">{{ doc.title }}</h4>
             <p class="doc-meta">{{ getTagName(doc.tagCode) }} • {{ formatDate(doc.createdAt) }}</p>
+          </div>
+          <div class="doc-link-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" fill="currentColor"/>
+            </svg>
           </div>
         </div>
       </div>
@@ -181,6 +191,13 @@ function getTagColor(code: number): { color: string, textColor: string } {
   };
   
   return colors[code] || colors[5];
+}
+
+// 打开文档URL
+function openDocUrl(url: string): void {
+  if (url) {
+    window.open(url, '_blank');
+  }
 }
 
 // 格式化日期
@@ -372,6 +389,8 @@ export default {
   transition: all 0.2s;
   border: none;
   border-bottom: 1px solid rgba(230, 230, 230, 0.3);
+  cursor: pointer;
+  position: relative;
 }
 
 .recent-doc-card:last-child {
@@ -379,9 +398,23 @@ export default {
 }
 
 .recent-doc-card:hover {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0.03);
   border-color: transparent;
-  opacity: 0.8;
+}
+
+.recent-doc-card:hover .doc-title {
+  color: #1976D2;
+}
+
+.doc-link-icon {
+  margin-left: auto;
+  opacity: 0;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.recent-doc-card:hover .doc-link-icon {
+  opacity: 0.7;
 }
 
 .doc-icon {
