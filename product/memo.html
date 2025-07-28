@@ -20,6 +20,8 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
         }
         
         body::before {
@@ -45,6 +47,8 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 30px;
+            position: relative;
+            z-index: 10;
         }
         
         header {
@@ -164,6 +168,7 @@
             -webkit-backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer;
+            position: relative;
         }
         
         .memo-card:hover {
@@ -184,6 +189,10 @@
             color: white;
             font-weight: 600;
             font-size: 18px;
+            max-width: 70%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .memo-category {
@@ -199,6 +208,11 @@
             font-size: 14px;
             line-height: 1.6;
             margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 60px;
         }
         
         .memo-footer {
@@ -226,6 +240,216 @@
             transform: scale(1.1);
         }
         
+        /* 模态框样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(-30px);
+            transition: transform 0.4s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            color: white;
+            transform: rotate(90deg);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .category-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .category-option {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .category-option:hover, .category-option.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.15);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.25);
+        }
+        
+        /* 预览模态框样式 */
+        .preview-content {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            padding: 10px 0;
+        }
+        
+        .preview-category {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .preview-date {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: white;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -234,6 +458,14 @@
             .memo-list {
                 grid-template-columns: 1fr;
             }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -241,198 +473,390 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-sticky-note"></i> 毛玻璃备忘录</h1>
-            <button class="add-btn"><i class="fas fa-plus"></i></button>
+            <button class="add-btn" id="addMemoBtn"><i class="fas fa-plus"></i></button>
         </header>
         
         <div class="search-container">
             <i class="fas fa-search"></i>
-            <input type="text" class="search-input" placeholder="搜索备忘录...">
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索备忘录...">
         </div>
         
-        <div class="tags-container">
-            <div class="tag active"><i class="fas fa-star"></i> 全部</div>
-            <div class="tag"><i class="fas fa-briefcase"></i> 工作</div>
-            <div class="tag"><i class="fas fa-shopping-cart"></i> 购物</div>
-            <div class="tag"><i class="fas fa-lightbulb"></i> 想法</div>
-            <div class="tag"><i class="fas fa-book"></i> 学习</div>
-            <div class="tag"><i class="fas fa-heart"></i> 个人</div>
+        <div class="tags-container" id="tagsContainer">
+            <div class="tag active" data-category="all"><i class="fas fa-star"></i> 全部</div>
+            <div class="tag" data-category="work"><i class="fas fa-briefcase"></i> 工作</div>
+            <div class="tag" data-category="shopping"><i class="fas fa-shopping-cart"></i> 购物</div>
+            <div class="tag" data-category="ideas"><i class="fas fa-lightbulb"></i> 想法</div>
+            <div class="tag" data-category="study"><i class="fas fa-book"></i> 学习</div>
+            <div class="tag" data-category="personal"><i class="fas fa-heart"></i> 个人</div>
         </div>
         
-        <div class="memo-list">
-            <div class="memo-card">
-                <div class="memo-header">
-                    <div class="memo-title">项目会议记录</div>
-                    <div class="memo-category">工作</div>
-                </div>
-                <div class="memo-content">
-                    讨论新项目时间表，确定UI设计方向，分配团队成员任务。需要在下周五前完成原型设计。
-                </div>
-                <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> 2023-07-15</div>
-                    <div class="memo-actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash-alt"></i>
-                    </div>
-                </div>
+        <div class="memo-list" id="memoList">
+            <!-- 备忘录列表由JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <!-- 添加备忘录模态框 -->
+    <div class="modal" id="addMemoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">添加新备忘录</h2>
+                <button class="close-btn" id="closeAddModal"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div class="memo-card">
-                <div class="memo-header">
-                    <div class="memo-title">周末购物清单</div>
-                    <div class="memo-category">购物</div>
+            <form id="memoForm">
+                <div class="form-group">
+                    <label for="memoTitle">标题</label>
+                    <input type="text" id="memoTitle" class="form-control" placeholder="输入标题" required>
                 </div>
-                <div class="memo-content">
-                    牛奶、鸡蛋、面包、水果、蔬菜、鸡肉、咖啡豆、洗衣液、牙膏、洗发水
+                
+                <div class="form-group">
+                    <label for="memoContent">内容</label>
+                    <textarea id="memoContent" class="form-control" placeholder="输入内容..." required></textarea>
                 </div>
-                <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> 2023-07-18</div>
-                    <div class="memo-actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash-alt"></i>
+                
+                <div class="form-group">
+                    <label>分类</label>
+                    <div class="category-selector">
+                        <div class="category-option" data-category="work"><i class="fas fa-briefcase"></i> 工作</div>
+                        <div class="category-option" data-category="shopping"><i class="fas fa-shopping-cart"></i> 购物</div>
+                        <div class="category-option active" data-category="ideas"><i class="fas fa-lightbulb"></i> 想法</div>
+                        <div class="category-option" data-category="study"><i class="fas fa-book"></i> 学习</div>
+                        <div class="category-option" data-category="personal"><i class="fas fa-heart"></i> 个人</div>
                     </div>
                 </div>
+                
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" id="cancelAddMemo">取消</button>
+                    <button type="submit" class="btn btn-primary">保存备忘录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 预览备忘录模态框 -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="previewTitle">备忘录预览</h2>
+                <button class="close-btn" id="closePreviewModal"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div class="memo-card">
-                <div class="memo-header">
-                    <div class="memo-title">读书笔记 - 设计心理学</div>
-                    <div class="memo-category">学习</div>
-                </div>
-                <div class="memo-content">
-                    好的设计应该让用户一目了然，不需要说明书就能使用。用户在使用产品时的挫败感往往源于设计缺陷。
-                </div>
-                <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> 2023-07-20</div>
-                    <div class="memo-actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash-alt"></i>
-                    </div>
-                </div>
+            <div class="preview-content" id="previewContent">
+                <!-- 预览内容由JavaScript动态生成 -->
             </div>
-            
-            <div class="memo-card">
-                <div class="memo-header">
-                    <div class="memo-title">生日派对策划</div>
-                    <div class="memo-category">个人</div>
-                </div>
-                <div class="memo-content">
-                    地点：家里客厅<br>
-                    时间：8月5日 18:00<br>
-                    邀请名单：家人、好友、同事<br>
-                    需要准备：蛋糕、饮料、小吃、装饰品
-                </div>
-                <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> 2023-07-22</div>
-                    <div class="memo-actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash-alt"></i>
-                    </div>
-                </div>
+            <div class="preview-category" id="previewCategory">
+                <!-- 分类由JavaScript动态生成 -->
             </div>
-            
-            <div class="memo-card">
-                <div class="memo-header">
-                    <div class="memo-title">新功能构思</div>
-                    <div class="memo-category">想法</div>
-                </div>
-                <div class="memo-content">
-                    为备忘录应用添加语音输入功能，支持语音创建和搜索备忘录。增加智能提醒功能，根据内容自动设置提醒时间。
-                </div>
-                <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> 2023-07-23</div>
-                    <div class="memo-actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash-alt"></i>
-                    </div>
-                </div>
+            <div class="preview-date" id="previewDate">
+                <!-- 日期由JavaScript动态生成 -->
             </div>
-            
-            <div class="memo-card">
-                <div class="memo-header">
-                    <div class="memo-title">健身计划</div>
-                    <div class="memo-category">个人</div>
-                </div>
-                <div class="memo-content">
-                    周一：胸部+三头肌<br>
-                    周二：有氧运动<br>
-                    周三：背部+二头肌<br>
-                    周四：休息<br>
-                    周五：腿部+肩部<br>
-                    周六：有氧运动<br>
-                    周日：休息
-                </div>
-                <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> 2023-07-24</div>
-                    <div class="memo-actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash-alt"></i>
-                    </div>
-                </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="closePreview">关闭</button>
+                <button class="btn btn-primary" id="editMemo">编辑</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 搜索功能
-        const searchInput = document.querySelector('.search-input');
-        const memoCards = document.querySelectorAll('.memo-card');
+        // 示例备忘录数据
+        let memos = [
+            {
+                id: 1,
+                title: "项目会议记录",
+                content: "讨论新项目时间表，确定UI设计方向，分配团队成员任务。需要在下周五前完成原型设计。\n\n下一步行动：\n- 李工负责前端框架搭建\n- 王设计完成初版UI\n- 张经理准备项目预算报告",
+                category: "work",
+                date: "2023-07-15"
+            },
+            {
+                id: 2,
+                title: "周末购物清单",
+                content: "牛奶、鸡蛋、面包、水果（苹果、香蕉、葡萄）、蔬菜（西红柿、黄瓜、生菜）、鸡肉、咖啡豆、洗衣液、牙膏、洗发水\n\n超市促销：\n- 鸡蛋买一送一\n- 咖啡豆第二件半价",
+                category: "shopping",
+                date: "2023-07-18"
+            },
+            {
+                id: 3,
+                title: "读书笔记 - 设计心理学",
+                content: "好的设计应该让用户一目了然，不需要说明书就能使用。用户在使用产品时的挫败感往往源于设计缺陷。\n\n关键点：\n1. 可见性原则：让功能显而易见\n2. 反馈原则：用户操作后应有明确反馈\n3. 限制原则：防止用户误操作\n4. 一致性原则：相似功能保持相同操作方式",
+                category: "study",
+                date: "2023-07-20"
+            },
+            {
+                id: 4,
+                title: "生日派对策划",
+                content: "地点：家里客厅\n时间：8月5日 18:00\n邀请名单：家人、好友、同事\n\n需要准备：\n- 蛋糕（巧克力口味）\n- 饮料（果汁、啤酒、红酒）\n- 小吃（披萨、鸡翅、沙拉）\n- 装饰品（气球、彩带、横幅）\n- 背景音乐播放列表",
+                category: "personal",
+                date: "2023-07-22"
+            },
+            {
+                id: 5,
+                title: "新功能构思",
+                content: "为备忘录应用添加以下功能：\n1. 语音输入：支持语音创建和搜索备忘录\n2. 智能提醒：根据内容自动设置提醒时间\n3. 图片附件：支持添加照片到备忘录\n4. 协作功能：多人共享编辑备忘录\n5. 标签系统：更灵活的分类方式",
+                category: "ideas",
+                date: "2023-07-23"
+            },
+            {
+                id: 6,
+                title: "健身计划",
+                content: "周一：胸部+三头肌\n   - 卧推 4×10\n   - 飞鸟 3×12\n   - 臂屈伸 4×10\n\n周二：有氧运动\n   - 跑步 40分钟\n   - 跳绳 15分钟\n\n周三：背部+二头肌\n   - 引体向上 4×8\n   - 划船 4×10\n   - 弯举 3×12\n\n周四：休息\n\n周五：腿部+肩部\n   - 深蹲 4×10\n   - 硬拉 4×8\n   - 推举 3×12\n\n周六：有氧运动\n   - 游泳 45分钟\n\n周日：休息",
+                category: "personal",
+                date: "2023-07-24"
+            }
+        ];
+
+        // DOM元素
+        const memoList = document.getElementById('memoList');
+        const addMemoBtn = document.getElementById('addMemoBtn');
+        const addMemoModal = document.getElementById('addMemoModal');
+        const closeAddModal = document.getElementById('closeAddModal');
+        const cancelAddMemo = document.getElementById('cancelAddMemo');
+        const memoForm = document.getElementById('memoForm');
+        const previewModal = document.getElementById('previewModal');
+        const closePreviewModal = document.getElementById('closePreviewModal');
+        const closePreview = document.getElementById('closePreview');
+        const searchInput = document.getElementById('searchInput');
+        const tagsContainer = document.getElementById('tagsContainer');
+        const categoryOptions = document.querySelectorAll('.category-option');
         
-        searchInput.addEventListener('input', () => {
-            const searchTerm = searchInput.value.toLowerCase();
+        // 当前选中的分类
+        let currentCategory = 'all';
+        let currentMemoId = null;
+
+        // 初始化应用
+        function initApp() {
+            renderMemos();
+            setupEventListeners();
+        }
+
+        // 渲染备忘录列表
+        function renderMemos() {
+            memoList.innerHTML = '';
             
-            memoCards.forEach(card => {
-                const title = card.querySelector('.memo-title').textContent.toLowerCase();
-                const content = card.querySelector('.memo-content').textContent.toLowerCase();
+            // 过滤备忘录
+            let filteredMemos = memos;
+            
+            // 按分类过滤
+            if (currentCategory !== 'all') {
+                filteredMemos = filteredMemos.filter(memo => memo.category === currentCategory);
+            }
+            
+            // 按搜索关键词过滤
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                filteredMemos = filteredMemos.filter(memo => 
+                    memo.title.toLowerCase().includes(searchTerm) || 
+                    memo.content.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // 显示空状态
+            if (filteredMemos.length === 0) {
+                memoList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-sticky-note"></i>
+                        <h3>没有找到备忘录</h3>
+                        <p>尝试更改搜索条件或添加新备忘录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 渲染备忘录卡片
+            filteredMemos.forEach(memo => {
+                const categoryName = getCategoryName(memo.category);
+                const icon = getCategoryIcon(memo.category);
                 
-                if (title.includes(searchTerm) || content.includes(searchTerm)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
+                const memoCard = document.createElement('div');
+                memoCard.className = 'memo-card';
+                memoCard.dataset.id = memo.id;
+                memoCard.innerHTML = `
+                    <div class="memo-header">
+                        <div class="memo-title">${memo.title}</div>
+                        <div class="memo-category">${categoryName}</div>
+                    </div>
+                    <div class="memo-content">${memo.content}</div>
+                    <div class="memo-footer">
+                        <div class="memo-date"><i class="far fa-clock"></i> ${memo.date}</div>
+                        <div class="memo-actions">
+                            <i class="fas fa-eye view-btn"></i>
+                            <i class="fas fa-trash-alt delete-btn"></i>
+                        </div>
+                    </div>
+                `;
+                memoList.appendChild(memoCard);
+            });
+        }
+
+        // 获取分类名称
+        function getCategoryName(category) {
+            const names = {
+                'work': '工作',
+                'shopping': '购物',
+                'ideas': '想法',
+                'study': '学习',
+                'personal': '个人'
+            };
+            return names[category] || '其他';
+        }
+
+        // 获取分类图标
+        function getCategoryIcon(category) {
+            const icons = {
+                'work': 'fa-briefcase',
+                'shopping': 'fa-shopping-cart',
+                'ideas': 'fa-lightbulb',
+                'study': 'fa-book',
+                'personal': 'fa-heart'
+            };
+            return icons[category] || 'fa-star';
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 添加备忘录按钮
+            addMemoBtn.addEventListener('click', () => {
+                addMemoModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // 关闭添加模态框
+            closeAddModal.addEventListener('click', closeAddModalFunc);
+            cancelAddMemo.addEventListener('click', closeAddModalFunc);
+            
+            // 关闭预览模态框
+            closePreviewModal.addEventListener('click', closePreviewModalFunc);
+            closePreview.addEventListener('click', closePreviewModalFunc);
+            
+            // 提交备忘录表单
+            memoForm.addEventListener('submit', addNewMemo);
+            
+            // 搜索功能
+            searchInput.addEventListener('input', renderMemos);
+            
+            // 分类标签
+            tagsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('tag')) {
+                    // 更新活动标签
+                    document.querySelectorAll('.tag').forEach(tag => {
+                        tag.classList.remove('active');
+                    });
+                    e.target.classList.add('active');
+                    
+                    // 更新当前分类
+                    currentCategory = e.target.dataset.category;
+                    renderMemos();
                 }
             });
-        });
-        
-        // 标签分类功能
-        const tags = document.querySelectorAll('.tag');
-        
-        tags.forEach(tag => {
-            tag.addEventListener('click', () => {
-                // 移除所有标签的active类
-                tags.forEach(t => t.classList.remove('active'));
-                // 给当前点击的标签添加active类
-                tag.classList.add('active');
-                
-                const category = tag.textContent.trim();
-                
-                memoCards.forEach(card => {
-                    const cardCategory = card.querySelector('.memo-category').textContent;
-                    
-                    if (category === '全部' || cardCategory === category) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
+            
+            // 分类选项
+            categoryOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    categoryOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
                 });
             });
-        });
-        
-        // 添加按钮效果
-        const addBtn = document.querySelector('.add-btn');
-        
-        addBtn.addEventListener('click', () => {
-            alert('添加新备忘录功能');
-        });
-        
-        // 卡片悬停效果增强
-        memoCards.forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                card.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.2)';
+            
+            // 备忘录卡片事件委托
+            memoList.addEventListener('click', (e) => {
+                const memoCard = e.target.closest('.memo-card');
+                if (!memoCard) return;
+                
+                const memoId = parseInt(memoCard.dataset.id);
+                const memo = memos.find(m => m.id === memoId);
+                
+                if (!memo) return;
+                
+                if (e.target.classList.contains('view-btn') || 
+                    e.target.classList.contains('memo-title') || 
+                    e.target.classList.contains('memo-content')) {
+                    showPreview(memo);
+                }
+                
+                if (e.target.classList.contains('delete-btn')) {
+                    deleteMemo(memoId);
+                }
             });
             
-            card.addEventListener('mouseleave', () => {
-                card.style.boxShadow = 'none';
+            // 编辑按钮
+            document.getElementById('editMemo').addEventListener('click', () => {
+                closePreviewModalFunc();
+                // 在实际应用中，这里会打开编辑模态框
+                alert('编辑功能将在实际应用中实现');
             });
-        });
+        }
+
+        // 显示预览
+        function showPreview(memo) {
+            const categoryName = getCategoryName(memo.category);
+            const icon = getCategoryIcon(memo.category);
+            
+            document.getElementById('previewTitle').textContent = memo.title;
+            document.getElementById('previewContent').textContent = memo.content;
+            document.getElementById('previewCategory').innerHTML = `<i class="fas ${icon}"></i> ${categoryName}`;
+            document.getElementById('previewDate').innerHTML = `<i class="far fa-clock"></i> 创建于 ${memo.date}`;
+            
+            previewModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            currentMemoId = memo.id;
+        }
+
+        // 添加新备忘录
+        function addNewMemo(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('memoTitle').value;
+            const content = document.getElementById('memoContent').value;
+            const activeCategory = document.querySelector('.category-option.active');
+            const category = activeCategory ? activeCategory.dataset.category : 'ideas';
+            
+            if (!title.trim() || !content.trim()) {
+                alert('标题和内容不能为空');
+                return;
+            }
+            
+            // 创建新备忘录对象
+            const newMemo = {
+                id: memos.length > 0 ? Math.max(...memos.map(m => m.id)) + 1 : 1,
+                title: title,
+                content: content,
+                category: category,
+                date: new Date().toISOString().split('T')[0] // YYYY-MM-DD格式
+            };
+            
+            // 添加到备忘录数组
+            memos.unshift(newMemo);
+            
+            // 重置表单
+            memoForm.reset();
+            
+            // 关闭模态框
+            closeAddModalFunc();
+            
+            // 重新渲染列表
+            renderMemos();
+        }
+
+        // 删除备忘录
+        function deleteMemo(id) {
+            if (confirm('确定要删除这个备忘录吗？')) {
+                memos = memos.filter(memo => memo.id !== id);
+                renderMemos();
+            }
+        }
+
+        // 关闭添加模态框
+        function closeAddModalFunc() {
+            addMemoModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // 关闭预览模态框
+        function closePreviewModalFunc() {
+            previewModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentMemoId = null;
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
