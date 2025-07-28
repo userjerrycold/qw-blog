@@ -243,10 +243,11 @@
             
             <div class="form-group">
               <label class="form-label">内容</label>
-              <!-- 使用ByteMD替代之前的编辑器 -->
+              <!-- 完全重构ByteMD编辑器的使用方式 -->
               <BytemdEditor
-                v-model="memoForm.content"
+                :value="memoForm.content || ''"
                 :plugins="editorPlugins"
+                @change="(v) => memoForm.content = v"
                 :upload-images="handleUploadImages"
                 placeholder="输入内容..."
                 class="form-control markdown-editor"
@@ -571,6 +572,9 @@ function editMemo(memo: Memo): void {
   isEditing.value = true;
   currentMemo.value = memo;
   
+  console.log('待编辑的备忘录:', memo);
+  console.log('备忘录内容长度:', memo.content ? memo.content.length : 0);
+  
   // 赋值到表单
   memoForm.id = memo.id;
   memoForm.title = String(memo.title || '');
@@ -579,6 +583,9 @@ function editMemo(memo: Memo): void {
   memoForm.isTodo = memo.isTodo;
   memoForm.dueDate = memo.dueDate || null;
   memoForm.completed = memo.completed || false;
+  
+  console.log('表单赋值后内容:', memoForm.content);
+  console.log('表单赋值后内容长度:', memoForm.content ? memoForm.content.length : 0);
   
   showEditModal.value = true;
   showViewModal.value = false; // 关闭查看模态框
@@ -680,6 +687,10 @@ async function saveMemo(): Promise<void> {
     return;
   }
   
+  // 调试日志，检查内容
+  console.log('即将保存的表单数据:', {...memoForm});
+  console.log('内容长度:', memoForm.content ? memoForm.content.length : 0);
+  
   isLoading.value = true;
   
   try {
@@ -694,6 +705,8 @@ async function saveMemo(): Promise<void> {
         dueDate: memoForm.dueDate ? formatDateForBackend(memoForm.dueDate) : undefined,
         completed: memoForm.completed
       };
+      
+      console.log('发送更新请求的参数:', updateParams);
       
       const response = await updateMemo(updateParams);
       if (response.data.code === 200 && response.data.data) {
@@ -713,6 +726,8 @@ async function saveMemo(): Promise<void> {
         dueDate: memoForm.dueDate ? formatDateForBackend(memoForm.dueDate) : undefined,
         author: username.value
       };
+      
+      console.log('发送创建请求的参数:', createParams);
       
       const response = await createMemo(createParams);
       if (response.data.code === 200) {
