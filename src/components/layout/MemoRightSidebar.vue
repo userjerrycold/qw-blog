@@ -335,7 +335,7 @@ export default {
   padding: 20px 16px 300px 0; /* 大幅增加底部内边距，确保可以滚动到底部 */
   height: auto;
   min-height: 100%;
-  width: 100%;
+  overflow-x: hidden; /* 防止水平滚动 */
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -355,6 +355,8 @@ export default {
   padding: 0;
   box-shadow: none;
   border: none;
+  max-width: 100%; /* 限制最大宽度 */
+  box-sizing: border-box;
 }
 
 .section-title {
@@ -445,6 +447,9 @@ export default {
     0 1px 3px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.7);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .progress-stats {
@@ -515,6 +520,9 @@ export default {
     0 1px 3px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.7);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .tag-stat-item {
@@ -587,6 +595,9 @@ export default {
     0 1px 3px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.7);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden; /* 防止日历内容溢出 */
 }
 
 .calendar-header {
