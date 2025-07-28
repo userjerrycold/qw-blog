@@ -25,6 +25,7 @@
                     type="text" 
                     placeholder="搜索备忘录..." 
                     class="search-input"
+                    @keyup.enter="handleSearch"
                   />
                 </div>
               </div>
@@ -164,9 +165,6 @@
         <div class="modal-inner">
           <div class="modal-header">
             <div class="modal-title">
-              <div v-if="currentMemo" class="view-tag">
-                <i :class="getTagIcon(currentMemo.tagCode)"></i> {{ currentMemo ? getTagName(currentMemo.tagCode) : '' }}
-              </div>
               <span>{{ currentMemo ? currentMemo.title : '' }}</span>
             </div>
             <n-button quaternary circle class="close-btn" @click="showViewModal = false">
@@ -179,6 +177,21 @@
           </div>
           
           <div class="modal-content">
+            <div class="memo-view-meta-info">
+              <div v-if="currentMemo" class="view-tag">
+                <i :class="getTagIcon(currentMemo.tagCode)"></i> {{ currentMemo ? getTagName(currentMemo.tagCode) : '' }}
+              </div>
+              <div class="memo-view-meta">
+                <div>创建于: {{ currentMemo ? formatFullDate(currentMemo.createdAt) : '' }}</div>
+              </div>
+            </div>
+
+            <div class="memo-view-content">
+              <!-- 使用简单的pre替代v-md-editor，解决预览问题 -->
+              <pre v-if="currentMemo" class="content-preview">{{ currentMemo.content }}</pre>
+            </div>
+            
+            <!-- 将待办状态区域移到内容框下方 -->
             <div v-if="currentMemo && currentMemo.isTodo" class="todo-status-view" :class="{'completed': currentMemo.completed}">
               <div class="todo-checkbox" @click="toggleViewTodoStatus">
                 <svg v-if="currentMemo.completed" width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -191,17 +204,11 @@
                 <span v-if="isOverdue(currentMemo.dueDate)" class="overdue-label">已过期</span>
               </div>
             </div>
-            
-            <div class="memo-view-content">{{ currentMemo ? currentMemo.content : '' }}</div>
-            
-            <div class="memo-view-meta">
-              <div>创建于: {{ currentMemo ? formatFullDate(currentMemo.createdAt) : '' }}</div>
-            </div>
           </div>
           
           <div class="modal-footer">
             <n-button class="cancel-button" @click="editCurrentMemo">编辑</n-button>
-            <n-button type="primary" class="save-button" @click="showViewModal = false">关闭</n-button>
+            <n-button type="primary" class="save-button" @click="closeViewModal">关闭</n-button>
           </div>
         </div>
       </div>
@@ -226,22 +233,25 @@
             <div class="form-group">
               <label class="form-label">标题</label>
               <n-input 
-                v-model="memoForm.title" 
+                :value="memoForm.title" 
                 placeholder="输入标题"
-                class="form-control" 
+                class="form-control"
+                @update:value="(value) => { memoForm.title = value }"
+                clearable
               />
             </div>
             
             <div class="form-group">
               <label class="form-label">内容</label>
-              <v-md-editor
+              <MdEditor
                 v-model="memoForm.content"
-                height="220px"
-                :toolbar="customToolbar"
-                :disabled-menus="[]"
-                mode="edit"
+                style="height: 220px"
+                :toolbars="customToolbar"
+                :preview="false"
+                theme="light"
                 class="form-control markdown-editor"
                 placeholder="输入内容..."
+                @onChange="handleMdEditorChange"
               />
             </div>
             
@@ -257,14 +267,24 @@
             <div class="form-group">
               <div class="todo-switch">
                 <label class="form-label">待办事项</label>
-                <n-switch v-model="memoForm.isTodo" />
+                <n-switch 
+                  :value="memoForm.isTodo"
+                  @update:value="(value) => { 
+                    memoForm.isTodo = value;
+                    console.log('待办状态更改为:', value);
+                    // 如果变为非待办，清空截止日期
+                    if (!value) {
+                      memoForm.dueDate = null;
+                    }
+                  }"
+                />
               </div>
               <div v-if="memoForm.isTodo" class="due-date-group">
-                <label class="form-label">截止日期</label>
+                <label class="form-label">截止日期 <span class="required">*</span></label>
                 <n-date-picker
-                  v-model="memoForm.dueDate"
+                  :value="memoForm.dueDate"
+                  @update:value="(value) => memoForm.dueDate = value"
                   type="date"
-                  clearable
                   class="due-date-picker"
                   :is-date-disabled="isDateDisabled"
                 />
@@ -320,26 +340,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, h } from 'vue'
+import { ref, computed, reactive, onMounted, h, nextTick } from 'vue'
 import { NTag, NButton, NModal, NInput, NSelect, NSpace, NMessageProvider, useMessage, NSpin, NIcon, NSwitch, NDatePicker } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import MemoRightSidebar from '@/components/layout/MemoRightSidebar.vue'
-import VMdEditor from '@kangc/v-md-editor';
-import '@kangc/v-md-editor/lib/style/base-editor.css';
-import githubTheme from '@kangc/v-md-editor/lib/theme/github.js';
-import '@kangc/v-md-editor/lib/theme/style/github.css';
-// import createToolbar from '@kangc/v-md-editor/lib/plugins/toolbar/index';
-// import '@kangc/v-md-editor/lib/plugins/toolbar/toolbar.css';
+// 替换Markdown编辑器导入 - 使用命名导入而非默认导入
+import { MdEditor } from 'md-editor-v3';
+import 'md-editor-v3/lib/style.css';
+// 导入highlight.js
+import hljs from 'highlight.js';
+// 导入常用语言
+import 'highlight.js/lib/languages/javascript';
+import 'highlight.js/lib/languages/java';
+import 'highlight.js/lib/languages/python';
+import 'highlight.js/lib/languages/sql';
+import 'highlight.js/lib/languages/json';
+import 'highlight.js/lib/languages/markdown';
+import 'highlight.js/lib/languages/bash';
+import 'highlight.js/lib/languages/css';
+import 'highlight.js/styles/github.css'; // 添加highlight.js的样式
+import { searchMemos, createMemo, updateMemo, deleteMemo, toggleMemoStatus, getMemoStatistics, 
+         Memo as ApiMemo, MemoSearchParams, MemoCreateParams, MemoUpdateParams } from '@/services/api';
 
-VMdEditor.use(githubTheme);
-// VMdEditor.use(createToolbar());
-
-// 自定义极简工具栏
+// 新的工具栏配置
 const customToolbar = [
-  'bold', 'italic', '|',
-  'unorderedList', 'orderedList', '|',
-  'undo', 'redo'
+  'bold',
+  'italic',
+  'strikethrough',
+  '-',
+  'title',
+  'quote',
+  'unorderedList',
+  'orderedList',
+  '-',
+  'codeRow',
+  'code',
+  'link',
+  'image',
+  '-',
+  'undo',
+  'redo',
 ];
+
+// 处理Markdown编辑器内容变化
+function handleMdEditorChange(content: string) {
+  memoForm.content = content;
+}
 
 // 创建全局message实例
 const message = useMessage();
@@ -350,9 +396,9 @@ interface Memo {
   title: string;
   content: string;
   tagCode: number;
-  createdAt: number;
+  createdAt: number; // 前端使用时间戳
   isTodo: boolean;
-  dueDate?: number | null;
+  dueDate?: number | null; // 前端使用时间戳
   completed?: boolean;
 }
 
@@ -391,6 +437,10 @@ const currentMemo = ref<Memo | null>(null);
 const MessageConsumer = h('div');
 const messageRef = ref(null);
 const isLoading = ref(false);
+const currentPage = ref(1);
+const pageSize = ref(20);
+const totalItems = ref(0);
+const username = ref('qianhu'); // 当前用户名，实际项目中可能从用户状态或配置中获取
 
 // 备忘录表单数据
 const memoForm = reactive({
@@ -413,142 +463,55 @@ const tagOptions = computed(() => {
     }));
 });
 
-// 备忘录数据 - 模拟数据，实际项目中应该从API获取
-const memos = ref<Memo[]>([
-  {
-    id: 1,
-    title: '完成Vue项目开发',
-    content: '需要实现备忘录功能，包括添加、编辑和删除备忘录等功能。实现标签筛选、搜索和按日期排序等高级功能。',
-    tagCode: 1,
-    createdAt: Date.now(), // 今天
-    isTodo: true,
-    dueDate: Date.now() + 86400000,
-    completed: false
-  },
-  {
-    id: 2,
-    title: '学习TypeScript高级特性',
-    content: '学习泛型、类型推断、类型守卫等高级特性，提升代码类型安全性。阅读官方文档并完成相关练习。',
-    tagCode: 2,
-    createdAt: Date.now() - 1800000, // 今天，半小时前
-    isTodo: false,
-    completed: false
-  },
-  {
-    id: 3,
-    title: '购物清单',
-    content: '牛奶、面包、鸡蛋、蔬菜、水果、咖啡豆、洗衣液、牙膏、洗发水',
-    tagCode: 3,
-    createdAt: Date.now() - 172800000, // 2天前
-    isTodo: true,
-    dueDate: Date.now() + 172800000,
-    completed: true
-  },
-  {
-    id: 4,
-    title: '阅读《设计模式》',
-    content: '学习常用设计模式，包括单例模式、工厂模式、观察者模式等。注重理解每种模式的适用场景和实现方式。',
-    tagCode: 2,
-    createdAt: Date.now() - 259200000, // 3天前
-    isTodo: false,
-    completed: false
-  },
-  {
-    id: 5,
-    title: '每周健身计划',
-    content: '周一：上肢\n周三：下肢\n周五：核心\n周日：有氧',
-    tagCode: 3,
-    createdAt: Date.now() - 432000000, // 5天前
-    isTodo: true,
-    dueDate: Date.now() + 259200000,
-    completed: false
-  },
-  {
-    id: 6,
-    title: '新产品创意brainstorm',
-    content: '针对年轻用户群体，设计一款更加用户友好的社交应用，关注隐私保护和个性化推荐。考虑AR/VR集成的可能性。',
-    tagCode: 1,
-    createdAt: Date.now(), // 今天
-    isTodo: false,
-    completed: false
-  },
-  {
-    id: 7,
-    title: 'React vs Vue对比分析',
-    content: '比较两个框架的优缺点、生态系统、性能和开发体验。整理成技术博客分享给团队成员。重点关注Hooks和Composition API。',
-    tagCode: 2,
-    createdAt: Date.now() - 86400000, // 1天前
-    isTodo: false,
-    completed: false
-  },
-  {
-    id: 8,
-    title: '旅行计划 - 日本',
-    content: '研究东京、京都、大阪的景点和美食。预订机票和住宿。准备行程安排和预算规划。了解当地文化和礼仪。',
-    tagCode: 3,
-    createdAt: Date.now() - 345600000, // 4天前
-    isTodo: true,
-    dueDate: Date.now() + 2592000000, // 30天后
-    completed: false
-  },
-  {
-    id: 9,
-    title: '团队会议安排',
-    content: '讨论项目进度、资源分配和下一阶段计划。解决团队成员遇到的技术问题。准备演示材料。',
-    tagCode: 1,
-    createdAt: Date.now(), // 今天
-    isTodo: true,
-    dueDate: Date.now() + 86400000, // 明天
-    completed: false
-  },
-  {
-    id: 10,
-    title: '学习Docker容器化',
-    content: '掌握Docker基础概念、镜像构建和容器编排。尝试将现有项目容器化并部署到云服务。',
-    tagCode: 2,
-    createdAt: Date.now() - 518400000, // 6天前
-    isTodo: true,
-    dueDate: Date.now() + 604800000, // 7天后
-    completed: false
-  },
-  {
-    id: 11,
-    title: '家庭聚会准备',
-    content: '准备食物和饮料、装饰房间、制作播放列表、规划活动和游戏。联系家人确认时间。',
-    tagCode: 3,
-    createdAt: Date.now() - 1800000, // 今天，半小时前
-    isTodo: true,
-    dueDate: Date.now() + 432000000, // 5天后
-    completed: false
-  },
-  {
-    id: 12,
-    title: '创业点子记录',
-    content: '在线教育平台、健康追踪应用、远程工作协作工具、可持续发展产品。分析市场需求和竞争情况。',
-    tagCode: 4,
-    createdAt: Date.now() - 691200000, // 8天前
-    isTodo: false,
-    completed: false
+// 备忘录数据 - 从API获取
+const memos = ref<Memo[]>([]);
+
+// 构造搜索参数
+const searchParams = computed((): MemoSearchParams => {
+  return {
+    username: username.value,
+    tagCode: activeTagCode.value === 0 ? undefined : activeTagCode.value,
+    keyword: searchQuery.value ? searchQuery.value : undefined,
+    page: currentPage.value,
+    pageSize: pageSize.value
+  };
+});
+
+// 从API获取备忘录数据
+const fetchMemos = async () => {
+  isLoading.value = true;
+  try {
+    const response = await searchMemos(searchParams.value);
+    if (response.data.code === 200) {
+      // 转换API返回的数据为前端需要的格式
+      const responseData = response.data.data;
+      // 注意：实际API返回的是data.data数组而不是data.list
+      memos.value = (responseData.data || []).map(apiMemo => ({
+        id: apiMemo.id,
+        title: apiMemo.title,
+        content: apiMemo.content,
+        tagCode: apiMemo.tagCode,
+        createdAt: new Date(apiMemo.createDt).getTime(), // 转换为时间戳
+        isTodo: apiMemo.isTodo,
+        dueDate: apiMemo.dueDate ? new Date(apiMemo.dueDate).getTime() : null,
+        completed: apiMemo.completed
+      }));
+      totalItems.value = responseData.total;
+    } else {
+      message.error(`获取备忘录失败: ${response.data.msg}`);
+    }
+  } catch (error) {
+    console.error('获取备忘录错误:', error);
+    message.error('获取备忘录失败，请稍后重试');
+  } finally {
+    isLoading.value = false;
   }
-]);
+};
 
 // 本地过滤备忘录列表 - 使用计算属性实现实时过滤
 const filteredMemos = computed(() => {
-  // 1. 先根据搜索词过滤
-  const searchFiltered = searchQuery.value
-    ? memos.value.filter(memo => 
-        memo.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        memo.content.toLowerCase().includes(searchQuery.value.toLowerCase())
-      )
-    : memos.value;
-  
-  // 2. 再根据标签过滤
-  const tagFiltered = activeTagCode.value === 0
-    ? searchFiltered
-    : searchFiltered.filter(memo => memo.tagCode === activeTagCode.value);
-  
-  // 3. 按创建时间排序
-  return tagFiltered.sort((a, b) => b.createdAt - a.createdAt);
+  // 数据已在后端按条件过滤，这里仅按创建时间排序
+  return [...memos.value].sort((a, b) => b.createdAt - a.createdAt);
 });
 
 // 按时间分组的备忘录
@@ -573,6 +536,9 @@ const pastMemos = computed(() => {
 // 设置活动标签
 function setActiveTag(code: number): void {
   activeTagCode.value = code;
+  // 切换标签时重新获取数据
+  currentPage.value = 1; // 重置到第一页
+  fetchMemos();
 }
 
 // 获取标签名称
@@ -606,13 +572,16 @@ function getContentSnippet(content: string): string {
 function editMemo(memo: Memo): void {
   isEditing.value = true;
   currentMemo.value = memo;
+  
+  // 赋值到表单
   memoForm.id = memo.id;
-  memoForm.title = memo.title;
+  memoForm.title = String(memo.title || '');
   memoForm.content = memo.content;
   memoForm.tagCode = memo.tagCode;
   memoForm.isTodo = memo.isTodo;
   memoForm.dueDate = memo.dueDate || null;
   memoForm.completed = memo.completed || false;
+  
   showEditModal.value = true;
   showViewModal.value = false; // 关闭查看模态框
 }
@@ -624,13 +593,25 @@ function confirmDelete(memo: Memo): void {
 }
 
 // 删除备忘录
-function deleteMemoHandler(): void {
+async function deleteMemoHandler(): Promise<void> {
   if (currentMemo.value) {
-    // 实际项目中应该调用API删除
-    memos.value = memos.value.filter(m => m.id !== currentMemo.value!.id);
-    message.success('备忘录已删除');
-    showDeleteModal.value = false;
-    showViewModal.value = false; // 如果正在查看，也关闭查看模态框
+    isLoading.value = true;
+    try {
+      const response = await deleteMemo(currentMemo.value.id);
+      if (response.data.code === 200 && response.data.data) {
+        memos.value = memos.value.filter(m => m.id !== currentMemo.value!.id);
+        message.success('备忘录已删除');
+        showDeleteModal.value = false;
+        showViewModal.value = false; // 如果正在查看，也关闭查看模态框
+      } else {
+        message.error(`删除备忘录失败: ${response.data.msg}`);
+      }
+    } catch (error) {
+      console.error('删除备忘录错误:', error);
+      message.error('删除备忘录失败，请稍后重试');
+    } finally {
+      isLoading.value = false;
+    }
   }
 }
 
@@ -642,16 +623,28 @@ function addNewMemo(): void {
 }
 
 // 从侧边栏接收新备忘录
-function addMemo(newMemo: Omit<Memo, 'id' | 'createdAt'>): void {
-  // 实际项目中应该调用API添加
-  const memo: Memo = {
+async function addMemo(newMemo: Omit<MemoCreateParams, 'author'>): Promise<void> {
+  isLoading.value = true;
+  const params: MemoCreateParams = {
     ...newMemo,
-    id: Math.max(0, ...memos.value.map(m => m.id)) + 1,
-    createdAt: Date.now(),
+    author: username.value
   };
   
-  memos.value.unshift(memo);
-  message.success('备忘录已添加');
+  try {
+    const response = await createMemo(params);
+    if (response.data.code === 200) {
+      // 添加成功后刷新列表
+      fetchMemos();
+      message.success('备忘录已添加');
+    } else {
+      message.error(`添加备忘录失败: ${response.data.msg}`);
+    }
+  } catch (error) {
+    console.error('添加备忘录错误:', error);
+    message.error('添加备忘录失败，请稍后重试');
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 // 取消编辑
@@ -674,47 +667,88 @@ function resetForm(): void {
 }
 
 // 保存备忘录
-function saveMemo(): void {
+async function saveMemo(): Promise<void> {
   // 表单验证
-  if (!memoForm.title) {
+  const titleValue = String(memoForm.title || '');
+  
+  if (!titleValue.trim()) {
     message.error('请填写标题');
     return;
   }
   
-  if (isEditing.value && currentMemo.value) {
-    // 更新备忘录
-    const index = memos.value.findIndex(m => m.id === memoForm.id);
-    if (index !== -1) {
-      memos.value[index] = {
-        ...memos.value[index],
+  // 验证待办事项的截止日期
+  if (memoForm.isTodo && !memoForm.dueDate) {
+    message.error('待办事项的截止日期不能为空');
+    return;
+  }
+  
+  isLoading.value = true;
+  
+  try {
+    if (isEditing.value && currentMemo.value) {
+      // 更新备忘录
+      const updateParams: MemoUpdateParams = {
+        id: memoForm.id,
         title: memoForm.title,
         content: memoForm.content,
         tagCode: memoForm.tagCode,
         isTodo: memoForm.isTodo,
-        dueDate: memoForm.dueDate,
+        dueDate: memoForm.dueDate ? formatDateForBackend(memoForm.dueDate) : undefined,
         completed: memoForm.completed
       };
-      message.success('备忘录已更新');
+      
+      const response = await updateMemo(updateParams);
+      if (response.data.code === 200 && response.data.data) {
+        // 更新成功后刷新列表
+        fetchMemos();
+        message.success('备忘录已更新');
+      } else {
+        message.error(`更新备忘录失败: ${response.data.msg}`);
+      }
+    } else {
+      // 添加新备忘录
+      const createParams: MemoCreateParams = {
+        title: memoForm.title,
+        content: memoForm.content,
+        tagCode: memoForm.tagCode,
+        isTodo: memoForm.isTodo,
+        dueDate: memoForm.dueDate ? formatDateForBackend(memoForm.dueDate) : undefined,
+        author: username.value
+      };
+      
+      const response = await createMemo(createParams);
+      if (response.data.code === 200) {
+        // 添加成功后刷新列表
+        fetchMemos();
+        message.success('备忘录已添加');
+      } else {
+        message.error(`添加备忘录失败: ${response.data.msg}`);
+      }
     }
-  } else {
-    // 添加新备忘录
-    const memo: Memo = {
-      id: Math.max(0, ...memos.value.map(m => m.id)) + 1,
-      title: memoForm.title,
-      content: memoForm.content,
-      tagCode: memoForm.tagCode,
-      createdAt: Date.now(),
-      isTodo: memoForm.isTodo,
-      dueDate: memoForm.dueDate,
-      completed: false
-    };
     
-    memos.value.unshift(memo);
-    message.success('备忘录已添加');
+    showEditModal.value = false;
+    resetForm();
+  } catch (error) {
+    console.error('保存备忘录错误:', error);
+    message.error('保存备忘录失败，请稍后重试');
+  } finally {
+    isLoading.value = false;
   }
+}
+
+// 格式化日期为后端接受的格式: yyyy-MM-dd HH:mm:ss
+function formatDateForBackend(timestamp: number | null): string | undefined {
+  if (!timestamp) return undefined;
   
-  showEditModal.value = false;
-  resetForm();
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 // 获取随机颜色用于备忘录图标
@@ -812,9 +846,24 @@ function isOverdue(timestamp: number | null): boolean {
 }
 
 // 切换待办事项状态
-function toggleTodoStatus(memo: Memo): void {
-  memo.completed = !memo.completed;
-  message.success(`待办事项已${memo.completed ? '完成' : '恢复'}`);
+async function toggleTodoStatus(memo: Memo): Promise<void> {
+  isLoading.value = true;
+  try {
+    const newStatus = !memo.completed;
+    const response = await toggleMemoStatus(memo.id, newStatus);
+    
+    if (response.data.code === 200 && response.data.data) {
+      memo.completed = newStatus;
+      message.success(`待办事项已${memo.completed ? '完成' : '恢复'}`);
+    } else {
+      message.error(`更新待办状态失败: ${response.data.msg}`);
+    }
+  } catch (error) {
+    console.error('更新待办状态错误:', error);
+    message.error('更新待办状态失败，请稍后重试');
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 // 查看备忘录详情
@@ -823,11 +872,44 @@ function viewMemo(memo: Memo): void {
   showViewModal.value = true;
 }
 
+// 关闭查看模态框并刷新数据
+function closeViewModal(): void {
+  showViewModal.value = false;
+  // 如果是待办事项状态有变更，关闭时刷新数据
+  if (currentMemo.value && currentMemo.value.isTodo) {
+    fetchMemos();
+    // 更新右侧边栏统计数据
+    updateSidebarStatistics();
+  }
+}
+
 // 切换查看备忘录的待办事项状态
-function toggleViewTodoStatus(): void {
+async function toggleViewTodoStatus(): Promise<void> {
   if (currentMemo.value) {
-    currentMemo.value.completed = !currentMemo.value.completed;
-    message.success(`待办事项已${currentMemo.value.completed ? '完成' : '恢复'}`);
+    isLoading.value = true;
+    try {
+      const newStatus = !currentMemo.value.completed;
+      const response = await toggleMemoStatus(currentMemo.value.id, newStatus);
+      
+      if (response.data.code === 200 && response.data.data) {
+        currentMemo.value.completed = newStatus;
+        // 同时更新列表中的状态
+        const memoInList = memos.value.find(m => m.id === currentMemo.value!.id);
+        if (memoInList) {
+          memoInList.completed = newStatus;
+        }
+        // 立即更新右侧边栏统计数据
+        updateSidebarStatistics();
+        message.success(`待办事项已${currentMemo.value.completed ? '完成' : '恢复'}`);
+      } else {
+        message.error(`更新待办状态失败: ${response.data.msg}`);
+      }
+    } catch (error) {
+      console.error('更新待办状态错误:', error);
+      message.error('更新待办状态失败，请稍后重试');
+    } finally {
+      isLoading.value = false;
+    }
   }
 }
 
@@ -841,11 +923,11 @@ function editCurrentMemo(): void {
 // 获取标签图标
 function getTagIcon(code: number): string {
   const icons: Record<number, string> = {
-      0: 'fas fa-star',       // 所有
-  1: 'fas fa-briefcase',  // 工作
-  2: 'fas fa-book',       // 学习
-  3: 'fas fa-heart',      // 生活
-  4: 'fas fa-lightbulb',  // 其他
+    0: 'fas fa-star',       // 所有
+    1: 'fas fa-briefcase',  // 工作
+    2: 'fas fa-book',       // 学习
+    3: 'fas fa-heart',      // 生活
+    4: 'fas fa-lightbulb',  // 其他
   };
   
   return icons[code] || 'fas fa-tag';
@@ -875,10 +957,38 @@ const isDateDisabled = (timestamp: number): boolean => {
   return timestamp < Date.now() - 86400000;
 };
 
+// 搜索处理函数
+function handleSearch(): void {
+  currentPage.value = 1; // 重置到第一页
+  fetchMemos();
+}
+
+// 监听搜索框回车事件
+function handleSearchKeyUp(e: KeyboardEvent): void {
+  if (e.key === 'Enter') {
+    handleSearch();
+  }
+}
+
 // 初始化
 onMounted(() => {
-  // 实际项目中应该从API获取备忘录数据
+  // 从API获取备忘录数据
+  fetchMemos();
 });
+
+// 更新右侧边栏的统计数据
+function updateSidebarStatistics() {
+  // 获取MemoRightSidebar组件实例
+  const sidebarComponent = document.querySelector('memo-right-sidebar');
+  if (sidebarComponent) {
+    // 获取组件实例并调用其刷新方法
+    nextTick(() => {
+      // 触发一个自定义事件通知右侧边栏更新数据
+      const event = new CustomEvent('update-statistics', { detail: { memos: memos.value } });
+      sidebarComponent.dispatchEvent(event);
+    });
+  }
+}
 </script>
 
 <style scoped>
@@ -1456,6 +1566,12 @@ onMounted(() => {
   gap: 8px;
 }
 
+.required {
+  color: #f56c6c;
+  margin-left: 2px;
+  font-weight: bold;
+}
+
 .memo-modal .close-btn {
   margin-right: -8px;
   color: #999;
@@ -1501,6 +1617,8 @@ onMounted(() => {
   gap: 12px;
 }
 
+
+
 .memo-modal .cancel-button {
   min-width: 80px;
   color: #333 !important;
@@ -1538,7 +1656,15 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-right: 12px;
+}
+
+.memo-view-meta-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .memo-modal .todo-status-view {
@@ -1548,7 +1674,7 @@ onMounted(() => {
   padding: 14px 18px;
   background: #f9fafb;
   border-radius: 12px;
-  margin-bottom: 0;
+  margin-bottom: 16px;
   border: 1px solid #e5e7eb;
 }
 
@@ -1573,23 +1699,51 @@ onMounted(() => {
 }
 
 .memo-modal .memo-view-content {
-  padding: 20px;
+  padding: 0;
   background: #f9fafb;
   border-radius: 12px;
-  font-size: 15px;
-  line-height: 1.8;
-  color: #4b5563;
-  min-height: 300px;
-  max-height: 500px;
+  min-height: 200px; /* 减小最小高度 */
+  max-height: 400px; /* 减小最大高度 */
   overflow-y: auto;
-  white-space: pre-wrap;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px; /* 添加下边距，与下方的待办状态区域分开 */
 }
 
 .memo-modal .memo-view-meta {
   font-size: 13px;
   color: #6b7280;
-  margin-top: 16px;
+}
+
+/* 简单的内容预览样式 */
+.content-preview {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4b5563;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 20px;
+  margin: 0;
+  background: transparent;
+  border: none;
+}
+
+.content-preview code {
+  background-color: #f6f8fa;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 85%;
+}
+
+.content-preview pre code {
+  display: block;
+  padding: 16px;
+  overflow-x: auto;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  margin: 12px 0;
 }
 
 /* 编辑弹窗特有样式 */
@@ -1703,7 +1857,7 @@ onMounted(() => {
 }
 
 /* 强制设置markdown编辑器宽度 */
-.memo-modal :deep(.v-md-editor) {
+.memo-modal :deep(.md-editor) {
   width: 100% !important;
 }
 
@@ -1780,5 +1934,71 @@ onMounted(() => {
     width: 100%;
     padding: 12px;
   }
+}
+
+/* 修改markdown编辑器的样式 */
+.form-control.markdown-editor {
+  height: 220px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+:deep(.md-editor) {
+  border-radius: 8px !important;
+  overflow: hidden;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:deep(.md-editor-toolbar) {
+  background-color: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+:deep(.md-editor-content) {
+  background-color: #fff !important;
+}
+
+/* 隐藏预览按钮 */
+:deep(.md-editor-toolbar-item:has(svg.md-icon-preview)) {
+  display: none;
+}
+
+/* 移除原来v-md-editor的样式 */
+:deep(.v-md-editor .v-md-editor__preview) {
+  display: none !important;
+}
+
+:deep(.v-md-editor .v-md-editor__editor) {
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  border-right: none !important;
+}
+
+:deep(.v-md-editor) {
+  border-radius: 12px !important;
+  overflow: hidden;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+:deep(.v-md-editor .v-md-editor__toolbar) {
+  border-bottom: 1px solid #e5e7eb !important;
+  background: #f9fafb !important;
+  padding: 8px !important;
+}
+
+:deep(.v-md-editor .v-md-editor__edit-content) {
+  background: #ffffff !important;
+  color: #4b5563 !important;
+  padding: 16px !important;
+  font-size: 15px !important;
+}
+
+/* 强制设置markdown编辑器宽度 */
+:deep(.md-editor) {
+  width: 100% !important;
 }
 </style> 

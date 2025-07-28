@@ -48,6 +48,74 @@ export interface Pagination<T> {
   pageSize: number
 }
 
+// 备忘录接口类型
+export interface Memo {
+  id: number;
+  title: string;
+  content: string;
+  tagCode: number;
+  tagName?: string;
+  isTodo: boolean;
+  dueDate: string | null;
+  completed: boolean;
+  author: string;
+  createDt: string;
+  updateDt: string;
+}
+
+// 备忘录搜索参数
+export interface MemoSearchParams {
+  username: string;
+  tagCode?: number;
+  keyword?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+// 备忘录创建参数
+export interface MemoCreateParams {
+  title: string;
+  content?: string;
+  tagCode: number;
+  isTodo: boolean;
+  dueDate?: string;
+  author: string;
+}
+
+// 备忘录更新参数
+export interface MemoUpdateParams {
+  id: number;
+  title: string;
+  content?: string;
+  tagCode: number;
+  isTodo: boolean;
+  dueDate?: string;
+  completed?: boolean;
+}
+
+// 标签统计接口
+export interface TagStat {
+  tagCode: number;
+  tagName: string;
+  count: number;
+}
+
+// 日期统计接口
+export interface DateStat {
+  date: string;
+  count: number;
+}
+
+// 备忘录统计响应接口
+export interface MemoStatistics {
+  total: number;
+  todoCount: number;
+  completedCount: number;
+  todayTodoCount: number;
+  tagDistribution: TagStat[];
+  dueDateDistribution: DateStat[];
+}
+
 export function fetchPosts(params: { page?: number; pageSize?: number; tag?: string }) {
   return http.get<Pagination<Post>>('/posts', { params })
 }
@@ -90,6 +158,48 @@ export function deleteDocument(id: number) {
     username: 'qianhu',
     id: id
   })
+}
+
+// 备忘录API
+// 搜索备忘录
+export function searchMemos(params: MemoSearchParams) {
+  return http.post<ApiResponse<{
+    code: number;
+    data: Memo[];
+    msg: string;
+    page: number;
+    size: number;
+    total: number;
+  }>>('/memo/search', params);
+}
+
+// 创建备忘录
+export function createMemo(params: MemoCreateParams) {
+  return http.post<ApiResponse<{ id: number }>>('/memo/create', params);
+}
+
+// 更新备忘录
+export function updateMemo(params: MemoUpdateParams) {
+  return http.post<ApiResponse<boolean>>('/memo/update', params);
+}
+
+// 删除备忘录
+export function deleteMemo(id: number) {
+  return http.post<ApiResponse<boolean>>('/memo/delete', { id });
+}
+
+// 获取备忘录统计
+export function getMemoStatistics(username: string) {
+  return http.post<ApiResponse<{
+    code: number;
+    data: MemoStatistics;
+    msg: string;
+  }>>('/memo/statistics', { username });
+}
+
+// 切换待办状态
+export function toggleMemoStatus(id: number, completed: boolean) {
+  return http.post<ApiResponse<boolean>>('/memo/toggleStatus', { id, completed });
 }
 
 export default http 

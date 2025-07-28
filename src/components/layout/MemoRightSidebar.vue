@@ -116,7 +116,9 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, computed, defineEmits, withDefaults, ref } from 'vue';
+import { defineProps, computed, defineEmits, withDefaults, ref, onMounted, watch, onUnmounted } from 'vue';
+import { getMemoStatistics, MemoStatistics, TagStat, DateStat, MemoCreateParams } from '@/services/api';
+import { useMessage } from 'naive-ui';
 
 interface Memo {
   id: number;
@@ -149,8 +151,94 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  (e: 'add-memo', memo: Omit<Memo, 'id' | 'createdAt'>): void;
+  (e: 'add-memo', memo: Omit<MemoCreateParams, 'author'>): void;
 }>();
+
+// 创建全局message实例
+const message = useMessage();
+
+// 统计数据
+const statistics = ref<MemoStatistics | null>(null);
+const isLoading = ref(false);
+const username = ref('qianhu'); // 当前用户名，实际项目中可能从用户状态或配置中获取
+
+// 获取统计数据
+async function fetchStatistics() {
+  isLoading.value = true;
+  try {
+    // 直接使用本地计算统计数据，避免后端API错误
+    useLocalStatistics();
+    
+    // 注释掉可能出错的后端API调用
+    /* 
+    const response = await getMemoStatistics(username.value);
+    if (response.data.code === 200) {
+      try {
+        // 处理嵌套的data结构
+        statistics.value = response.data.data.data || response.data.data;
+      } catch (parseError) {
+        console.error('解析统计数据错误:', parseError);
+        // 使用本地计算的统计数据
+        useLocalStatistics();
+      }
+    } else {
+      console.warn(`获取统计信息失败: ${response.data.msg}`);
+      // 使用本地计算的统计数据
+      useLocalStatistics();
+    }
+    */
+  } catch (error) {
+    console.error('获取统计信息错误:', error);
+    // 使用本地计算的统计数据
+    useLocalStatistics();
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// 使用本地数据计算统计信息
+function useLocalStatistics() {
+  const allMemos = props.memos;
+  const todoMemos = allMemos.filter(memo => memo.isTodo);
+  const completedMemos = todoMemos.filter(memo => memo.completed);
+  
+  // 计算今日待办
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTimestamp = today.getTime();
+  const tomorrow = new Date(todayTimestamp + 24 * 60 * 60 * 1000).getTime();
+  
+  const todayTodos = todoMemos.filter(memo => 
+    !memo.completed && 
+    memo.dueDate && 
+    memo.dueDate >= todayTimestamp && 
+    memo.dueDate < tomorrow
+  );
+  
+  // 计算标签分布
+  const tagDistribution: TagStat[] = [];
+  memoTags.forEach(tag => {
+    const count = allMemos.filter(memo => memo.tagCode === tag.code).length;
+    tagDistribution.push({
+      tagCode: tag.code,
+      tagName: tag.name,
+      count
+    });
+  });
+  
+  // 生成日期分布（简化版）
+  const dueDateDistribution: DateStat[] = [];
+  
+  // 设置统计数据
+  statistics.value = {
+    total: allMemos.length,
+    todoCount: todoMemos.length,
+    completedCount: completedMemos.length,
+    todayTodoCount: todayTodos.length,
+    tagDistribution,
+    dueDateDistribution
+  };
+}
 
 // 备忘录类型枚举
 const MemoTypeEnum: Record<string, TagType> = {
@@ -170,10 +258,18 @@ const memoTags: TagType[] = [
 
 // 待办事项统计
 const allTodoCount = computed(() => {
+  if (statistics.value) {
+    return statistics.value.todoCount - statistics.value.completedCount;
+  }
+  // 回退到本地计算
   return props.memos.filter(memo => memo.isTodo && !memo.completed).length;
 });
 
 const todayTodoCount = computed(() => {
+  if (statistics.value) {
+    return statistics.value.todayTodoCount;
+  }
+  // 回退到本地计算
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayTimestamp = today.getTime();
@@ -189,10 +285,18 @@ const todayTodoCount = computed(() => {
 });
 
 const completedCount = computed(() => {
+  if (statistics.value) {
+    return statistics.value.completedCount;
+  }
+  // 回退到本地计算
   return props.memos.filter(memo => memo.isTodo && memo.completed).length;
 });
 
 const totalTodoCount = computed(() => {
+  if (statistics.value) {
+    return statistics.value.todoCount;
+  }
+  // 回退到本地计算
   return props.memos.filter(memo => memo.isTodo).length;
 });
 
@@ -209,11 +313,19 @@ function getTagName(code: number): string {
 
 // 获取标签数量
 function getTagCount(code: number): number {
+  if (statistics.value && statistics.value.tagDistribution) {
+    const tagStat = statistics.value.tagDistribution.find(t => t.tagCode === code);
+    return tagStat ? tagStat.count : 0;
+  }
+  // 回退到本地计算
   return props.memos.filter(memo => memo.tagCode === code).length;
 }
 
 // 获取标签百分比
 function getTagPercentage(code: number): number {
+  if (statistics.value && statistics.value.total > 0) {
+    return Math.round((getTagCount(code) / statistics.value.total) * 100);
+  }
   if (props.memos.length === 0) return 0;
   return Math.round((getTagCount(code) / props.memos.length) * 100);
 }
@@ -269,13 +381,21 @@ const calendarDays = computed(() => {
     const dateTimestamp = date.getTime();
     const nextDayTimestamp = dateTimestamp + 24 * 60 * 60 * 1000;
     
-    // 检查这一天是否有待办事项
-    const hasTodos = props.memos.some(memo => 
+    let hasTodos = false;
+    // 如果有日期分布数据则使用API数据，否则使用本地数据
+    if (statistics.value && statistics.value.dueDateDistribution) {
+      const dateStr = new Date(dateTimestamp).toISOString().split('T')[0];
+      const dateStat = statistics.value.dueDateDistribution.find(d => d.date === dateStr);
+      hasTodos = !!dateStat && dateStat.count > 0;
+    } else {
+      // 使用本地数据
+      hasTodos = props.memos.some(memo => 
       memo.isTodo && 
       memo.dueDate && 
       memo.dueDate >= dateTimestamp && 
       memo.dueDate < nextDayTimestamp
     );
+    }
     
     days.push({
       date: dateTimestamp,
@@ -307,17 +427,57 @@ const quickAddTitle = ref('');
 function quickAddMemo() {
   if (!quickAddTitle.value.trim()) return;
   
+  // 设置默认截止日期为今天
+  const today = new Date();
+  
   const newMemo = {
     title: quickAddTitle.value.trim(),
     content: '',
     tagCode: 1, // 默认工作分类
     isTodo: true, // 默认为待办事项
-    dueDate: null,
+    dueDate: formatDateForBackend(today), // 使用格式化函数
     completed: false
   };
   
   emit('add-memo', newMemo);
   quickAddTitle.value = '';
+}
+
+// 格式化日期为后端接受的格式: yyyy-MM-dd HH:mm:ss
+function formatDateForBackend(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// 监听备忘录变化，重新获取统计数据
+watch(() => props.memos.length, () => {
+  fetchStatistics();
+});
+
+// 初始化
+onMounted(() => {
+  fetchStatistics();
+  
+  // 添加事件监听，监听主页面发出的更新统计请求
+  document.addEventListener('update-statistics', handleUpdateStatistics as EventListener);
+});
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  document.removeEventListener('update-statistics', handleUpdateStatistics as EventListener);
+});
+
+// 处理更新统计信息的事件
+function handleUpdateStatistics(event: CustomEvent) {
+  console.log('收到更新统计数据请求');
+  // 重新获取统计数据
+  fetchStatistics();
 }
 </script>
 
