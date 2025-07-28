@@ -187,8 +187,8 @@
             </div>
 
             <div class="memo-view-content">
-              <!-- 使用简单的pre替代v-md-editor，解决预览问题 -->
-              <pre v-if="currentMemo" class="content-preview">{{ currentMemo.content }}</pre>
+              <!-- 使用ByteMD渲染Markdown内容 -->
+              <BytemdViewer v-if="currentMemo" :value="currentMemo.content" :plugins="viewerPlugins" />
             </div>
             
             <!-- 将待办状态区域移到内容框下方 -->
@@ -243,15 +243,13 @@
             
             <div class="form-group">
               <label class="form-label">内容</label>
-              <MdEditor
+              <!-- 使用ByteMD替代之前的编辑器 -->
+              <BytemdEditor
                 v-model="memoForm.content"
-                style="height: 220px"
-                :toolbars="customToolbar"
-                :preview="false"
-                theme="light"
-                class="form-control markdown-editor"
+                :plugins="editorPlugins"
+                :upload-images="handleUploadImages"
                 placeholder="输入内容..."
-                @onChange="handleMdEditorChange"
+                class="form-control markdown-editor"
               />
             </div>
             
@@ -344,47 +342,47 @@ import { ref, computed, reactive, onMounted, h, nextTick } from 'vue'
 import { NTag, NButton, NModal, NInput, NSelect, NSpace, NMessageProvider, useMessage, NSpin, NIcon, NSwitch, NDatePicker } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import MemoRightSidebar from '@/components/layout/MemoRightSidebar.vue'
-// 替换Markdown编辑器导入 - 使用命名导入而非默认导入
-import { MdEditor } from 'md-editor-v3';
-import 'md-editor-v3/lib/style.css';
-// 导入highlight.js
-import hljs from 'highlight.js';
-// 导入常用语言
-import 'highlight.js/lib/languages/javascript';
-import 'highlight.js/lib/languages/java';
-import 'highlight.js/lib/languages/python';
-import 'highlight.js/lib/languages/sql';
-import 'highlight.js/lib/languages/json';
-import 'highlight.js/lib/languages/markdown';
-import 'highlight.js/lib/languages/bash';
-import 'highlight.js/lib/languages/css';
-import 'highlight.js/styles/github.css'; // 添加highlight.js的样式
+
+// 导入ByteMD编辑器和相关插件
+import { Editor as BytemdEditor, Viewer as BytemdViewer } from '@bytemd/vue-next'
+import 'bytemd/dist/index.css'
+import gfm from '@bytemd/plugin-gfm'
+import highlight from '@bytemd/plugin-highlight'
+import math from '@bytemd/plugin-math'
+import 'highlight.js/styles/github.css'
+import 'katex/dist/katex.css'
+
 import { searchMemos, createMemo, updateMemo, deleteMemo, toggleMemoStatus, getMemoStatistics, 
          Memo as ApiMemo, MemoSearchParams, MemoCreateParams, MemoUpdateParams } from '@/services/api';
 
-// 新的工具栏配置
-const customToolbar = [
-  'bold',
-  'italic',
-  'strikethrough',
-  '-',
-  'title',
-  'quote',
-  'unorderedList',
-  'orderedList',
-  '-',
-  'codeRow',
-  'code',
-  'link',
-  'image',
-  '-',
-  'undo',
-  'redo',
+// ByteMD编辑器插件配置
+const editorPlugins = [
+  gfm(),
+  highlight(),
+  math()
 ];
 
-// 处理Markdown编辑器内容变化
-function handleMdEditorChange(content: string) {
-  memoForm.content = content;
+// ByteMD查看器插件配置
+const viewerPlugins = [
+  gfm(),
+  highlight(),
+  math()
+];
+
+// 图片上传处理函数
+async function handleUploadImages(files: File[]): Promise<string[]> {
+  // 这里只是一个简单的实现，将图片转为base64
+  // 实际项目中，您可能需要将图片上传到服务器
+  const urls: string[] = [];
+  for (const file of files) {
+    const url = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+    urls.push(url);
+  }
+  return urls;
 }
 
 // 创建全局message实例
@@ -875,12 +873,10 @@ function viewMemo(memo: Memo): void {
 // 关闭查看模态框并刷新数据
 function closeViewModal(): void {
   showViewModal.value = false;
-  // 如果是待办事项状态有变更，关闭时刷新数据
-  if (currentMemo.value && currentMemo.value.isTodo) {
-    fetchMemos();
-    // 更新右侧边栏统计数据
-    updateSidebarStatistics();
-  }
+  // 刷新数据
+  fetchMemos();
+  // 更新右侧边栏统计数据
+  updateSidebarStatistics();
 }
 
 // 切换查看备忘录的待办事项状态
@@ -1938,63 +1934,53 @@ function updateSidebarStatistics() {
 
 /* 修改markdown编辑器的样式 */
 .form-control.markdown-editor {
-  height: 220px;
+  height: auto;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: none;
 }
 
-:deep(.md-editor) {
+:deep(.bytemd) {
+  height: 350px !important;
   border-radius: 8px !important;
-  overflow: hidden;
-  border: none !important;
-  box-shadow: none !important;
+  border: 1px solid #e5e7eb !important;
 }
 
-:deep(.md-editor-toolbar) {
+:deep(.bytemd-toolbar) {
   background-color: #f9fafb !important;
   border-bottom: 1px solid #e5e7eb !important;
 }
 
-:deep(.md-editor-content) {
-  background-color: #fff !important;
+:deep(.bytemd-status) {
+  background-color: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
 }
 
-/* 隐藏预览按钮 */
-:deep(.md-editor-toolbar-item:has(svg.md-icon-preview)) {
-  display: none;
+/* ByteMD 预览样式 */
+.memo-view-content {
+  padding: 0;
+  background: #f9fafb;
+  border-radius: 12px;
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
 }
 
-/* 移除原来v-md-editor的样式 */
-:deep(.v-md-editor .v-md-editor__preview) {
-  display: none !important;
+:deep(.markdown-body) {
+  padding: 20px !important;
+  background-color: transparent !important;
 }
 
-:deep(.v-md-editor .v-md-editor__editor) {
-  width: 100% !important;
-  flex: 1 1 auto !important;
-  border-right: none !important;
-}
-
-:deep(.v-md-editor) {
-  border-radius: 12px !important;
-  overflow: hidden;
-  background: #ffffff !important;
-  border: 1px solid #e5e7eb !important;
-  box-shadow: none !important;
-}
-
-:deep(.v-md-editor .v-md-editor__toolbar) {
-  border-bottom: 1px solid #e5e7eb !important;
-  background: #f9fafb !important;
-  padding: 8px !important;
-}
-
-:deep(.v-md-editor .v-md-editor__edit-content) {
-  background: #ffffff !important;
-  color: #4b5563 !important;
+:deep(.markdown-body pre) {
+  background-color: #f6f8fa !important;
   padding: 16px !important;
-  font-size: 15px !important;
+  border-radius: 8px !important;
+}
+
+:deep(.markdown-body code) {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace !important;
 }
 
 /* 强制设置markdown编辑器宽度 */
