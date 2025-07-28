@@ -156,128 +156,158 @@
       </template>
     </PageLayout>
     
+    <!-- 模态框已被移除，此处可以构建新的弹窗 -->
+    
     <!-- 查看备忘录详情模态框 -->
-    <n-modal v-model:show="showViewModal" class="memo-modal view-modal">
-      <div class="modal-inner">
-        <div class="modal-header">
-          <div class="modal-title">
-            <div v-if="currentMemo" class="view-tag">
-              <i :class="getTagIcon(currentMemo.tagCode)"></i> {{ currentMemo ? getTagName(currentMemo.tagCode) : '' }}
+    <n-modal v-model:show="showViewModal" class="memo-modal" style="width: 70vw; max-width: 800px;">
+      <div class="modal-container">
+        <div class="modal-inner">
+          <div class="modal-header">
+            <div class="modal-title">
+              <div v-if="currentMemo" class="view-tag">
+                <i :class="getTagIcon(currentMemo.tagCode)"></i> {{ currentMemo ? getTagName(currentMemo.tagCode) : '' }}
+              </div>
+              <span>{{ currentMemo ? currentMemo.title : '' }}</span>
             </div>
-            <span>{{ currentMemo ? currentMemo.title : '' }}</span>
+            <n-button quaternary circle class="close-btn" @click="showViewModal = false">
+              <n-icon>
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                </svg>
+              </n-icon>
+            </n-button>
           </div>
-          <button class="close-btn" @click="showViewModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <div class="modal-content view-content">
-          <div v-if="currentMemo && currentMemo.isTodo" class="todo-status-view" :class="{'completed': currentMemo.completed}">
-            <div class="todo-checkbox large" @click="toggleViewTodoStatus">
-              <svg v-if="currentMemo.completed" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
-              </svg>
+          
+          <div class="modal-content">
+            <div v-if="currentMemo && currentMemo.isTodo" class="todo-status-view" :class="{'completed': currentMemo.completed}">
+              <div class="todo-checkbox" @click="toggleViewTodoStatus">
+                <svg v-if="currentMemo.completed" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                </svg>
+              </div>
+              <span>{{ currentMemo.completed ? '已完成' : '待办事项' }}</span>
+              <div v-if="currentMemo.dueDate" class="due-date-view" :class="{'overdue': isOverdue(currentMemo.dueDate)}">
+                截止日期: {{ formatFullDate(currentMemo.dueDate) }}
+                <span v-if="isOverdue(currentMemo.dueDate)" class="overdue-label">已过期</span>
+              </div>
             </div>
-            <span>{{ currentMemo.completed ? '已完成' : '待办事项' }}</span>
-            <div v-if="currentMemo.dueDate" class="due-date-view" :class="{'overdue': isOverdue(currentMemo.dueDate)}">
-              截止日期: {{ formatFullDate(currentMemo.dueDate) }}
-              <span v-if="isOverdue(currentMemo.dueDate)" class="overdue-label">已过期</span>
+            
+            <div class="memo-view-content">{{ currentMemo ? currentMemo.content : '' }}</div>
+            
+            <div class="memo-view-meta">
+              <div>创建于: {{ currentMemo ? formatFullDate(currentMemo.createdAt) : '' }}</div>
             </div>
           </div>
           
-          <div class="memo-view-content">{{ currentMemo ? currentMemo.content : '' }}</div>
-          
-          <div class="memo-view-meta">
-            <div>创建于: {{ currentMemo ? formatFullDate(currentMemo.createdAt) : '' }}</div>
+          <div class="modal-footer">
+            <n-button class="cancel-button" @click="editCurrentMemo">编辑</n-button>
+            <n-button type="primary" class="save-button" @click="showViewModal = false">关闭</n-button>
           </div>
-        </div>
-        
-        <div class="modal-footer">
-          <n-button class="edit-view-button" @click="editCurrentMemo">编辑</n-button>
-          <n-button type="primary" @click="showViewModal = false">关闭</n-button>
         </div>
       </div>
     </n-modal>
     
     <!-- 编辑备忘录模态框 -->
-    <n-modal v-model:show="showEditModal" :mask-closable="false" class="memo-modal edit-modal">
-      <div class="modal-inner">
-        <div class="modal-header edit-modal-header">
-          <div class="modal-title">{{ isEditing ? '编辑备忘录' : '添加备忘录' }}</div>
-          <button class="close-btn" @click="cancelEdit">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-content edit-modal-content">
-          <div class="form-group">
-            <label class="form-label">标题</label>
-            <input type="text" v-model="memoForm.title" class="form-control custom-input" placeholder="输入标题" />
+    <n-modal v-model:show="showEditModal" :mask-closable="false" class="memo-modal" style="width: 70vw; max-width: 800px;">
+      <div class="modal-container">
+        <div class="modal-inner">
+          <div class="modal-header">
+            <div class="modal-title">{{ isEditing ? '编辑备忘录' : '添加备忘录' }}</div>
+            <n-button quaternary circle class="close-btn" @click="cancelEdit">
+              <n-icon>
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                </svg>
+              </n-icon>
+            </n-button>
           </div>
-          <div class="form-group">
-            <label class="form-label">内容</label>
-            <v-md-editor
-              v-model="memoForm.content"
-              height="180px"
-              :toolbar="customToolbar"
-              mode="edit"
-              :preview-theme="null"
-              :show-preview="false"
-              class="form-control custom-textarea markdown-editor"
-              style="box-shadow: none !important; border-radius: 12px !important;"
-            />
-          </div>
-          <div class="form-group">
-            <label class="form-label">分类</label>
-            <div class="category-selector">
-              <button v-for="tag in tagOptions" :key="tag.value" :class="['category-option', { active: memoForm.tagCode === tag.value }]" @click.prevent="memoForm.tagCode = tag.value">
-                <i :class="getTagIcon(tag.value)"></i> {{ tag.label }}
-              </button>
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="todo-switch">
-              <label class="form-label">待办事项</label>
-              <n-switch v-model:value="memoForm.isTodo" />
-            </div>
-            <div v-if="memoForm.isTodo" class="due-date-group">
-              <label class="form-label">截止日期</label>
-              <n-date-picker
-                v-model:value="memoForm.dueDate"
-                type="date"
-                clearable
-                class="due-date-picker"
-                :is-date-disabled="(timestamp) => timestamp < Date.now() - 86400000"
+          
+          <div class="modal-content">
+            <div class="form-group">
+              <label class="form-label">标题</label>
+              <n-input 
+                v-model="memoForm.title" 
+                placeholder="输入标题"
+                class="form-control" 
               />
             </div>
+            
+            <div class="form-group">
+              <label class="form-label">内容</label>
+              <v-md-editor
+                v-model="memoForm.content"
+                height="180px"
+                :toolbar="customToolbar"
+                :disabled-menus="[]"
+                mode="edit"
+                class="form-control markdown-editor"
+                placeholder="输入内容..."
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">分类</label>
+              <div class="category-selector">
+                <button v-for="tag in tagOptions" :key="tag.value" :class="['category-option', { active: memoForm.tagCode === tag.value }]" @click.prevent="memoForm.tagCode = tag.value">
+                  <i :class="getTagIcon(tag.value)"></i> {{ tag.label }}
+                </button>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <div class="todo-switch">
+                <label class="form-label">待办事项</label>
+                <n-switch v-model="memoForm.isTodo" />
+              </div>
+              <div v-if="memoForm.isTodo" class="due-date-group">
+                <label class="form-label">截止日期</label>
+                <n-date-picker
+                  v-model="memoForm.dueDate"
+                  type="date"
+                  clearable
+                  class="due-date-picker"
+                  :is-date-disabled="(timestamp) => timestamp < Date.now() - 86400000"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="modal-footer edit-modal-footer">
-          <button class="btn btn-secondary" @click="cancelEdit">取消</button>
-          <button class="btn btn-primary" @click="saveMemo">保存</button>
+          
+          <div class="modal-footer">
+            <n-button class="cancel-button" @click="cancelEdit">取消</n-button>
+            <n-button type="primary" class="save-button" @click="saveMemo">保存</n-button>
+          </div>
         </div>
       </div>
     </n-modal>
     
     <!-- 删除确认对话框 -->
-    <n-modal v-model:show="showDeleteModal" class="memo-modal delete-modal">
-      <div class="modal-inner delete-modal-inner">
-        <div class="modal-header">
-          <div class="modal-title">确认删除</div>
-          <button class="close-btn" @click="showDeleteModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-content delete-content">
-          <div class="delete-icon">
-            <i class="fas fa-exclamation-triangle"></i>
+    <n-modal v-model:show="showDeleteModal" class="memo-modal delete-modal" style="width: 70vw; max-width: 600px;">
+      <div class="modal-container">
+        <div class="modal-inner">
+          <div class="modal-header">
+            <div class="modal-title">确认删除</div>
+            <n-button quaternary circle class="close-btn" @click="showDeleteModal = false">
+              <n-icon>
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                </svg>
+              </n-icon>
+            </n-button>
           </div>
-          <div class="delete-message">
-            确定要删除这条备忘录吗？<br>此操作无法撤销。
+          
+          <div class="modal-content delete-content">
+            <div class="delete-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="delete-message">
+              确定要删除这条备忘录吗？<br>此操作无法撤销。
+            </div>
           </div>
-        </div>
-        <div class="modal-footer delete-modal-footer">
-          <button class="btn btn-secondary" @click="showDeleteModal = false">取消</button>
-          <button class="btn btn-danger" @click="deleteMemoHandler">删除</button>
+          
+          <div class="modal-footer">
+            <n-button class="cancel-button" @click="showDeleteModal = false">取消</n-button>
+            <n-button type="primary" class="save-button danger-button" @click="deleteMemoHandler">删除</n-button>
+          </div>
         </div>
       </div>
     </n-modal>
@@ -306,9 +336,8 @@ VMdEditor.use(githubTheme);
 
 // 自定义极简工具栏
 const customToolbar = [
-  'bold', 'italic', 'header', '|',
+  'bold', 'italic', '|',
   'unorderedList', 'orderedList', '|',
-  'code', 'line', '|',
   'undo', 'redo'
 ];
 
@@ -812,11 +841,11 @@ function editCurrentMemo(): void {
 // 获取标签图标
 function getTagIcon(code: number): string {
   const icons: Record<number, string> = {
-    0: 'fas fa-star',       // 所有
-    1: 'fas fa-briefcase',  // 工作
-    2: 'fas fa-book',       // 学习
-    3: 'fas fa-heart',      // 生活
-    4: 'fas fa-lightbulb',  // 其他
+      0: 'fas fa-star',       // 所有
+  1: 'fas fa-briefcase',  // 工作
+  2: 'fas fa-book',       // 学习
+  3: 'fas fa-heart',      // 生活
+  4: 'fas fa-lightbulb',  // 其他
   };
   
   return icons[code] || 'fas fa-tag';
@@ -1359,83 +1388,141 @@ onMounted(() => {
   }
 }
 
-/* 重新设计的弹窗样式 - 白色主题 */
+/* 新弹窗样式将在这里添加 */
+
+/* 全新设计的弹窗样式 */
 .memo-modal {
-  --modal-width: 50vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 修改这里可以改变弹窗大小 */
+.memo-modal .modal-container {
+  position: relative;
+
+  margin: 0 auto;
+}
+
+.memo-modal :deep(.n-modal) {
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.memo-modal :deep(.n-modal-body),
+.memo-modal :deep(.n-modal-body-wrapper),
+.memo-modal :deep(.n-card),
+.memo-modal :deep(.n-card__content) {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  width: 100% !important;
 }
 
 .memo-modal .modal-inner {
-  background: #ffffff; /* 主背景色：纯白色 */
-  color: #333333;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-  border: 1px solid #e5e7eb; /* 边框：浅灰色 */
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 28px;
-  position: relative;
-  width: var(--modal-width) !important; /* 宽度固定为屏幕的一半，使用!important确保生效 */
-  max-height: 80vh; /* 最大高度为视口的80% */
-  overflow: auto;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 .memo-modal .modal-header {
-  width: 100%;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb; /* 分隔线：浅灰色 */
-  position: relative;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .memo-modal .modal-title {
-  color: #333333; /* 标题：深灰色 */
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 8px;
 }
 
 .memo-modal .close-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #f3f4f6; /* 按钮背景：浅灰色 */
-  border: none;
-  color: #6b7280; /* 按钮图标：中灰色 */
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.memo-modal .close-btn:hover {
-  background: #e5e7eb; /* 悬停时：稍深灰色 */
-  color: #333333;
-  transform: rotate(90deg);
+  margin-right: -8px;
+  color: #999;
 }
 
 .memo-modal .modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  padding: 0;
+  padding: 24px;
+  text-align: left;
 }
 
+.memo-modal .form-group {
+  margin-bottom: 24px;
+  text-align: left;
+  width: 100%;
+}
+
+.memo-modal .form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  text-align: left;
+}
+
+.memo-modal .form-control {
+  width: 100%;
+}
+
+.memo-modal .form-control :deep(.n-input),
+.memo-modal .form-control :deep(.n-base-selection) {
+  width: 100% !important;
+}
+
+.memo-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #f0f0f0;
+  gap: 12px;
+}
+
+.memo-modal .cancel-button {
+  min-width: 80px;
+  color: #333 !important;
+}
+
+.memo-modal .save-button {
+  min-width: 80px;
+  background-color: #333 !important;
+  border-color: #333 !important;
+}
+
+.memo-modal .save-button:hover {
+  background-color: #555 !important;
+  border-color: #555 !important;
+}
+
+.memo-modal .danger-button {
+  background-color: #f56c6c !important;
+  border-color: #f56c6c !important;
+}
+
+.memo-modal .danger-button:hover {
+  background-color: #e64242 !important;
+  border-color: #e64242 !important;
+}
+
+/* 查看备忘录样式 */
 .memo-modal .view-tag {
-  background: #f3f4f6; /* 标签背景：浅灰色 */
-  color: #4b5563; /* 标签文本：中灰色 */
+  background: #f3f4f6;
+  color: #4b5563;
   border-radius: 8px;
   padding: 4px 12px;
   font-size: 13px;
@@ -1451,20 +1538,20 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: #f9fafb; /* 待办状态背景：超浅灰色 */
+  background: #f9fafb;
   border-radius: 12px;
   margin-bottom: 12px;
 }
 
 .memo-modal .todo-status-view.completed {
-  background: rgba(16, 185, 129, 0.05); /* 浅绿色背景 */
+  background: rgba(16, 185, 129, 0.05);
 }
 
 .memo-modal .todo-checkbox {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid #9ca3af; /* 复选框边框：中灰色 */
+  border: 2px solid #9ca3af;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1472,77 +1559,28 @@ onMounted(() => {
 }
 
 .memo-modal .todo-status-view.completed .todo-checkbox {
-  background: #10B981; /* 完成状态复选框：绿色 */
+  background: #10B981;
   border-color: #10B981;
 }
 
 .memo-modal .memo-view-content {
   padding: 16px;
-  background: #f9fafb; /* 内容区背景：超浅灰色 */
+  background: #f9fafb;
   border-radius: 12px;
   font-size: 15px;
   line-height: 1.6;
-  color: #4b5563; /* 内容文本：中灰色 */
+  color: #4b5563;
   min-height: 100px;
   white-space: pre-wrap;
 }
 
 .memo-modal .memo-view-meta {
   font-size: 13px;
-  color: #6b7280; /* 元数据文本：中灰色 */
+  color: #6b7280;
+  margin-top: 16px;
 }
 
-.memo-modal .modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  margin-top: 24px;
-  width: 100%;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb; /* 分隔线：浅灰色 */
-}
-
-/* 编辑模态框样式 */
-.memo-modal.edit-modal .modal-inner {
-  width: 50vw; /* 宽度固定为屏幕的一半 */
-  max-height: 80vh; /* 最大高度为视口的80% */
-}
-
-.memo-modal .form-group {
-  margin-bottom: 20px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.memo-modal .form-label {
-  color: #6b7280; /* 表单标签：中灰色 */
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.memo-modal .form-control {
-  background: #ffffff; /* 输入框背景：白色 */
-  color: #333333; /* 输入框文本：深灰色 */
-  border: 1px solid #d1d5db; /* 输入框边框：浅灰色 */
-  border-radius: 12px;
-  font-size: 15px;
-  padding: 12px 16px;
-  width: 100%;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.memo-modal .form-control:focus,
-.memo-modal .form-control:hover {
-  border-color: #3B82F6; /* 焦点/悬停边框：蓝色 */
-  background: #ffffff; /* 焦点/悬停背景：白色 */
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); /* 轻微阴影效果 */
-}
-
+/* 编辑弹窗特有样式 */
 .memo-modal .category-selector {
   display: flex;
   flex-wrap: wrap;
@@ -1551,9 +1589,9 @@ onMounted(() => {
 }
 
 .memo-modal .category-option {
-  background: #f9fafb; /* 分类选项背景：超浅灰色 */
-  color: #6b7280; /* 分类选项文本：中灰色 */
-  border: 1px solid #e5e7eb; /* 分类选项边框：浅灰色 */
+  background: #f9fafb;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
@@ -1566,42 +1604,14 @@ onMounted(() => {
 }
 
 .memo-modal .category-option:hover {
-  background: #f3f4f6; /* 悬停背景：浅灰色 */
-  color: #4b5563; /* 悬停文本：较深灰色 */
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 .memo-modal .category-option.active {
-  background: #ebf5ff; /* 激活背景：超浅蓝色 */
-  border-color: #93c5fd; /* 激活边框：浅蓝色 */
-  color: #2563eb; /* 激活文本：深蓝色 */
-}
-
-/* 工作分类按钮激活样式 */
-.memo-modal .category-option.active[data-value="1"] {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: #3B82F6;
+  background: #ebf5ff;
+  border-color: #93c5fd;
   color: #2563eb;
-}
-
-/* 学习分类按钮激活样式 */
-.memo-modal .category-option.active[data-value="2"] {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: #10B981;
-  color: #059669;
-}
-
-/* 生活分类按钮激活样式 */
-.memo-modal .category-option.active[data-value="3"] {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: #F59E0B;
-  color: #D97706;
-}
-
-/* 其他分类按钮激活样式 */
-.memo-modal .category-option.active[data-value="4"] {
-  background: rgba(139, 92, 246, 0.1);
-  border-color: #8B5CF6;
-  color: #7C3AED;
 }
 
 .memo-modal .todo-switch {
@@ -1610,7 +1620,7 @@ onMounted(() => {
   justify-content: space-between;
   width: 100%;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb; /* 分隔线：浅灰色 */
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .memo-modal .due-date-group {
@@ -1622,56 +1632,65 @@ onMounted(() => {
   width: 100%;
 }
 
-.memo-modal .btn {
-  padding: 10px 20px;
-  border: none;
+/* 为markdown编辑器应用自定义样式 */
+.memo-modal .markdown-editor {
   border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  overflow: hidden;
 }
 
-.memo-modal .btn-secondary {
-  background: #f3f4f6; /* 次要按钮背景：浅灰色 */
-  color: #4b5563; /* 次要按钮文本：中灰色 */
+/* 隐藏预览功能 */
+.memo-modal :deep(.v-md-editor .v-md-editor__preview) {
+  display: none !important;
 }
 
-.memo-modal .btn-secondary:hover {
-  background: #e5e7eb; /* 悬停背景：较深灰色 */
-  color: #111827; /* 悬停文本：近黑色 */
+/* 强化编辑区域 */
+.memo-modal :deep(.v-md-editor .v-md-editor__editor) {
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  border-right: none !important;
 }
 
-.memo-modal .btn-primary {
-  background: #3B82F6; /* 主按钮背景：蓝色 */
-  color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+.memo-modal :deep(.v-md-editor) {
+  border-radius: 12px !important;
+  overflow: hidden;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
 }
 
-.memo-modal .btn-primary:hover {
-  background: #2563EB; /* 悬停背景：深蓝色 */
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+.memo-modal :deep(.v-md-editor .v-md-editor__toolbar) {
+  border-bottom: 1px solid #e5e7eb !important;
+  background: #f9fafb !important;
+  padding: 8px !important;
 }
 
-.memo-modal .btn-danger {
-  background: #EF4444; /* 危险按钮背景：红色 */
-  color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+.memo-modal :deep(.v-md-editor .v-md-editor__edit-content) {
+  background: #ffffff !important;
+  color: #4b5563 !important;
+  padding: 16px !important;
+  font-size: 15px !important;
 }
 
-.memo-modal .btn-danger:hover {
-  background: #DC2626; /* 悬停背景：深红色 */
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+/* 强制设置弹窗内容宽度 */
+.memo-modal :deep(.n-modal-body-wrapper) {
+  width: 70vw !important;
+  max-width: 800px !important;
 }
 
-/* 删除模态框样式 */
-.memo-modal.delete-modal .modal-inner {
-  width: 30vw; /* 删除确认弹窗更窄 */
-  max-width: 420px;
+.memo-modal .modal-container {
+  width: 100% !important;
 }
 
+.memo-modal :deep(.n-modal-body) {
+  width: 100% !important;
+}
+
+/* 强制设置markdown编辑器宽度 */
+.memo-modal :deep(.v-md-editor) {
+  width: 100% !important;
+}
+
+/* 删除弹窗样式 */
 .memo-modal .delete-content {
   display: flex;
   flex-direction: column;
@@ -1679,7 +1698,7 @@ onMounted(() => {
   justify-content: center;
   gap: 16px;
   padding: 16px;
-  background: #f9fafb; /* 删除内容背景：超浅灰色 */
+  background: #f9fafb;
   border-radius: 12px;
 }
 
@@ -1688,7 +1707,7 @@ onMounted(() => {
   height: 64px;
   border-radius: 50%;
   background: rgba(239, 68, 68, 0.1);
-  color: #EF4444; /* 删除图标：红色 */
+  color: #EF4444;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1699,79 +1718,18 @@ onMounted(() => {
   text-align: center;
   font-size: 16px;
   line-height: 1.6;
-  color: #4b5563; /* 删除消息：中灰色 */
-}
-
-/* 为模态框内的markdown编辑器应用自定义样式 */
-.memo-modal :deep(.v-md-editor) {
-  border-radius: 12px;
-  overflow: hidden;
-  background: #ffffff !important;
-  border: 1px solid #d1d5db !important;
-}
-
-.memo-modal :deep(.v-md-editor .v-md-editor__toolbar) {
-  background: #f9fafb !important;
-  border-bottom: 1px solid #e5e7eb !important;
-  padding: 8px !important;
-}
-
-.memo-modal :deep(.v-md-editor .v-md-editor__toolbar-item) {
-  color: #6b7280 !important;
-}
-
-.memo-modal :deep(.v-md-editor .v-md-editor__toolbar-item:hover) {
-  color: #111827 !important;
-}
-
-.memo-modal :deep(.v-md-editor .v-md-editor__toolbar-divider) {
-  background-color: #e5e7eb !important;
-}
-
-.memo-modal :deep(.v-md-editor .v-md-editor__edit-content) {
-  background: #ffffff !important;
-  color: #4b5563 !important;
-  padding: 16px !important;
-  min-height: 180px !important;
+  color: #4b5563;
 }
 
 /* 响应式调整 */
-@media (max-width: 1200px) {
-  .memo-modal {
-    --modal-width: 65vw;
-  }
-  
-  .memo-modal.delete-modal {
-    --modal-width: 40vw;
-  }
-}
-
 @media (max-width: 768px) {
-  .memo-modal {
-    --modal-width: 80vw;
-  }
-  
-  .memo-modal .modal-inner {
-    padding: 24px;
-  }
-  
-  .memo-modal.delete-modal {
-    --modal-width: 60vw;
-  }
-}
-
-@media (max-width: 480px) {
-  .memo-modal {
-    --modal-width: 95vw;
+  .memo-modal .modal-container {
+    width: 90vw;
+    max-width: 90vw;
   }
   
   .memo-modal .modal-inner {
     padding: 20px;
-    border-radius: 16px;
-  }
-  
-  .memo-modal.delete-modal {
-    --modal-width: 90vw;
   }
   
   .memo-modal .category-selector {
@@ -1783,13 +1741,25 @@ onMounted(() => {
     text-align: center;
     justify-content: center;
   }
+}
+
+@media (max-width: 480px) {
+  .memo-modal .modal-container {
+    width: 95vw;
+    max-width: 95vw;
+  }
+  
+  .memo-modal .modal-inner {
+    padding: 16px;
+  }
   
   .memo-modal .modal-footer {
     flex-direction: column;
     gap: 12px;
   }
   
-  .memo-modal .btn {
+  .memo-modal .cancel-button,
+  .memo-modal .save-button {
     width: 100%;
     padding: 12px;
   }
