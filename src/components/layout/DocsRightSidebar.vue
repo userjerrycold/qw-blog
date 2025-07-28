@@ -255,7 +255,7 @@ export default {
   gap: 24px;
   padding-right: 12px;
   height: 100%;
-  width: 100%;
+  
   overflow-y: auto; /* 启用垂直滚动 */
   overscroll-behavior: contain;
   padding-bottom: 60px;

@@ -21,6 +21,30 @@
       </div>
     </div>
     
+    <!-- 待办事项进度 -->
+    <div class="sidebar-section">
+      <h3 class="section-title">完成进度</h3>
+      <div class="progress-container">
+        <div class="progress-stats">
+          <div class="progress-percentage">{{ completionPercentage }}%</div>
+          <div class="progress-label">已完成</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" :style="{ width: `${completionPercentage}%` }"></div>
+        </div>
+        <div class="progress-details">
+          <div class="progress-item">
+            <div class="progress-item-label">已完成</div>
+            <div class="progress-item-value">{{ completedCount }}</div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-item-label">总待办</div>
+            <div class="progress-item-value">{{ totalTodoCount }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- 备忘录分类统计 -->
     <div class="sidebar-section">
       <h3 class="section-title">分类统计</h3>
@@ -30,49 +54,69 @@
             <span class="tag-stat-indicator" :style="{ backgroundColor: getTagColor(tag.code).color }"></span>
             <span class="tag-stat-name">{{ tag.name }}</span>
           </div>
+          <div class="tag-stat-bar-container">
+            <div class="tag-stat-bar" :style="{ width: `${getTagPercentage(tag.code)}%`, backgroundColor: getTagColor(tag.code).color }"></div>
+          </div>
           <span class="tag-stat-count">{{ getTagCount(tag.code) }}</span>
         </div>
       </div>
     </div>
     
-    <!-- 最近添加 -->
+    <!-- 简易日历视图 -->
     <div class="sidebar-section">
-      <h3 class="section-title">最近添加</h3>
-      <div class="recent-memos">
-        <div v-if="recentMemos.length === 0" class="empty-recent">
-          暂无备忘录
+      <h3 class="section-title">待办日历</h3>
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" @click="previousMonth">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div class="calendar-title">{{ currentMonthYear }}</div>
+          <button class="calendar-nav-btn" @click="nextMonth">
+            <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
-        <div 
-          v-for="memo in recentMemos" 
-          :key="memo.id" 
-          class="recent-memo-card"
-        >
-          <div class="memo-icon" :style="{ backgroundColor: getTagColor(memo.tagCode).color }">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="white"/>
-            </svg>
-          </div>
-          <div class="memo-content">
-            <h4 class="memo-title">{{ memo.title }}</h4>
-            <div class="memo-meta-row">
-              <span class="memo-tag-small" :style="{ backgroundColor: getTagColor(memo.tagCode).color, color: '#fff' }">
-                {{ getTagName(memo.tagCode) }}
-              </span>
-              <span class="memo-date">{{ formatDate(memo.createdAt) }}</span>
-            </div>
-            <div v-if="memo.isTodo" class="memo-todo-status" :class="{ 'completed': memo.completed }">
-              {{ memo.completed ? '已完成' : '待办' }}
-              <span v-if="!memo.completed && isDueToday(memo.dueDate)" class="due-today">今日到期</span>
-            </div>
+        <div class="calendar-weekdays">
+          <div class="calendar-weekday" v-for="day in weekdays" :key="day">{{ day }}</div>
+        </div>
+        <div class="calendar-days">
+          <div 
+            v-for="day in calendarDays" 
+            :key="day.date"
+            class="calendar-day"
+            :class="{
+              'other-month': !day.isCurrentMonth,
+              'today': day.isToday,
+              'has-todos': day.hasTodos
+            }"
+          >
+            <div class="calendar-day-number">{{ day.dayNumber }}</div>
+            <div v-if="day.hasTodos" class="calendar-day-indicator"></div>
           </div>
         </div>
+      </div>
+    </div>
+    
+    <!-- 快速添加备忘录 -->
+    <div class="sidebar-section">
+      <h3 class="section-title">快速添加</h3>
+      <div class="quick-add-container">
+        <input 
+          v-model="quickAddTitle" 
+          type="text" 
+          class="quick-add-input" 
+          placeholder="输入标题..." 
+          @keyup.enter="quickAddMemo"
+        />
+        <button class="quick-add-button" @click="quickAddMemo">
+          <i class="fas fa-plus"></i>
+        </button>
       </div>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { defineProps, computed, defineEmits, withDefaults } from 'vue';
+import { defineProps, computed, defineEmits, withDefaults, ref } from 'vue';
 
 interface Memo {
   id: number;
@@ -88,6 +132,14 @@ interface Memo {
 interface TagType {
   code: number;
   name: string;
+}
+
+interface CalendarDay {
+  date: number;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  hasTodos: boolean;
 }
 
 const props = withDefaults(defineProps<{
@@ -116,13 +168,6 @@ const memoTags: TagType[] = [
   MemoTypeEnum.OTHER
 ];
 
-// 最近添加的备忘录
-const recentMemos = computed(() => {
-  return [...props.memos]
-    .sort((a: Memo, b: Memo) => b.createdAt - a.createdAt)
-    .slice(0, 3); // 显示最近添加的3条
-});
-
 // 待办事项统计
 const allTodoCount = computed(() => {
   return props.memos.filter(memo => memo.isTodo && !memo.completed).length;
@@ -147,6 +192,15 @@ const completedCount = computed(() => {
   return props.memos.filter(memo => memo.isTodo && memo.completed).length;
 });
 
+const totalTodoCount = computed(() => {
+  return props.memos.filter(memo => memo.isTodo).length;
+});
+
+const completionPercentage = computed(() => {
+  if (totalTodoCount.value === 0) return 0;
+  return Math.round((completedCount.value / totalTodoCount.value) * 100);
+});
+
 // 获取标签名称
 function getTagName(code: number): string {
   const tag = Object.values(MemoTypeEnum).find(t => t.code === code);
@@ -156,6 +210,12 @@ function getTagName(code: number): string {
 // 获取标签数量
 function getTagCount(code: number): number {
   return props.memos.filter(memo => memo.tagCode === code).length;
+}
+
+// 获取标签百分比
+function getTagPercentage(code: number): number {
+  if (props.memos.length === 0) return 0;
+  return Math.round((getTagCount(code) / props.memos.length) * 100);
 }
 
 // 获取标签颜色
@@ -170,38 +230,94 @@ function getTagColor(code: number): { color: string, textColor: string } {
   return colors[code] || colors[4];
 }
 
-// 格式化日期
-function formatDate(timestamp: number): string {
-  const now = new Date();
-  const date = new Date(timestamp);
-  
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  
-  if (days === 0) {
-    return '今天';
-  } else if (days === 1) {
-    return '昨天';
-  } else if (days < 7) {
-    return `${days}天前`;
-  } else {
-    return date.toLocaleDateString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit'
-    });
-  }
-}
+// 日历功能
+const currentDate = ref(new Date());
+const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
-// 检查是否今日到期
-function isDueToday(dueDate?: number | null): boolean {
-  if (!dueDate) return false;
+const currentMonthYear = computed(() => {
+  return currentDate.value.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long'
+  });
+});
+
+const calendarDays = computed(() => {
+  const year = currentDate.value.getFullYear();
+  const month = currentDate.value.getMonth();
   
+  // 当月第一天
+  const firstDayOfMonth = new Date(year, month, 1);
+  // 当月最后一天
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  
+  // 上个月需要显示的天数
+  const daysFromPrevMonth = firstDayOfMonth.getDay();
+  
+  // 日历开始日期（可能是上个月的某一天）
+  const startDate = new Date(year, month, 1 - daysFromPrevMonth);
+  
+  // 创建42天的日历（6周）
+  const days: CalendarDay[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayTimestamp = today.getTime();
-  const tomorrow = new Date(todayTimestamp + 24 * 60 * 60 * 1000).getTime();
   
-  return dueDate >= todayTimestamp && dueDate < tomorrow;
+  for (let i = 0; i < 42; i++) {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    
+    const dateTimestamp = date.getTime();
+    const nextDayTimestamp = dateTimestamp + 24 * 60 * 60 * 1000;
+    
+    // 检查这一天是否有待办事项
+    const hasTodos = props.memos.some(memo => 
+      memo.isTodo && 
+      memo.dueDate && 
+      memo.dueDate >= dateTimestamp && 
+      memo.dueDate < nextDayTimestamp
+    );
+    
+    days.push({
+      date: dateTimestamp,
+      dayNumber: date.getDate(),
+      isCurrentMonth: date.getMonth() === month,
+      isToday: date.getTime() === todayTimestamp,
+      hasTodos
+    });
+  }
+  
+  return days;
+});
+
+function previousMonth() {
+  const newDate = new Date(currentDate.value);
+  newDate.setMonth(newDate.getMonth() - 1);
+  currentDate.value = newDate;
+}
+
+function nextMonth() {
+  const newDate = new Date(currentDate.value);
+  newDate.setMonth(newDate.getMonth() + 1);
+  currentDate.value = newDate;
+}
+
+// 快速添加备忘录
+const quickAddTitle = ref('');
+
+function quickAddMemo() {
+  if (!quickAddTitle.value.trim()) return;
+  
+  const newMemo = {
+    title: quickAddTitle.value.trim(),
+    content: '',
+    tagCode: 1, // 默认工作分类
+    isTodo: true, // 默认为待办事项
+    dueDate: null,
+    completed: false
+  };
+  
+  emit('add-memo', newMemo);
+  quickAddTitle.value = '';
 }
 </script>
 
@@ -216,14 +332,16 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 32px;
-  padding: 20px 16px 20px 0;
-  height: 100%;
+  padding: 20px 16px 300px 0; /* 大幅增加底部内边距，确保可以滚动到底部 */
+  height: auto;
+  min-height: 100%;
   width: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-bottom: 60px;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  position: relative;
+  max-height: none !important;
 }
 
 .sidebar-container::-webkit-scrollbar {
@@ -316,11 +434,78 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* 进度条样式 */
+.progress-container {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.03),
+    0 1px 3px rgba(0, 0, 0, 0.02),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.progress-stats {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.progress-percentage {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  line-height: 1;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.progress-bar-container {
+  height: 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3B82F6, #10B981);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.progress-details {
+  display: flex;
+  justify-content: space-between;
+}
+
+.progress-item {
+  text-align: center;
+}
+
+.progress-item-label {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.progress-item-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
 /* 标签统计样式 */
 .tag-stats {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   background-color: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border-radius: 16px;
@@ -334,9 +519,14 @@ export default {
 
 .tag-stat-item {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tag-stat-info {
+  display: flex;
   align-items: center;
-  padding: 6px 0;
+  justify-content: space-between;
 }
 
 .tag-stat-info {
@@ -357,6 +547,21 @@ export default {
   color: #333;
 }
 
+.tag-stat-bar-container {
+  height: 6px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-grow: 1;
+  margin: 0 8px;
+}
+
+.tag-stat-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
 .tag-stat-count {
   font-size: 13px;
   font-weight: 600;
@@ -371,22 +576,12 @@ export default {
   padding: 0 8px;
 }
 
-/* 最近添加样式 */
-.recent-memos {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.empty-recent {
-  text-align: center;
-  padding: 24px 0;
-  color: #888;
-  font-size: 13px;
-  font-style: italic;
+/* 日历样式 */
+.calendar-container {
   background-color: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border-radius: 16px;
+  padding: 16px;
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.03),
     0 1px 3px rgba(0, 0, 0, 0.02),
@@ -394,94 +589,144 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
-.recent-memo-card {
+.calendar-header {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
-  background-color: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.03),
-    0 1px 3px rgba(0, 0, 0, 0.02),
-    inset 0 1px 1px rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-}
-
-.recent-memo-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 8px 20px rgba(0, 0, 0, 0.06),
-    0 2px 6px rgba(0, 0, 0, 0.04),
-    inset 0 1px 1px rgba(255, 255, 255, 0.5);
-}
-
-.memo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 12px;
 }
 
-.memo-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.memo-title {
-  margin: 0 0 6px 0;
-  font-size: 13px;
+.calendar-title {
+  font-size: 14px;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: #333;
 }
 
-.memo-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.memo-tag-small {
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 500;
-}
-
-.memo-date {
-  font-size: 10px;
+.calendar-nav-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.05);
   color: #666;
-}
-
-.memo-todo-status {
-  margin-top: 4px;
-  font-size: 11px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-nav-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  padding: 4px 0;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
   gap: 4px;
-  color: #f56c6c;
 }
 
-.memo-todo-status.completed {
-  color: #67c23a;
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.due-today {
-  background-color: #fef0f0;
-  color: #f56c6c;
-  padding: 1px 4px;
-  border-radius: 4px;
-  font-size: 10px;
+.calendar-day:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.calendar-day-number {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+}
+
+.calendar-day.other-month .calendar-day-number {
+  color: #aaa;
+}
+
+.calendar-day.today {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.calendar-day.today .calendar-day-number {
+  color: #3B82F6;
+  font-weight: 700;
+}
+
+.calendar-day-indicator {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #f56c6c;
+  margin-top: 2px;
+}
+
+/* 快速添加样式 */
+.quick-add-container {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quick-add-input {
+  flex-grow: 1;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0 12px;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.quick-add-input:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.quick-add-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: none;
+  background-color: #3B82F6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.quick-add-button:hover {
+  background-color: #2563EB;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
 }
 </style> 
