@@ -236,7 +236,7 @@
               <label class="form-label">内容</label>
               <v-md-editor
                 v-model="memoForm.content"
-                height="180px"
+                height="220px"
                 :toolbar="customToolbar"
                 :disabled-menus="[]"
                 mode="edit"
@@ -266,7 +266,7 @@
                   type="date"
                   clearable
                   class="due-date-picker"
-                  :is-date-disabled="(timestamp) => timestamp < Date.now() - 86400000"
+                  :is-date-disabled="isDateDisabled"
                 />
               </div>
             </div>
@@ -870,6 +870,11 @@ const modalStyle = {
   overflow: 'visible',
 };
 
+// 日期禁用函数
+const isDateDisabled = (timestamp: number): boolean => {
+  return timestamp < Date.now() - 86400000;
+};
+
 // 初始化
 onMounted(() => {
   // 实际项目中应该从API获取备忘录数据
@@ -1459,6 +1464,9 @@ onMounted(() => {
 .memo-modal .modal-content {
   padding: 24px;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .memo-modal .form-group {
@@ -1536,11 +1544,12 @@ onMounted(() => {
 .memo-modal .todo-status-view {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
+  gap: 12px;
+  padding: 14px 18px;
   background: #f9fafb;
   border-radius: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  border: 1px solid #e5e7eb;
 }
 
 .memo-modal .todo-status-view.completed {
@@ -1564,14 +1573,17 @@ onMounted(() => {
 }
 
 .memo-modal .memo-view-content {
-  padding: 16px;
+  padding: 20px;
   background: #f9fafb;
   border-radius: 12px;
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.8;
   color: #4b5563;
-  min-height: 100px;
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
   white-space: pre-wrap;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .memo-modal .memo-view-meta {
@@ -1617,10 +1629,15 @@ onMounted(() => {
 .memo-modal .todo-switch {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   padding-bottom: 16px;
   border-bottom: 1px solid #e5e7eb;
+}
+
+.memo-modal .todo-switch .form-label {
+  margin-bottom: 0;
+  flex: 1;
+  margin-right: 80px; /* 让开关不要太靠右 */
 }
 
 .memo-modal .due-date-group {
