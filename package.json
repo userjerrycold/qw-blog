@@ -19,10 +19,12 @@
     "highlight.js": "^11.11.1",
     "lodash-es": "^4.17.21",
     "marked": "^16.1.1",
+    "mavon-editor": "^2.10.4",
     "md-editor-v3": "^5.8.2",
     "monaco-editor-vue3": "^0.1.10",
     "naive-ui": "^2.34.3",
     "pinia": "^2.1.4",
+    "prismjs": "^1.30.0",
     "qrcode": "^1.5.4",
     "vue": "^3.4.0",
     "vue-router": "^4.2.5"

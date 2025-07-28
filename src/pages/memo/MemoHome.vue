@@ -187,8 +187,11 @@
             </div>
 
             <div class="memo-view-content">
-              <!-- 使用ByteMD渲染Markdown内容 -->
-              <BytemdViewer v-if="currentMemo" :value="currentMemo.content" :plugins="viewerPlugins" />
+              <!-- 使用MD Editor V3预览Markdown内容 -->
+              <MdPreview
+                v-if="currentMemo"
+                :modelValue="currentMemo.content"
+              />
             </div>
             
             <!-- 将待办状态区域移到内容框下方 -->
@@ -243,12 +246,11 @@
             
             <div class="form-group">
               <label class="form-label">内容</label>
-              <!-- 完全重构ByteMD编辑器的使用方式 -->
-              <BytemdEditor
-                :value="memoForm.content || ''"
-                :plugins="editorPlugins"
-                @change="(v) => memoForm.content = v"
-                :upload-images="handleUploadImages"
+              <!-- 使用v-md-editor替代mavon-editor -->
+              <MdEditor
+                v-model="memoForm.content"
+                :toolbars="toolbars"
+                @upload-image="handleUploadImage"
                 placeholder="输入内容..."
                 class="form-control markdown-editor"
               />
@@ -286,6 +288,7 @@
                   type="date"
                   class="due-date-picker"
                   :is-date-disabled="isDateDisabled"
+                  style="max-width: 250px;"
                 />
               </div>
             </div>
@@ -344,46 +347,42 @@ import { NTag, NButton, NModal, NInput, NSelect, NSpace, NMessageProvider, useMe
 import PageLayout from '@/components/layout/PageLayout.vue'
 import MemoRightSidebar from '@/components/layout/MemoRightSidebar.vue'
 
-// 导入ByteMD编辑器和相关插件
-import { Editor as BytemdEditor, Viewer as BytemdViewer } from '@bytemd/vue-next'
-import 'bytemd/dist/index.css'
-import gfm from '@bytemd/plugin-gfm'
-import highlight from '@bytemd/plugin-highlight'
-import math from '@bytemd/plugin-math'
-import 'highlight.js/styles/github.css'
-import 'katex/dist/katex.css'
+// 导入MD Editor V3
+import { MdEditor, MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
 
 import { searchMemos, createMemo, updateMemo, deleteMemo, toggleMemoStatus, getMemoStatistics, 
          Memo as ApiMemo, MemoSearchParams, MemoCreateParams, MemoUpdateParams } from '@/services/api';
 
-// ByteMD编辑器插件配置
-const editorPlugins = [
-  gfm(),
-  highlight(),
-  math()
-];
+// 配置MD Editor V3工具栏
+const toolbars = [
+  'bold', 'underline', 'italic', 'strikethrough', 
+  '-',
+  'title', 'quote', 'unorderedList', 'orderedList', 
+  '-', 
+  'codeRow', 'code', 'link', 'image', 'table', 'revoke', 'next',
+  '-',
+  'pageFullscreen', 'fullscreen', 'preview'
+]
 
-// ByteMD查看器插件配置
-const viewerPlugins = [
-  gfm(),
-  highlight(),
-  math()
-];
-
-// 图片上传处理函数
-async function handleUploadImages(files: File[]): Promise<string[]> {
-  // 这里只是一个简单的实现，将图片转为base64
-  // 实际项目中，您可能需要将图片上传到服务器
-  const urls: string[] = [];
-  for (const file of files) {
-    const url = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
-    });
-    urls.push(url);
-  }
-  return urls;
+// 处理图片上传
+function handleUploadImage(
+  files: FileList, 
+  callback: (urls: string[]) => void
+): void {
+  const fileList = Array.from(files)
+  const urls: string[] = []
+  
+  fileList.forEach(file => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      urls.push(reader.result as string)
+      if (urls.length === fileList.length) {
+        callback(urls)
+      }
+    }
+    reader.readAsDataURL(file)
+  })
 }
 
 // 创建全局message实例
@@ -2000,6 +1999,103 @@ function updateSidebarStatistics() {
 
 /* 强制设置markdown编辑器宽度 */
 :deep(.md-editor) {
+  width: 100% !important;
+}
+
+/* 添加圆角效果 */
+.form-control, .n-input, .n-date-picker, .n-select {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+/* V-md-editor样式调整 */
+:deep(.v-md-editor) {
+  border-radius: 8px !important;
+  border: 1px solid #e0e0e0;
+}
+
+:deep(.v-md-editor__toolbar) {
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+}
+
+:deep(.v-md-editor__editor-wrapper) {
+  min-height: 250px;
+}
+
+:deep(.v-md-preview) {
+  border-radius: 8px !important;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.markdown-editor {
+  height: 300px;
+  margin-bottom: 20px;
+}
+
+.v-note-wrapper {
+  border-radius: 8px !important;
+  z-index: 1000 !important; /* 确保弹出菜单不被遮挡 */
+}
+
+/* 弧度输入框 */
+.n-input {
+  border-radius: 8px !important;
+}
+
+.n-input__input-el {
+  border-radius: 8px !important;
+}
+
+/* 调整时间选择框 */
+.due-date-picker {
+  width: 100%;
+  max-width: 250px !important;
+  border-radius: 8px;
+}
+
+/* MD Editor V3样式优化 */
+:deep(.md-editor) {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid #e5e7eb !important;
+  height: 300px !important;
+}
+
+:deep(.md-editor-preview) {
+  border-radius: 8px !important;
+  padding: 16px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #f9fafb !important;
+}
+
+:deep(.md-editor-toolbar) {
+  border-bottom: 1px solid #e5e7eb !important;
+  background: #f9fafb !important;
+}
+
+:deep(.md-editor-content) {
+  background: #ffffff !important;
+}
+
+/* 修复markdown预览样式 */
+.memo-view-content {
+  background: #f9fafb;
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.memo-view-content :deep(.md-editor-preview) {
+  border: none !important;
+  padding: 24px !important;
+  background: transparent !important;
+}
+
+/* 强制设置markdown编辑器宽度 */
+.markdown-editor {
   width: 100% !important;
 }
 </style> 
