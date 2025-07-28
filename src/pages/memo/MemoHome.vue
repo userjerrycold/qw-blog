@@ -187,11 +187,13 @@
             </div>
 
             <div class="memo-view-content">
-              <!-- 使用MD Editor V3预览Markdown内容 -->
-              <MdPreview
-                v-if="currentMemo"
-                :modelValue="currentMemo.content"
-              />
+              <!-- 简化的预览容器结构 -->
+              <div class="custom-md-preview-container">
+                <MdPreview
+                  v-if="currentMemo"
+                  :modelValue="currentMemo.content"
+                />
+              </div>
             </div>
             
             <!-- 将待办状态区域移到内容框下方 -->
@@ -246,13 +248,14 @@
             
             <div class="form-group">
               <label class="form-label">内容</label>
-              <!-- 使用v-md-editor替代mavon-editor -->
+              <!-- 使用MD Editor V3，默认不开启预览 -->
               <MdEditor
                 v-model="memoForm.content"
                 :toolbars="toolbars"
                 @upload-image="handleUploadImage"
                 placeholder="输入内容..."
                 class="form-control markdown-editor"
+                :preview="false"
               />
             </div>
             
@@ -2084,18 +2087,149 @@ function updateSidebarStatistics() {
 .memo-view-content {
   background: #f9fafb;
   border-radius: 12px;
-  overflow: hidden;
   padding: 0;
+  margin-bottom: 16px;
+  max-height: 450px; /* 允许更大的查看区域 */
+  overflow: auto; /* 自动处理滚动 */
 }
 
-.memo-view-content :deep(.md-editor-preview) {
-  border: none !important;
-  padding: 24px !important;
-  background: transparent !important;
+.memo-preview-component {
+  width: 100%;
+  height: 100%;
+}
+
+/* 对md-preview的内部容器应用滚动样式 */
+:deep(.md-preview-wrapper) {
+  max-height: 350px !important;
+  overflow-y: auto !important;
+  padding-right: 4px; /* 为滚动条预留空间 */
+}
+
+:deep(.md-preview) {
+  padding: 16px 24px !important;
+}
+
+/* 美化滚动条 */
+:deep(.md-preview-wrapper::-webkit-scrollbar) {
+  width: 6px;
+}
+
+:deep(.md-preview-wrapper::-webkit-scrollbar-thumb) {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+:deep(.md-preview-wrapper::-webkit-scrollbar-track) {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* 强制设置markdown编辑器宽度 */
 .markdown-editor {
   width: 100% !important;
+}
+
+/* 完全重写预览区样式 */
+.memo-view-content {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 0;
+}
+
+/* 创建一个自定义容器包裹预览组件 */
+.custom-md-preview-container {
+  padding: 20px;
+  width: 100%;
+}
+
+/* 确保预览组件能完全展示 */
+:deep(.md-preview-full) {
+  width: 100% !important;
+}
+
+:deep(.md-preview-full .md-editor-preview-wrapper),
+:deep(.md-preview-full .md-editor-preview) {
+  min-height: auto !important;
+  height: auto !important; 
+  max-height: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+
+/* 确保所有内容正确显示 */
+:deep(.md-preview-full *) {
+  max-width: 100%;
+}
+
+/* 确保代码块正确显示 */
+:deep(.custom-md-preview-container pre) {
+  margin: 10px 0;
+  padding: 16px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+/* 美化滚动条 */
+.memo-view-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.memo-view-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.memo-view-content::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* 重置预览区样式 */
+.memo-view-content {
+  background: #f9fafb;
+  border-radius: 12px;
+  height: 350px; /* 固定高度 */
+  overflow-y: auto; /* 只允许垂直滚动 */
+  overflow-x: hidden; /* 禁止水平滚动 */
+  margin-bottom: 16px;
+}
+
+/* 创建一个简单的内容容器 */
+.custom-md-preview-container {
+  padding: 20px;
+}
+
+/* 确保预览内容不超出容器宽度 */
+:deep(.custom-md-preview-container img),
+:deep(.custom-md-preview-container pre),
+:deep(.custom-md-preview-container table) {
+  max-width: 100%;
+}
+
+/* 确保代码块正确显示且不产生水平滚动 */
+:deep(.custom-md-preview-container pre) {
+  margin: 10px 0;
+  padding: 16px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 6px;
+  white-space: pre-wrap; /* 确保代码换行 */
+  word-break: break-word; /* 防止溢出 */
+}
+
+/* 美化滚动条 - 只有垂直滚动条 */
+.memo-view-content::-webkit-scrollbar {
+  width: 6px;
+  height: 0; /* 确保没有水平滚动条 */
+}
+
+.memo-view-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.memo-view-content::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 </style> 
