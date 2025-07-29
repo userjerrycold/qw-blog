@@ -144,6 +144,13 @@ interface CalendarDay {
   hasTodos: boolean;
 }
 
+// 在脚本最前面添加类型定义
+interface UpdateStatisticsEvent extends CustomEvent {
+  detail: {
+    memos: Memo[];
+  };
+}
+
 const props = withDefaults(defineProps<{
   memos: Memo[]
 }>(), {
@@ -460,24 +467,35 @@ watch(() => props.memos.length, () => {
   fetchStatistics();
 });
 
-// 初始化
+// 在onMounted钩子中添加事件监听器
 onMounted(() => {
+  // 初始化获取统计数据
   fetchStatistics();
   
-  // 添加事件监听，监听主页面发出的更新统计请求
+  // 监听统计数据更新事件
   document.addEventListener('update-statistics', handleUpdateStatistics as EventListener);
 });
 
-// 组件卸载时移除事件监听
+// 在onUnmounted钩子中移除事件监听器
 onUnmounted(() => {
+  // 移除事件监听器，防止内存泄漏
   document.removeEventListener('update-statistics', handleUpdateStatistics as EventListener);
 });
 
-// 处理更新统计信息的事件
-function handleUpdateStatistics(event: CustomEvent) {
-  console.log('收到更新统计数据请求');
-  // 重新获取统计数据
-  fetchStatistics();
+// 处理统计数据更新事件 - 单独定义函数
+function handleUpdateStatistics(event: Event) {
+  console.log('MemoRightSidebar received update event');
+  
+  // 尝试将事件转换为自定义事件类型
+  const customEvent = event as UpdateStatisticsEvent;
+  
+  // 刷新统计数据
+  useLocalStatistics();
+  
+  // 如果事件包含数据，则使用最新数据
+  if (customEvent.detail && customEvent.detail.memos) {
+    console.log('Updated with event data');
+  }
 }
 </script>
 

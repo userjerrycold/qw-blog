@@ -1015,16 +1015,21 @@ onMounted(() => {
 
 // 更新右侧边栏的统计数据
 function updateSidebarStatistics() {
-  // 获取MemoRightSidebar组件实例
-  const sidebarComponent = document.querySelector('memo-right-sidebar');
-  if (sidebarComponent) {
-    // 获取组件实例并调用其刷新方法
-    nextTick(() => {
-      // 触发一个自定义事件通知右侧边栏更新数据
-      const event = new CustomEvent('update-statistics', { detail: { memos: memos.value } });
-      sidebarComponent.dispatchEvent(event);
+  // 直接使用document自定义事件，不依赖DOM元素查询
+  console.log('Triggering update-statistics event');
+  
+  // 使用nextTick确保DOM更新后再触发事件
+  nextTick(() => {
+    // 创建自定义事件，传递最新的备忘录数据
+    const event = new CustomEvent('update-statistics', { 
+      detail: { memos: memos.value },
+      bubbles: true,  // 允许事件冒泡
+      composed: true  // 允许事件穿越Shadow DOM边界
     });
-  }
+    
+    // 在document上派发事件，确保所有组件都能收到
+    document.dispatchEvent(event);
+  });
 }
 
 // 创建markdownit实例用于备选渲染方案
