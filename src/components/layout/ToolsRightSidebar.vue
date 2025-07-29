@@ -1,5 +1,5 @@
 <template>
-  <aside class="tools-sidebar overflow-y-auto pl-4 pr-3 py-3 scrollbar-hide" style=" border-left:1px solid var(--color-border);">
+  <aside class="tools-sidebar overflow-y-auto pl-4 pr-3 py-3 scrollbar-hide">
     <!-- Tools Navigation -->
     <div class="mb-6">
       <h3 class="text-base font-semibold mb-3">工具导航</h3>
@@ -304,7 +304,6 @@ const filteredTools = computed(() => {
 }
 
 .tools-sidebar {
-  min-width: 180px;
   max-width: 300px;
 }
 </style> 

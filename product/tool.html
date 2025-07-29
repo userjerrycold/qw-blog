@@ -14,9 +14,9 @@
         }
         
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-            color: #333;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            color: #334155;
+            line-height: 1.5;
             padding: 20px;
             min-height: 100vh;
         }
@@ -29,153 +29,174 @@
         
         header {
             text-align: center;
-            padding: 40px 20px;
-            margin-bottom: 30px;
+            padding: 30px 20px;
+            margin-bottom: 20px;
         }
         
         h1 {
-            font-size: 2.8rem;
-            margin-bottom: 15px;
-            color: #2c3e50;
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            color: #1e293b;
             font-weight: 700;
         }
         
         .subtitle {
-            font-size: 1.2rem;
-            color: #7f8c8d;
+            font-size: 1rem;
+            color: #64748b;
             max-width: 600px;
             margin: 0 auto;
         }
         
         .tools-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
         }
         
         .tool-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.25s ease;
             display: flex;
             flex-direction: column;
             height: 100%;
+            border: 1px solid #e2e8f0;
         }
         
         .tool-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
         }
         
         .card-header {
-            padding: 25px 25px 20px;
-            background: linear-gradient(120deg, #3498db, #2c3e50);
-            color: white;
+            padding: 20px 20px 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #f1f5f9;
         }
         
         .card-header i {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            display: block;
+            font-size: 1.8rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            margin-right: 15px;
+            color: white;
+        }
+        
+        .title-section {
+            flex: 1;
         }
         
         .card-header h2 {
-            font-size: 1.6rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+        
+        .card-header p {
+            font-size: 0.85rem;
+            color: #64748b;
         }
         
         .card-content {
-            padding: 25px;
+            padding: 20px;
             flex-grow: 1;
         }
         
         .features {
             list-style-type: none;
-            margin-top: 15px;
         }
         
         .features li {
             padding: 8px 0;
             position: relative;
-            padding-left: 28px;
+            padding-left: 24px;
+            font-size: 0.9rem;
         }
         
         .features li:before {
-            content: "\f00c";
+            content: "\f054";
             font-family: "Font Awesome 6 Free";
             font-weight: 900;
             position: absolute;
             left: 0;
-            top: 8px;
-            color: #27ae60;
+            top: 10px;
+            color: #3b82f6;
+            font-size: 0.7rem;
         }
         
         .card-footer {
-            padding: 20px 25px;
-            background-color: #f8f9fa;
-            border-top: 1px solid #eee;
+            padding: 15px 20px;
+            background-color: #f8fafc;
+            border-top: 1px solid #f1f5f9;
             text-align: center;
         }
         
         .btn {
             display: inline-block;
-            padding: 12px 28px;
-            background: linear-gradient(120deg, #3498db, #2c3e50);
+            padding: 8px 20px;
+            background: #3b82f6;
             color: white;
             text-decoration: none;
-            border-radius: 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         
         .btn:hover {
-            background: linear-gradient(120deg, #2980b9, #1a2530);
+            background: #2563eb;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         
-        .git-tool .card-header {
-            background: linear-gradient(120deg, #f39c12, #e74c3c);
+        /* 不同工具的图标颜色 */
+        .git-tool i {
+            background: linear-gradient(120deg, #f97316, #ea580c);
         }
         
-        .maven-tool .card-header {
-            background: linear-gradient(120deg, #9b59b6, #34495e);
+        .maven-tool i {
+            background: linear-gradient(120deg, #8b5cf6, #7c3aed);
         }
         
-        .md5-tool .card-header {
-            background: linear-gradient(120deg, #27ae60, #16a085);
+        .md5-tool i {
+            background: linear-gradient(120deg, #10b981, #059669);
         }
         
-        .json-tool .card-header {
-            background: linear-gradient(120deg, #e74c3c, #c0392b);
+        .json-tool i {
+            background: linear-gradient(120deg, #ef4444, #dc2626);
         }
         
         footer {
             text-align: center;
-            margin-top: 50px;
+            margin-top: 40px;
             padding: 20px;
-            color: #7f8c8d;
-            font-size: 0.9rem;
+            color: #64748b;
+            font-size: 0.85rem;
+            border-top: 1px solid #e2e8f0;
         }
         
         @media (max-width: 768px) {
             .tools-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
             }
             
             h1 {
-                font-size: 2.2rem;
+                font-size: 1.8rem;
             }
             
             .subtitle {
-                font-size: 1rem;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -184,7 +205,7 @@
     <div class="container">
         <header>
             <h1>开发者工具箱</h1>
-            <p class="subtitle">精选实用工具，提升开发效率，简化日常工作流程</p>
+            <p class="subtitle">精选实用工具，提升开发效率</p>
         </header>
         
         <div class="tools-grid">
@@ -192,20 +213,21 @@
             <div class="tool-card git-tool">
                 <div class="card-header">
                     <i class="fab fa-git-alt"></i>
-                    <h2>Git 工具</h2>
-                    <p>版本控制与协作开发</p>
+                    <div class="title-section">
+                        <h2>Git 工具</h2>
+                        <p>版本控制与协作</p>
+                    </div>
                 </div>
                 <div class="card-content">
-                    <p>高效管理代码版本，简化团队协作流程</p>
                     <ul class="features">
-                        <li>常用命令速查手册</li>
-                        <li>可视化分支图生成器</li>
-                        <li>智能 Commit 模板</li>
-                        <li>工作流最佳实践指南</li>
+                        <li>常用命令速查</li>
+                        <li>分支图生成器</li>
+                        <li>Commit 模板</li>
+                        <li>工作流指南</li>
                     </ul>
                 </div>
                 <div class="card-footer">
-                    <a href="#" class="btn">使用工具</a>
+                    <a href="#" class="btn">立即使用</a>
                 </div>
             </div>
             
@@ -213,20 +235,21 @@
             <div class="tool-card maven-tool">
                 <div class="card-header">
                     <i class="fas fa-cogs"></i>
-                    <h2>Maven 工具</h2>
-                    <p>Java 项目管理专家</p>
+                    <div class="title-section">
+                        <h2>Maven 工具</h2>
+                        <p>Java 项目管理</p>
+                    </div>
                 </div>
                 <div class="card-content">
-                    <p>简化 Java 项目构建与依赖管理</p>
                     <ul class="features">
-                        <li>常用命令快速参考</li>
-                        <li>智能依赖查询与分析</li>
-                        <li>常见问题解决方案库</li>
-                        <li>依赖冲突检测工具</li>
+                        <li>命令快速参考</li>
+                        <li>依赖查询分析</li>
+                        <li>问题解决方案</li>
+                        <li>冲突检测工具</li>
                     </ul>
                 </div>
                 <div class="card-footer">
-                    <a href="#" class="btn">使用工具</a>
+                    <a href="#" class="btn">立即使用</a>
                 </div>
             </div>
             
@@ -234,20 +257,21 @@
             <div class="tool-card md5-tool">
                 <div class="card-header">
                     <i class="fas fa-lock"></i>
-                    <h2>MD5 加密工具</h2>
-                    <p>安全加密解决方案</p>
+                    <div class="title-section">
+                        <h2>MD5 工具</h2>
+                        <p>安全加密方案</p>
+                    </div>
                 </div>
                 <div class="card-content">
-                    <p>快速安全的文本与文件加密工具</p>
                     <ul class="features">
-                        <li>文本即时加密/解密</li>
-                        <li>文件 MD5 值计算</li>
-                        <li>批量文件校验功能</li>
-                        <li>加密结果历史记录</li>
+                        <li>文本加密/解密</li>
+                        <li>文件 MD5 计算</li>
+                        <li>批量文件校验</li>
+                        <li>加密历史记录</li>
                     </ul>
                 </div>
                 <div class="card-footer">
-                    <a href="#" class="btn">使用工具</a>
+                    <a href="#" class="btn">立即使用</a>
                 </div>
             </div>
             
@@ -255,27 +279,28 @@
             <div class="tool-card json-tool">
                 <div class="card-header">
                     <i class="fas fa-code"></i>
-                    <h2>JSON 工具</h2>
-                    <p>数据格式处理专家</p>
+                    <div class="title-section">
+                        <h2>JSON 工具</h2>
+                        <p>数据格式处理</p>
+                    </div>
                 </div>
                 <div class="card-content">
-                    <p>强大的 JSON 数据处理与转换工具</p>
                     <ul class="features">
-                        <li>智能格式化与压缩</li>
-                        <li>JSON/XML 双向转换</li>
-                        <li>JSON 数据验证</li>
-                        <li>根据 JSON 生成实体类</li>
+                        <li>格式化与压缩</li>
+                        <li>JSON/XML 转换</li>
+                        <li>数据验证</li>
+                        <li>生成实体类</li>
                     </ul>
                 </div>
                 <div class="card-footer">
-                    <a href="#" class="btn">使用工具</a>
+                    <a href="#" class="btn">立即使用</a>
                 </div>
             </div>
         </div>
         
         <footer>
-            <p>© 2023 开发者工具箱 | 让开发工作更高效、更轻松</p>
+            <p>© 2023 开发者工具箱 | 简洁高效的开发工具集合</p>
         </footer>
     </div>
 </body>
-</html
+</html>
