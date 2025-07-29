@@ -160,9 +160,9 @@
     <!-- 模态框已被移除，此处可以构建新的弹窗 -->
     
     <!-- 查看备忘录详情模态框 -->
-    <n-modal v-model:show="showViewModal" class="memo-modal" style="width: 70vw; max-width: 800px;">
+    <n-modal v-model:show="showViewModal" class="memo-modal" style="width: 70vw; max-width: 800px; max-height: 90vh;">
       <div class="modal-container">
-        <div class="modal-inner">
+        <div class="modal-inner" style="max-height: 90vh; overflow-y: auto;">
           <div class="modal-header">
             <div class="modal-title">
               <span>{{ currentMemo ? currentMemo.title : '' }}</span>
@@ -186,13 +186,23 @@
               </div>
             </div>
 
-            <div class="memo-view-content">
-              <!-- 简化的预览容器结构 -->
-              <div class="custom-md-preview-container">
+            <div class="memo-view-content-wrapper">
+              <!-- 方案1：使用MdPreview组件 -->
+              <div v-if="false" class="custom-md-preview-container">
                 <MdPreview
                   v-if="currentMemo"
                   :modelValue="currentMemo.content"
                 />
+              </div>
+              
+              <!-- 方案2：使用HTML渲染 -->
+              <div v-if="currentMemo" class="html-preview-container" v-html="renderMarkdown(currentMemo.content || '')"></div>
+
+              <!-- 方案3：极简方案 - 使用纯文本展示 -->
+              <div v-if="currentMemo && useSimpleMode" class="simple-preview-container">
+                <div class="simple-content">
+                  {{ currentMemo.content }}
+                </div>
               </div>
             </div>
             
@@ -212,6 +222,9 @@
           </div>
           
           <div class="modal-footer">
+            <n-button class="action-button" @click="toggleSimpleMode">
+              {{ useSimpleMode ? '格式化预览' : '简单预览' }}
+            </n-button>
             <n-button class="cancel-button" @click="editCurrentMemo">编辑</n-button>
             <n-button type="primary" class="save-button" @click="closeViewModal">关闭</n-button>
           </div>
@@ -351,15 +364,18 @@ import PageLayout from '@/components/layout/PageLayout.vue'
 import MemoRightSidebar from '@/components/layout/MemoRightSidebar.vue'
 
 // 导入MD Editor V3
-import { MdEditor, MdPreview } from 'md-editor-v3'
+import { MdEditor, MdPreview, ToolbarNames } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
+import markdownit from 'markdown-it'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.css'
 
 import { searchMemos, createMemo, updateMemo, deleteMemo, toggleMemoStatus, getMemoStatistics, 
          Memo as ApiMemo, MemoSearchParams, MemoCreateParams, MemoUpdateParams } from '@/services/api';
 
 // 配置MD Editor V3工具栏
-const toolbars = [
-  'bold', 'underline', 'italic', 'strikethrough', 
+const toolbars: ToolbarNames[] = [
+  'bold', 'underline', 'italic', 'strikeThrough', 
   '-',
   'title', 'quote', 'unorderedList', 'orderedList', 
   '-', 
@@ -1001,6 +1017,45 @@ function updateSidebarStatistics() {
       sidebarComponent.dispatchEvent(event);
     });
   }
+}
+
+// 创建markdownit实例用于备选渲染方案
+const md: markdownit = markdownit({
+  html: true,
+  linkify: true,
+  typographer: true,
+  breaks: true,
+  highlight: function (str: string, lang: string): string {
+    // 简单代码高亮
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return '<pre class="hljs"><code>' +
+               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+               '</code></pre>';
+      } catch (__) {}
+    }
+    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+  }
+});
+
+// 使用markdownit渲染Markdown为HTML
+function renderMarkdown(content: string): string {
+  if (!content) return '';
+  try {
+    return md.render(content);
+  } catch (error) {
+    console.error('Markdown渲染错误:', error);
+    return `<div class="markdown-error">内容渲染失败</div>`;
+  }
+}
+
+// 简单模式开关
+const useSimpleMode = ref(false); // 默认不使用简单模式
+
+// 在内容过长或渲染失败时切换到简单模式
+function toggleSimpleMode() {
+  useSimpleMode.value = !useSimpleMode.value;
+  message.info(`已切换到${useSimpleMode.value ? '简单' : '格式化'}预览模式`);
 }
 </script>
 
@@ -2088,9 +2143,39 @@ function updateSidebarStatistics() {
   background: #f9fafb;
   border-radius: 12px;
   padding: 0;
+  height: auto; /* 修改这里，移除固定高度限制 */
+  max-height: 450px; /* 增加最大高度，允许更多内容显示 */
+  overflow-y: auto; /* 确保可以垂直滚动 */
+  overflow-x: hidden; /* 防止水平滚动 */
   margin-bottom: 16px;
-  max-height: 450px; /* 允许更大的查看区域 */
-  overflow: auto; /* 自动处理滚动 */
+}
+
+.custom-md-preview-container {
+  padding: 20px;
+  width: 100%;
+  height: 100%; /* 确保容器占满整个高度 */
+}
+
+/* 确保预览组件正确填充容器 */
+:deep(.md-editor-preview) {
+  width: 100% !important;
+  min-height: auto !important;
+  height: auto !important;
+  background: transparent !important;
+}
+
+/* 增强滚动条样式 */
+.memo-view-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.memo-view-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.memo-view-content::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .memo-preview-component {
@@ -2231,5 +2316,162 @@ function updateSidebarStatistics() {
 
 .memo-view-content::-webkit-scrollbar-track {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* 完全重新设计预览内容样式 */
+.memo-view-content-wrapper {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 0;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.custom-md-preview-container {
+  padding: 20px;
+  width: 100%;
+}
+
+:deep(.md-preview) {
+  padding: 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+
+:deep(.md-editor-preview) {
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* 移除之前可能冲突的样式 */
+.memo-view-content {
+  display: none;
+}
+
+/* 确保图片和代码块不会溢出 */
+:deep(.custom-md-preview-container img),
+:deep(.custom-md-preview-container pre),
+:deep(.custom-md-preview-container table) {
+  max-width: 100%;
+}
+
+:deep(.custom-md-preview-container pre) {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* HTML渲染样式 */
+.html-preview-container {
+  padding: 20px;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  font-size: 15px;
+}
+
+.html-preview-container h1,
+.html-preview-container h2,
+.html-preview-container h3,
+.html-preview-container h4,
+.html-preview-container h5,
+.html-preview-container h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.html-preview-container h1 {
+  font-size: 2em;
+  margin-top: 0;
+}
+
+.html-preview-container h2 {
+  font-size: 1.5em;
+}
+
+.html-preview-container h3 {
+  font-size: 1.25em;
+}
+
+.html-preview-container p {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.html-preview-container pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  margin: 0 0 16px;
+}
+
+.html-preview-container code {
+  font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(27, 31, 35, 0.05);
+  border-radius: 3px;
+}
+
+.html-preview-container pre code {
+  padding: 0;
+  font-size: 100%;
+  background-color: transparent;
+}
+
+.html-preview-container img {
+  max-width: 100%;
+  box-sizing: content-box;
+}
+
+.html-preview-container blockquote {
+  margin: 0 0 16px;
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+}
+
+.html-preview-container ul,
+.html-preview-container ol {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-left: 2em;
+}
+
+.markdown-error {
+  color: #f56c6c;
+  font-size: 14px;
+  padding: 10px;
+  border: 1px solid #ffebeb;
+  background-color: #fff5f5;
+  border-radius: 4px;
+}
+
+/* 简单预览样式 */
+.simple-preview-container {
+  padding: 20px;
+  width: 100%;
+}
+
+.simple-content {
+  white-space: pre-wrap;
+  font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background: #fff;
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  overflow-wrap: break-word;
 }
 </style> 
