@@ -62,17 +62,17 @@ const menuOptions: MenuOption[] = [
     key: '/memo',
     icon: () => h('img', { src: beiwangluSvg, class: 'w-4 h-4' }),
   },
-  // 隐藏博客和工具菜单，保留代码但不显示
+  {
+    label: '工具',
+    key: '/tools',
+    icon: () => h('img', { src: toolsSvg, class: 'w-4 h-4' }),
+  },
+  // 隐藏博客菜单，保留代码但不显示
   /*
   {
     label: '博客',
     key: '/blog',
     icon: () => h('img', { src: blogSvg, class: 'w-4 h-4' }),
-  },
-  {
-    label: '工具',
-    key: '/tools',
-    icon: () => h('img', { src: toolsSvg, class: 'w-4 h-4' }),
   },
   */
 ]

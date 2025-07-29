@@ -3,7 +3,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/blog',
+    redirect: '/tools',
   },
   {
     path: '/blog',
@@ -16,6 +16,18 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/tools/git',
     component: () => import('@/pages/tools/git/GitTools.vue'),
+  },
+  {
+    path: '/tools/maven',
+    component: () => import('@/pages/tools/maven/MavenTools.vue'),
+  },
+  {
+    path: '/tools/md5',
+    component: () => import('@/pages/tools/crypto/Md5Tools.vue'),
+  },
+  {
+    path: '/tools/json',
+    component: () => import('@/pages/tools/format/JsonTools.vue'),
   },
   {
     path: '/tools/java-gen',
@@ -33,33 +45,6 @@ const routes: RouteRecordRaw[] = [
     path: '/memo',
     component: () => import('@/pages/memo/MemoHome.vue'),
   },
-  // 以下路由暂未实现
-  /* 
-  {
-    path: '/tools/prompts',
-    component: () => import('@/pages/tools/prompts/AIPrompts.vue'),
-  },
-  {
-    path: '/tools/format',
-    component: () => import('@/pages/tools/format/JsonXmlTools.vue'),
-  },
-  {
-    path: '/tools/maven',
-    component: () => import('@/pages/tools/java/MavenTools.vue'),
-  },
-  {
-    path: '/tools/spring',
-    component: () => import('@/pages/tools/java/SpringTools.vue'),
-  },
-  {
-    path: '/tools/regex',
-    component: () => import('@/pages/tools/utils/RegexTester.vue'),
-  },
-  {
-    path: '/tools/sql',
-    component: () => import('@/pages/tools/data/SqlFormatter.vue'),
-  },
-  */
 ]
 
 const router = createRouter({
