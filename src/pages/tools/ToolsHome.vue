@@ -11,11 +11,12 @@
                 <div class="tool-card git-tool">
                   <div class="card-header">
                     <i class="fab fa-git-alt"></i>
-                    <h2>Git 工具集</h2>
-                    <p>版本控制与协作开发</p>
+                    <div class="title-section">
+                      <h2>Git 工具集</h2>
+                      <p>版本控制与协作开发</p>
+                    </div>
                   </div>
                   <div class="card-content">
-                    <p>高效管理代码版本，简化团队协作流程</p>
                     <ul class="features">
                       <li class="check-item">常用命令速查手册</li>
                       <li class="check-item">可视化分支图生成器</li>
@@ -24,7 +25,7 @@
                     </ul>
                   </div>
                   <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/git')">使用工具</a>
+                    <a class="btn" @click="router.push('/tools/git')">立即使用</a>
                   </div>
                 </div>
                 
@@ -32,11 +33,12 @@
                 <div class="tool-card maven-tool">
                   <div class="card-header">
                     <i class="fas fa-cogs"></i>
-                    <h2>Maven 工具</h2>
-                    <p>Java 项目管理专家</p>
+                    <div class="title-section">
+                      <h2>Maven 工具</h2>
+                      <p>Java 项目管理专家</p>
+                    </div>
                   </div>
                   <div class="card-content">
-                    <p>简化 Java 项目构建与依赖管理</p>
                     <ul class="features">
                       <li class="check-item">常用命令快速参考</li>
                       <li class="check-item">智能依赖查询与分析</li>
@@ -45,7 +47,7 @@
                     </ul>
                   </div>
                   <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/maven')">使用工具</a>
+                    <a class="btn" @click="router.push('/tools/maven')">立即使用</a>
                   </div>
                 </div>
               </div>
@@ -58,11 +60,12 @@
                 <div class="tool-card md5-tool">
                   <div class="card-header">
                     <i class="fas fa-lock"></i>
-                    <h2>MD5 加密工具</h2>
-                    <p>安全加密解决方案</p>
+                    <div class="title-section">
+                      <h2>MD5 加密工具</h2>
+                      <p>安全加密解决方案</p>
+                    </div>
                   </div>
                   <div class="card-content">
-                    <p>快速安全的文本与文件加密工具</p>
                     <ul class="features">
                       <li class="check-item">文本即时加密/解密</li>
                       <li class="check-item">文件 MD5 值计算</li>
@@ -71,7 +74,7 @@
                     </ul>
                   </div>
                   <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/md5')">使用工具</a>
+                    <a class="btn" @click="router.push('/tools/md5')">立即使用</a>
                   </div>
                 </div>
 
@@ -79,11 +82,12 @@
                 <div class="tool-card regex-tool">
                   <div class="card-header">
                     <i class="fas fa-code"></i>
-                    <h2>正则表达式</h2>
-                    <p>模式匹配专家</p>
+                    <div class="title-section">
+                      <h2>正则表达式</h2>
+                      <p>模式匹配专家</p>
+                    </div>
                   </div>
                   <div class="card-content">
-                    <p>强大的文本模式匹配与处理工具</p>
                     <ul class="features">
                       <li class="check-item">实时正则表达式测试</li>
                       <li class="check-item">常用正则表达式库</li>
@@ -92,7 +96,7 @@
                     </ul>
                   </div>
                   <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/regex')">使用工具</a>
+                    <a class="btn" @click="router.push('/tools/regex')">立即使用</a>
                   </div>
                 </div>
               </div>
@@ -105,11 +109,12 @@
                 <div class="tool-card json-tool">
                   <div class="card-header">
                     <i class="fas fa-code"></i>
-                    <h2>JSON 工具</h2>
-                    <p>数据格式处理专家</p>
+                    <div class="title-section">
+                      <h2>JSON 工具</h2>
+                      <p>数据格式处理专家</p>
+                    </div>
                   </div>
                   <div class="card-content">
-                    <p>强大的 JSON 数据处理与转换工具</p>
                     <ul class="features">
                       <li class="check-item">智能格式化与压缩</li>
                       <li class="check-item">JSON/XML 双向转换</li>
@@ -118,7 +123,7 @@
                     </ul>
                   </div>
                   <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/json')">使用工具</a>
+                    <a class="btn" @click="router.push('/tools/json')">立即使用</a>
                   </div>
                 </div>
 
@@ -126,11 +131,12 @@
                 <div class="tool-card sql-tool">
                   <div class="card-header">
                     <i class="fas fa-database"></i>
-                    <h2>SQL 格式化</h2>
-                    <p>数据库语句优化工具</p>
+                    <div class="title-section">
+                      <h2>SQL 格式化</h2>
+                      <p>数据库语句优化工具</p>
+                    </div>
                   </div>
                   <div class="card-content">
-                    <p>专业的SQL语句格式化与优化工具</p>
                     <ul class="features">
                       <li class="check-item">智能SQL语句格式化</li>
                       <li class="check-item">多种数据库语法支持</li>
@@ -139,7 +145,7 @@
                     </ul>
                   </div>
                   <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/sql')">使用工具</a>
+                    <a class="btn" @click="router.push('/tools/sql')">立即使用</a>
                   </div>
                 </div>
               </div>
@@ -152,11 +158,12 @@
                 <div class="tool-card java-tool">
                   <div class="card-header">
                     <i class="fab fa-java"></i>
-                    <h2>Java 类生成器</h2>
-                    <p>代码自动化工具</p>
+                    <div class="title-section">
+                      <h2>Java 类生成器</h2>
+                      <p>代码自动化工具</p>
+                    </div>
                   </div>
                   <div class="card-content">
-                    <p>一键生成Java代码，提高开发效率</p>
                     <ul class="features">
                       <li class="check-item">Entity/DTO/VO类生成</li>
                       <li class="check-item">Lombok注解支持</li>
@@ -165,7 +172,7 @@
                     </ul>
                   </div>
                   <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/java-gen')">使用工具</a>
+                    <a class="btn" @click="router.push('/tools/java-gen')">立即使用</a>
                   </div>
                 </div>
               </div>
@@ -207,190 +214,149 @@ const router = useRouter()
 
 .tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
   margin-top: 10px;
 }
 
 .tool-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 520px; /* 限制卡片高度，更紧凑 */
+  border: 1px solid #e2e8f0;
 }
 
 .tool-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
-  padding: 20px 20px 15px; /* 减小内边距 */
-  color: white;
-  text-align: left; /* 确保文字左对齐 */
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .card-header i {
-  font-size: 2rem; /* 减小图标尺寸 */
-  margin-bottom: 12px;
-  display: block;
+  font-size: 1.8rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  margin-right: 15px;
+  color: white;
+}
+
+.title-section {
+  flex: 1;
 }
 
 .card-header h2 {
-  font-size: 1.4rem; /* 减小标题尺寸 */
+  font-size: 1.25rem;
   font-weight: 600;
-  margin-bottom: 6px;
-  text-align: left; /* 确保标题左对齐 */
+  margin-bottom: 4px;
+  color: #1e293b;
 }
 
 .card-header p {
-  font-size: 0.9rem; /* 减小副标题尺寸 */
-  text-align: left; /* 确保副标题左对齐 */
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .card-content {
-  padding: 20px; /* 减小内边距 */
+  padding: 20px;
   flex-grow: 1;
-  text-align: left; /* 确保内容左对齐 */
-}
-
-.card-content p {
-  color: #333; /* 使文本颜色更深，增强对比度 */
-  font-size: 0.95rem; /* 调整文本大小 */
-  margin-bottom: 12px;
-  text-align: left; /* 确保段落左对齐 */
 }
 
 .features {
   list-style-type: none;
-  margin-top: 12px;
-  text-align: left; /* 确保列表左对齐 */
-  padding-left: 0; /* 移除可能的左内边距 */
+  margin-top: 0;
+  padding-left: 0;
 }
 
 .features li {
-  padding: 6px 0; /* 减小内边距，更紧凑 */
+  padding: 8px 0;
   position: relative;
-  padding-left: 28px;
-  color: #333; /* 使文本颜色更深 */
-  font-size: 0.9rem; /* 稍微减小字体 */
-  text-align: left; /* 确保列表项左对齐 */
+  padding-left: 24px;
+  font-size: 0.9rem;
 }
 
-/* 两种对勾样式 */
-.features li:before,
+/* 保留现有的对勾图标样式 */
 .features li.check-item:before {
-  content: "\f00c"; /* Font Awesome 对勾图标 */
-  font-family: "Font Awesome 6 Free", "FontAwesome"; /* 添加备用字体名称 */
-  font-weight: 900;
+  content: "✓";
+  font-family: sans-serif;
+  font-weight: normal;
   position: absolute;
   left: 0;
-  top: 8px; /* 调整为8px，与tool.html一致 */
-  color: #27ae60; /* 绿色对勾 */
-  display: inline-block; /* 确保图标正常显示 */
-  font-size: 14px; /* 明确设置图标大小 */
-  width: 14px; /* 固定宽度 */
-  text-align: center; /* 居中对齐 */
-}
-
-/* 提供备选方案：如果Font Awesome图标无法显示，使用Unicode对勾 */
-.features li.fallback:before {
-  content: "✓"; /* Unicode对勾字符 */
-  font-family: sans-serif; /* 使用系统字体 */
-}
-
-/* 添加一个确保对勾显示的备用类 */
-.check-item:before {
-  content: "✓" !important; /* 强制使用Unicode对勾字符 */
-  font-family: sans-serif !important; /* 使用系统字体 */
-  color: #27ae60 !important; /* 保持绿色 */
+  top: 8px;
+  color: #27ae60;
+  display: inline-block;
+  font-size: 14px;
+  width: 14px;
+  text-align: center;
 }
 
 .card-footer {
-  padding: 15px 20px; /* 减小内边距 */
-  background-color: #f8f9fa;
-  border-top: 1px solid #eee;
-  text-align: center; /* 按钮保持居中对齐 */
+  padding: 15px 20px;
+  background-color: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
 }
 
 .btn {
   display: inline-block;
-  padding: 10px 24px; /* 减小按钮内边距 */
+  padding: 8px 20px;
+  background: #3b82f6;
   color: white;
   text-decoration: none;
-  border-radius: 30px;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
   border: none;
   cursor: pointer;
-  font-size: 0.95rem; /* 减小按钮文字大小 */
+  font-size: 0.9rem;
 }
 
 .btn:hover {
+  background: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* 工具卡片背景色 */
-.git-tool .card-header {
-  background: linear-gradient(120deg, #f39c12, #e74c3c);
+/* 工具卡片图标背景 */
+.git-tool i {
+  background: linear-gradient(120deg, #f97316, #ea580c);
 }
 
-.maven-tool .card-header {
-  background: linear-gradient(120deg, #9b59b6, #34495e);
+.maven-tool i {
+  background: linear-gradient(120deg, #8b5cf6, #7c3aed);
 }
 
-.md5-tool .card-header {
-  background: linear-gradient(120deg, #27ae60, #16a085);
+.md5-tool i {
+  background: linear-gradient(120deg, #10b981, #059669);
 }
 
-.json-tool .card-header {
-  background: linear-gradient(120deg, #e74c3c, #c0392b);
+.json-tool i {
+  background: linear-gradient(120deg, #ef4444, #dc2626);
 }
 
-.sql-tool .card-header {
-  background: linear-gradient(120deg, #3498db, #2980b9);
+.sql-tool i {
+  background: linear-gradient(120deg, #3b82f6, #2563eb);
 }
 
-.java-tool .card-header {
-  background: linear-gradient(120deg, #ff5722, #e64a19);
+.java-tool i {
+  background: linear-gradient(120deg, #f97316, #ea580c);
 }
 
-.regex-tool .card-header {
-  background: linear-gradient(120deg, #ffb300, #fb8c00);
-}
-
-.git-tool .btn {
-  background: linear-gradient(120deg, #f39c12, #e74c3c);
-}
-
-.maven-tool .btn {
-  background: linear-gradient(120deg, #9b59b6, #34495e);
-}
-
-.md5-tool .btn {
-  background: linear-gradient(120deg, #27ae60, #16a085);
-}
-
-.json-tool .btn {
-  background: linear-gradient(120deg, #e74c3c, #c0392b);
-}
-
-.sql-tool .btn {
-  background: linear-gradient(120deg, #3498db, #2980b9);
-}
-
-.java-tool .btn {
-  background: linear-gradient(120deg, #ff5722, #e64a19);
-}
-
-.regex-tool .btn {
-  background: linear-gradient(120deg, #ffb300, #fb8c00);
+.regex-tool i {
+  background: linear-gradient(120deg, #f59e0b, #d97706);
 }
 
 /* 媒体查询 */
@@ -408,7 +374,7 @@ const router = useRouter()
 
 @media (min-width: 1201px) {
   .tools-grid {
-    grid-template-columns: repeat(3, 1fr); /* 默认显示三列，更接近tool.html */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   }
 }
 </style> 
