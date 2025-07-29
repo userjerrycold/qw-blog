@@ -8,7 +8,7 @@
               <h2 class="category-title">开发工具</h2>
               <div class="tools-grid">
                 <!-- Git 工具 -->
-                <div class="tool-card git-tool" @click="openTool('/tools/git')">
+                <div class="tool-card git-tool" @click="openTool('/tools/git', 'Git 工具集')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fab fa-git-alt"></i>
@@ -19,7 +19,7 @@
                 </div>
                 
                 <!-- Maven 工具 -->
-                <div class="tool-card maven-tool" @click="openTool('/tools/maven')">
+                <div class="tool-card maven-tool" @click="openTool('/tools/maven', 'Maven 工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-cogs"></i>
@@ -30,7 +30,7 @@
                 </div>
                 
                 <!-- SQL 工具 -->
-                <div class="tool-card sql-tool" @click="openTool('/tools/sql')">
+                <div class="tool-card sql-tool" @click="openTool('/tools/sql', 'SQL 工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-database"></i>
@@ -46,7 +46,7 @@
               <h2 class="category-title">实用工具</h2>
               <div class="tools-grid">
                 <!-- MD5 加密工具 -->
-                <div class="tool-card md5-tool" @click="openTool('/tools/md5')">
+                <div class="tool-card md5-tool" @click="openTool('/tools/md5', 'MD5 加密工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-lock"></i>
@@ -56,16 +56,7 @@
                   </div>
                 </div>
 
-                <!-- 正则表达式 -->
-                <div class="tool-card regex-tool" @click="openTool('/tools/regex')">
-                  <div class="card-content">
-                    <div class="tool-header">
-                      <i class="fas fa-code"></i>
-                      <h2>正则表达式</h2>
-                    </div>
-                    <p class="tool-desc">模式匹配测试工具</p>
-                  </div>
-                </div>
+                <!-- 移除正则表达式工具卡片 -->
               </div>
             </div>
 
@@ -73,7 +64,7 @@
               <h2 class="category-title">数据处理</h2>
               <div class="tools-grid">
                 <!-- JSON 工具 -->
-                <div class="tool-card json-tool" @click="openTool('/tools/json')">
+                <div class="tool-card json-tool" @click="openTool('/tools/json', 'JSON 工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-code"></i>
@@ -89,7 +80,7 @@
               <h2 class="category-title">代码生成</h2>
               <div class="tools-grid">
                 <!-- Java 类生成器 -->
-                <div class="tool-card java-tool" @click="openTool('/tools/java-gen')">
+                <div class="tool-card java-tool" @click="openTool('/tools/java-gen', 'Java 类生成器')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fab fa-java"></i>
@@ -108,7 +99,7 @@
             <div class="tool-category">
               <div class="tools-grid">
                 <!-- Git 工具 -->
-                <div class="tool-card git-tool" @click="openTool('/tools/git')">
+                <div class="tool-card git-tool" @click="openTool('/tools/git', 'Git 工具集')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fab fa-git-alt"></i>
@@ -119,7 +110,7 @@
                 </div>
                 
                 <!-- Maven 工具 -->
-                <div class="tool-card maven-tool" @click="openTool('/tools/maven')">
+                <div class="tool-card maven-tool" @click="openTool('/tools/maven', 'Maven 工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-cogs"></i>
@@ -130,7 +121,7 @@
                 </div>
                 
                 <!-- SQL 工具 -->
-                <div class="tool-card sql-tool" @click="openTool('/tools/sql')">
+                <div class="tool-card sql-tool" @click="openTool('/tools/sql', 'SQL 工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-database"></i>
@@ -149,7 +140,7 @@
             <div class="tool-category">
               <div class="tools-grid">
                 <!-- Java 类生成器 -->
-                <div class="tool-card java-tool" @click="openTool('/tools/java-gen')">
+                <div class="tool-card java-tool" @click="openTool('/tools/java-gen', 'Java 类生成器')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fab fa-java"></i>
@@ -160,7 +151,7 @@
                 </div>
 
                 <!-- Maven 工具 (也属于Java工具) -->
-                <div class="tool-card maven-tool" @click="openTool('/tools/maven')">
+                <div class="tool-card maven-tool" @click="openTool('/tools/maven', 'Maven 工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-cogs"></i>
@@ -179,7 +170,7 @@
             <div class="tool-category">
               <div class="tools-grid">
                 <!-- JSON 工具 -->
-                <div class="tool-card json-tool" @click="openTool('/tools/json')">
+                <div class="tool-card json-tool" @click="openTool('/tools/json', 'JSON 工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-code"></i>
@@ -198,7 +189,7 @@
             <div class="tool-category">
               <div class="tools-grid">
                 <!-- MD5 加密工具 -->
-                <div class="tool-card md5-tool" @click="openTool('/tools/md5')">
+                <div class="tool-card md5-tool" @click="openTool('/tools/md5', 'MD5 加密工具')">
                   <div class="card-content">
                     <div class="tool-header">
                       <i class="fas fa-lock"></i>
@@ -208,16 +199,7 @@
                   </div>
                 </div>
 
-                <!-- 正则表达式 -->
-                <div class="tool-card regex-tool" @click="openTool('/tools/regex')">
-                  <div class="card-content">
-                    <div class="tool-header">
-                      <i class="fas fa-code"></i>
-                      <h2>正则表达式</h2>
-                    </div>
-                    <p class="tool-desc">模式匹配测试工具</p>
-                  </div>
-                </div>
+                <!-- 移除实用工具标签页中的正则表达式 -->
               </div>
             </div>
           </div>
@@ -235,9 +217,12 @@ import { NCard, NButton, NTag, NTabs, NTabPane } from 'naive-ui'
 const router = useRouter()
 const activeTab = ref('all')
 
-// 在新窗口打开工具
-function openTool(url: string) {
-  window.open(url, '_blank')
+// 在新窗口打开工具并设置标题
+function openTool(url: string, title: string = 'QH DevTools') {
+  const newWindow = window.open(url, '_blank')
+  if (newWindow) {
+    newWindow.document.title = title
+  }
 }
 </script>
 
@@ -331,8 +316,7 @@ function openTool(url: string) {
 .tool-card.md5-tool:hover::before,
 .tool-card.json-tool:hover::before,
 .tool-card.sql-tool:hover::before,
-.tool-card.java-tool:hover::before,
-.tool-card.regex-tool:hover::before {
+.tool-card.java-tool:hover::before {
   background: linear-gradient(135deg, rgba(100, 181, 246, 0.1), rgba(33, 150, 243, 0.1));
   opacity: 1;
 }
@@ -400,10 +384,6 @@ function openTool(url: string) {
 
 .java-tool .tool-header i {
   background: linear-gradient(120deg, #f97316, #ea580c);
-}
-
-.regex-tool .tool-header i {
-  background: linear-gradient(120deg, #f59e0b, #d97706);
 }
 
 /* 媒体查询 */
