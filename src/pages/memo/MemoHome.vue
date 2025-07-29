@@ -2366,7 +2366,6 @@ function toggleSimpleMode() {
 /* HTML渲染样式 */
 .html-preview-container {
   padding: 20px;
-  width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;
   color: #333;
