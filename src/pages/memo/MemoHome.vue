@@ -222,9 +222,7 @@
           </div>
           
           <div class="modal-footer">
-            <n-button class="action-button" @click="toggleSimpleMode">
-              {{ useSimpleMode ? '格式化预览' : '简单预览' }}
-            </n-button>
+            
             <n-button class="cancel-button" @click="editCurrentMemo">编辑</n-button>
             <n-button type="primary" class="save-button" @click="closeViewModal">关闭</n-button>
           </div>
