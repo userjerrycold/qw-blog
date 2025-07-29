@@ -2,7 +2,7 @@
   <PageLayout :rightSidebar="ToolsRightSidebar">
     <div class="tools-container">
       <div class="mb-6">
-        <n-tabs type="line" animated>
+        <n-tabs type="line" animated v-model:value="activeTab">
           <n-tab-pane name="all" tab="全部">
             <div class="tool-category mb-8">
               <h2 class="text-xl font-medium mb-5">开发工具</h2>
@@ -48,6 +48,28 @@
                   </div>
                   <div class="card-footer">
                     <a class="btn" @click="router.push('/tools/maven')">立即使用</a>
+                  </div>
+                </div>
+                
+                <!-- SQL 工具 -->
+                <div class="tool-card sql-tool">
+                  <div class="card-header">
+                    <i class="fas fa-database"></i>
+                    <div class="title-section">
+                      <h2>SQL 工具</h2>
+                      <p>数据库语句优化工具</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">智能SQL语句格式化</li>
+                      <li class="check-item">多种数据库语法支持</li>
+                      <li class="check-item">SQL语句性能分析</li>
+                      <li class="check-item">常用SQL模板库</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/sql')">立即使用</a>
                   </div>
                 </div>
               </div>
@@ -126,28 +148,6 @@
                     <a class="btn" @click="router.push('/tools/json')">立即使用</a>
                   </div>
                 </div>
-
-                <!-- SQL 格式化 -->
-                <div class="tool-card sql-tool">
-                  <div class="card-header">
-                    <i class="fas fa-database"></i>
-                    <div class="title-section">
-                      <h2>SQL 格式化</h2>
-                      <p>数据库语句优化工具</p>
-                    </div>
-                  </div>
-                  <div class="card-content">
-                    <ul class="features">
-                      <li class="check-item">智能SQL语句格式化</li>
-                      <li class="check-item">多种数据库语法支持</li>
-                      <li class="check-item">SQL语句性能分析</li>
-                      <li class="check-item">常用SQL模板库</li>
-                    </ul>
-                  </div>
-                  <div class="card-footer">
-                    <a class="btn" @click="router.push('/tools/sql')">立即使用</a>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -181,14 +181,206 @@
           
           <n-tab-pane name="dev" tab="开发工具">
             <!-- 开发工具分类内容 -->
+            <div class="tool-category">
+              <div class="tools-grid">
+                <!-- Git 工具 -->
+                <div class="tool-card git-tool">
+                  <div class="card-header">
+                    <i class="fab fa-git-alt"></i>
+                    <div class="title-section">
+                      <h2>Git 工具集</h2>
+                      <p>版本控制与协作开发</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">常用命令速查手册</li>
+                      <li class="check-item">可视化分支图生成器</li>
+                      <li class="check-item">智能 Commit 模板</li>
+                      <li class="check-item">工作流最佳实践指南</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/git')">立即使用</a>
+                  </div>
+                </div>
+                
+                <!-- Maven 工具 -->
+                <div class="tool-card maven-tool">
+                  <div class="card-header">
+                    <i class="fas fa-cogs"></i>
+                    <div class="title-section">
+                      <h2>Maven 工具</h2>
+                      <p>Java 项目管理专家</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">常用命令快速参考</li>
+                      <li class="check-item">智能依赖查询与分析</li>
+                      <li class="check-item">常见问题解决方案库</li>
+                      <li class="check-item">依赖冲突检测工具</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/maven')">立即使用</a>
+                  </div>
+                </div>
+                
+                <!-- SQL 工具 -->
+                <div class="tool-card sql-tool">
+                  <div class="card-header">
+                    <i class="fas fa-database"></i>
+                    <div class="title-section">
+                      <h2>SQL 工具</h2>
+                      <p>数据库语句优化工具</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">智能SQL语句格式化</li>
+                      <li class="check-item">多种数据库语法支持</li>
+                      <li class="check-item">SQL语句性能分析</li>
+                      <li class="check-item">常用SQL模板库</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/sql')">立即使用</a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </n-tab-pane>
           
           <n-tab-pane name="java" tab="Java 工具">
             <!-- Java工具分类内容 -->
+            <div class="tool-category">
+              <div class="tools-grid">
+                <!-- Java 类生成器 -->
+                <div class="tool-card java-tool">
+                  <div class="card-header">
+                    <i class="fab fa-java"></i>
+                    <div class="title-section">
+                      <h2>Java 类生成器</h2>
+                      <p>代码自动化工具</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">Entity/DTO/VO类生成</li>
+                      <li class="check-item">Lombok注解支持</li>
+                      <li class="check-item">Controller/Service模板</li>
+                      <li class="check-item">MyBatis Mapper生成</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/java-gen')">立即使用</a>
+                  </div>
+                </div>
+
+                <!-- Maven 工具 (也属于Java工具) -->
+                <div class="tool-card maven-tool">
+                  <div class="card-header">
+                    <i class="fas fa-cogs"></i>
+                    <div class="title-section">
+                      <h2>Maven 工具</h2>
+                      <p>Java 项目管理专家</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">常用命令快速参考</li>
+                      <li class="check-item">智能依赖查询与分析</li>
+                      <li class="check-item">常见问题解决方案库</li>
+                      <li class="check-item">依赖冲突检测工具</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/maven')">立即使用</a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </n-tab-pane>
           
           <n-tab-pane name="data" tab="数据处理">
             <!-- 数据处理分类内容 -->
+            <div class="tool-category">
+              <div class="tools-grid">
+                <!-- JSON 工具 -->
+                <div class="tool-card json-tool">
+                  <div class="card-header">
+                    <i class="fas fa-code"></i>
+                    <div class="title-section">
+                      <h2>JSON 工具</h2>
+                      <p>数据格式处理专家</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">智能格式化与压缩</li>
+                      <li class="check-item">JSON/XML 双向转换</li>
+                      <li class="check-item">JSON 数据验证</li>
+                      <li class="check-item">根据 JSON 生成实体类</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/json')">立即使用</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </n-tab-pane>
+
+          <n-tab-pane name="utils" tab="实用工具">
+            <!-- 实用工具分类内容 -->
+            <div class="tool-category">
+              <div class="tools-grid">
+                <!-- MD5 加密工具 -->
+                <div class="tool-card md5-tool">
+                  <div class="card-header">
+                    <i class="fas fa-lock"></i>
+                    <div class="title-section">
+                      <h2>MD5 加密工具</h2>
+                      <p>安全加密解决方案</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">文本即时加密/解密</li>
+                      <li class="check-item">文件 MD5 值计算</li>
+                      <li class="check-item">批量文件校验功能</li>
+                      <li class="check-item">加密结果历史记录</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/md5')">立即使用</a>
+                  </div>
+                </div>
+
+                <!-- 正则表达式 -->
+                <div class="tool-card regex-tool">
+                  <div class="card-header">
+                    <i class="fas fa-code"></i>
+                    <div class="title-section">
+                      <h2>正则表达式</h2>
+                      <p>模式匹配专家</p>
+                    </div>
+                  </div>
+                  <div class="card-content">
+                    <ul class="features">
+                      <li class="check-item">实时正则表达式测试</li>
+                      <li class="check-item">常用正则表达式库</li>
+                      <li class="check-item">批量文本查找替换</li>
+                      <li class="check-item">正则匹配可视化解析</li>
+                    </ul>
+                  </div>
+                  <div class="card-footer">
+                    <a class="btn" @click="router.push('/tools/regex')">立即使用</a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </n-tab-pane>
         </n-tabs>
       </div>
@@ -197,6 +389,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NCard, NButton, NTag, NTabs, NTabPane } from 'naive-ui'
 // @ts-ignore
@@ -205,6 +398,7 @@ import PageLayout from '@/components/layout/PageLayout.vue'
 import ToolsRightSidebar from '@/components/layout/ToolsRightSidebar.vue'
 
 const router = useRouter()
+const activeTab = ref('all')
 </script>
 
 <style scoped>

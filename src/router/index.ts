@@ -30,6 +30,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/tools/format/JsonTools.vue'),
   },
   {
+    path: '/tools/sql',
+    component: () => import('@/pages/tools/format/SqlTools.vue'),
+  },
+  {
     path: '/tools/java-gen',
     component: () => import('@/pages/tools/java/JavaGenerator.vue'),
   },
