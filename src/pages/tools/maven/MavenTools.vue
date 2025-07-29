@@ -1,6 +1,6 @@
 <template>
-  <PageLayout :rightSidebar="ToolsRightSidebar">
-    <div class="maven-tools-container">
+  <div class="tools-container">
+    <div class="content-container">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Maven 工具</h1>
         <n-button @click="router.push('/tools')" size="small">
@@ -256,7 +256,7 @@
         </n-tab-pane>
       </n-tabs>
     </div>
-  </PageLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -267,10 +267,6 @@ import {
   NCard, NButton, NTabs, NTabPane, NForm, NFormItem, 
   NInput, NAlert, NCollapse, NCollapseItem 
 } from 'naive-ui'
-// @ts-ignore
-import PageLayout from '@/components/layout/PageLayout.vue'
-// @ts-ignore
-import ToolsRightSidebar from '@/components/layout/ToolsRightSidebar.vue'
 
 const router = useRouter()
 const message = useMessage()
@@ -427,8 +423,18 @@ function copyToClipboard(text: string) {
 </script>
 
 <style scoped>
-.maven-tools-container {
-  padding: 10px;
+.tools-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  background-color: white;
+  overflow-y: auto;
+}
+
+.content-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px;
 }
 
 .command-grid {
@@ -497,5 +503,15 @@ function copyToClipboard(text: string) {
   border-radius: 3px;
   font-family: monospace;
   font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    padding: 15px;
+  }
+  
+  .command-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style> 

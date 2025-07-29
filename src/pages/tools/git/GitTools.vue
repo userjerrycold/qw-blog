@@ -1,6 +1,6 @@
 <template>
-  <PageLayout :rightSidebar="ToolsRightSidebar">
-    <div class="git-tools-container">
+  <div class="tools-container">
+    <div class="content-container">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Git 工具集</h1>
         <n-button @click="router.push('/tools')" size="small">
@@ -99,37 +99,35 @@
                 <h3 class="text-base font-medium mb-2">分支配置</h3>
                 <n-form>
                   <n-form-item label="主分支名称">
-                    <n-input v-model:value="branchGraph.mainBranch" placeholder="main" />
+                    <n-input v-model:value="branchGraphConfig.mainBranch" placeholder="main" />
                   </n-form-item>
                   
-                  <n-form-item label="特性分支">
-                    <n-dynamic-input
-                      v-model:value="branchGraph.featureBranches"
-                      :on-create="() => ({ name: '', commits: 2, mergedTo: 'main' })"
-                    >
-                      <template #default="{ value }">
-                        <div class="grid grid-cols-3 gap-2">
-                          <n-input v-model:value="value.name" placeholder="分支名称" />
-                          <n-input-number v-model:value="value.commits" placeholder="提交数" :min="1" :max="10" />
-                          <n-select v-model:value="value.mergedTo" :options="branchOptions" />
-                        </div>
-                      </template>
-                    </n-dynamic-input>
+                  <n-form-item label="分支与合并定义">
+                    <n-input
+                      v-model:value="branchGraphConfig.branchDefinition"
+                      type="textarea"
+                      :autosize="{ minRows: 6, maxRows: 10 }"
+                      placeholder="每行一个操作，例如:
+feature: main 50
+bugfix: feature 30
+merge bugfix feature
+merge feature main"
+                    />
                   </n-form-item>
-
+                  
                   <n-form-item>
                     <n-button type="primary" @click="generateBranchGraph">生成分支图</n-button>
                   </n-form-item>
                 </n-form>
               </div>
-
+              
               <div>
-                <h3 class="text-base font-medium mb-2">分支图</h3>
+                <h3 class="text-base font-medium mb-2">生成的分支图</h3>
                 <div class="branch-graph-output">
                   <pre>{{ branchGraphOutput }}</pre>
                 </div>
                 <n-button class="mt-2" size="small" @click="copyToClipboard(branchGraphOutput)">
-                  复制图形
+                  复制分支图
                 </n-button>
               </div>
             </div>
@@ -138,55 +136,56 @@
 
         <!-- Commit 模板 -->
         <n-tab-pane name="commit-template" tab="Commit 模板">
-          <n-card title="Commit Message 模板生成器" class="mb-4">
+          <n-card title="Commit 消息生成器" class="mb-4">
             <div class="mb-4">
               <n-alert type="info">
-                选择 Commit 类型和填写相关信息，生成规范的 Commit Message
+                生成规范的 Git Commit 消息，遵循 Conventional Commits 规范
               </n-alert>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h3 class="text-base font-medium mb-2">Commit 信息</h3>
+                <h3 class="text-base font-medium mb-2">Commit 配置</h3>
                 <n-form>
                   <n-form-item label="类型">
                     <n-select v-model:value="commitTemplate.type" :options="commitTypeOptions" />
                   </n-form-item>
                   
                   <n-form-item label="范围 (可选)">
-                    <n-input v-model:value="commitTemplate.scope" placeholder="影响范围，如：auth, api" />
+                    <n-input v-model:value="commitTemplate.scope" placeholder="auth" />
                   </n-form-item>
                   
                   <n-form-item label="简短描述">
-                    <n-input v-model:value="commitTemplate.subject" placeholder="简明扼要的变更描述" />
+                    <n-input v-model:value="commitTemplate.subject" placeholder="添加用户登录功能" />
                   </n-form-item>
                   
                   <n-form-item label="详细描述 (可选)">
                     <n-input
                       v-model:value="commitTemplate.body"
                       type="textarea"
-                      placeholder="详细的变更原因和影响"
-                      :autosize="{ minRows: 3, maxRows: 5 }"
+                      :autosize="{ minRows: 3, maxRows: 6 }"
+                      placeholder="实现了基于JWT的认证系统，包括登录表单和Token存储。
+添加了记住密码功能和自动登录选项。"
                     />
                   </n-form-item>
                   
-                  <n-form-item label="关联 Issue (可选)">
-                    <n-input v-model:value="commitTemplate.footer" placeholder="如：Closes #123, Fixes #456" />
+                  <n-form-item label="页脚注释 (可选)">
+                    <n-input v-model:value="commitTemplate.footer" placeholder="Closes #123" />
                   </n-form-item>
-
+                  
                   <n-form-item>
-                    <n-button type="primary" @click="generateCommitMessage">生成 Commit Message</n-button>
+                    <n-button type="primary" @click="generateCommitMessage">生成 Commit 消息</n-button>
                   </n-form-item>
                 </n-form>
               </div>
-
+              
               <div>
-                <h3 class="text-base font-medium mb-2">生成结果</h3>
+                <h3 class="text-base font-medium mb-2">生成的 Commit 消息</h3>
                 <div class="commit-message-output">
                   <pre>{{ commitMessageOutput }}</pre>
                 </div>
                 <n-button class="mt-2" size="small" @click="copyToClipboard(commitMessageOutput)">
-                  复制 Commit Message
+                  复制 Commit 消息
                 </n-button>
               </div>
             </div>
@@ -194,21 +193,17 @@
         </n-tab-pane>
       </n-tabs>
     </div>
-  </PageLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { 
   NCard, NButton, NTabs, NTabPane, NForm, NFormItem, 
-  NInput, NInputNumber, NSelect, NDynamicInput, NAlert 
+  NInput, NAlert, NSelect
 } from 'naive-ui'
-// @ts-ignore
-import PageLayout from '@/components/layout/PageLayout.vue'
-// @ts-ignore
-import ToolsRightSidebar from '@/components/layout/ToolsRightSidebar.vue'
 
 const router = useRouter()
 const message = useMessage()
@@ -218,45 +213,50 @@ const basicCommands = [
   { 
     name: '初始化仓库', 
     command: 'git init', 
-    description: '在当前目录创建一个新的 Git 仓库' 
+    description: '创建一个新的Git仓库' 
   },
   { 
     name: '克隆仓库', 
-    command: 'git clone <repository-url>', 
+    command: 'git clone https://github.com/username/repository.git', 
     description: '克隆远程仓库到本地' 
   },
   { 
     name: '添加文件', 
-    command: 'git add <file-name> 或 git add .', 
+    command: 'git add <filename>', 
     description: '将文件添加到暂存区' 
   },
   { 
+    name: '添加所有', 
+    command: 'git add .', 
+    description: '将所有更改添加到暂存区' 
+  },
+  { 
     name: '提交更改', 
-    command: 'git commit -m "commit message"', 
-    description: '将暂存区的更改提交到本地仓库' 
+    command: 'git commit -m "提交信息"', 
+    description: '提交暂存区的更改' 
   },
   { 
     name: '查看状态', 
     command: 'git status', 
-    description: '查看工作区和暂存区的状态' 
-  },
-  { 
-    name: '查看日志', 
-    command: 'git log', 
-    description: '查看提交历史' 
+    description: '显示工作区和暂存区的状态' 
   }
 ]
 
 const branchCommands = [
   { 
-    name: '查看分支', 
+    name: '列出分支', 
     command: 'git branch', 
     description: '列出本地所有分支' 
   },
   { 
+    name: '列出远程分支', 
+    command: 'git branch -r', 
+    description: '列出所有远程分支' 
+  },
+  { 
     name: '创建分支', 
     command: 'git branch <branch-name>', 
-    description: '创建新分支' 
+    description: '创建新的分支' 
   },
   { 
     name: '切换分支', 
@@ -266,135 +266,110 @@ const branchCommands = [
   { 
     name: '创建并切换', 
     command: 'git checkout -b <branch-name>', 
-    description: '创建新分支并立即切换到该分支' 
+    description: '创建并切换到新分支' 
   },
   { 
     name: '合并分支', 
     command: 'git merge <branch-name>', 
-    description: '将指定分支合并到当前分支' 
-  },
-  { 
-    name: '删除分支', 
-    command: 'git branch -d <branch-name>', 
-    description: '删除指定分支' 
+    description: '合并指定分支到当前分支' 
   }
 ]
 
 const advancedCommands = [
   { 
-    name: '暂存更改', 
-    command: 'git stash', 
-    description: '临时保存工作区的修改' 
+    name: '添加远程仓库', 
+    command: 'git remote add origin https://github.com/username/repository.git', 
+    description: '添加远程仓库' 
   },
   { 
-    name: '恢复暂存', 
-    command: 'git stash pop', 
-    description: '恢复最近一次暂存的更改' 
+    name: '推送到远程', 
+    command: 'git push -u origin main', 
+    description: '推送本地分支到远程仓库' 
   },
   { 
     name: '拉取更新', 
-    command: 'git pull origin <branch-name>', 
-    description: '从远程仓库拉取更新' 
+    command: 'git pull origin main', 
+    description: '从远程仓库拉取并合并更新' 
   },
   { 
-    name: '推送更新', 
-    command: 'git push origin <branch-name>', 
-    description: '将本地更新推送到远程仓库' 
+    name: '查看日志', 
+    command: 'git log --oneline --graph', 
+    description: '以图形方式查看提交历史' 
   },
   { 
-    name: '查看远程', 
-    command: 'git remote -v', 
-    description: '查看远程仓库信息' 
+    name: '撤销提交', 
+    command: 'git revert <commit-hash>', 
+    description: '撤销指定的提交' 
   },
   { 
-    name: '添加远程', 
-    command: 'git remote add origin <repository-url>', 
-    description: '添加远程仓库' 
+    name: '变基操作', 
+    command: 'git rebase main', 
+    description: '将当前分支变基到main分支' 
   }
 ]
 
 // 分支图生成器
-const branchGraph = ref({
+const branchGraphConfig = ref({
   mainBranch: 'main',
-  featureBranches: [
-    { name: 'feature-1', commits: 3, mergedTo: 'main' },
-    { name: 'feature-2', commits: 2, mergedTo: 'main' }
-  ]
+  branchDefinition: `feature: main 50
+bugfix: feature 30
+merge bugfix feature
+merge feature main`
 })
 
-const branchOptions = computed(() => {
-  const options = [{ label: branchGraph.value.mainBranch, value: branchGraph.value.mainBranch }]
-  branchGraph.value.featureBranches.forEach(branch => {
-    if (branch.name) {
-      options.push({ label: branch.name, value: branch.name })
-    }
-  })
-  return options
-})
-
-const branchGraphOutput = ref(`
-* 9e8a6c2 (HEAD -> main) Merge branch 'feature-2'
-|\\
-| * 7d2f5b1 (feature-2) Add feature 2
-| * 3a1b4c5 Start feature 2
-|/
-* 2e6f8a0 Merge branch 'feature-1'
-|\\
-| * 5c7d9e1 (feature-1) Complete feature 1
-| * 4b6a8c0 Progress on feature 1
-| * 1d3f5a7 Start feature 1
-|/
-* 0e2c4a6 Initial commit
-`)
+const branchGraphOutput = ref(`main ----------------------------+
+                            |
+feature         +------------+-----+
+                |                  |
+bugfix          +-------+          |
+                        |          |
+                        +----------+
+                                   |
+                                   +`)
 
 function generateBranchGraph() {
-  // 简单的 ASCII 图形生成逻辑
-  let output = ''
-  const mainBranch = branchGraph.value.mainBranch
-  let commitCounter = 0
+  // 简易实现，实际应用需要更复杂的算法
+  const { mainBranch, branchDefinition } = branchGraphConfig.value
   
-  // 初始提交
-  output += `* ${generateCommitHash(commitCounter++)} Initial commit\n`
-  
-  // 处理每个特性分支
-  branchGraph.value.featureBranches.forEach((branch, index) => {
-    if (!branch.name) return
-    
-    // 分支开始
-    output += `|\n`
-    output += `* ${generateCommitHash(commitCounter++)} Merge branch '${branch.name}'\n`
-    output += `|\\\n`
-    
-    // 分支上的提交
-    for (let i = 0; i < branch.commits; i++) {
-      const commitMsg = i === 0 ? `Start ${branch.name}` : 
-                        i === branch.commits - 1 ? `Complete ${branch.name}` : 
-                        `Progress on ${branch.name}`
-      output += `| * ${generateCommitHash(commitCounter++)} (${branch.name}) ${commitMsg}\n`
-    }
-    
-    // 分支结束
-    output += `|/\n`
-  })
-  
-  // 最后一个提交（HEAD）
-  output += `* ${generateCommitHash(commitCounter++)} (HEAD -> ${mainBranch}) Latest commit\n`
-  
-  branchGraphOutput.value = output
-}
-
-function generateCommitHash(seed: number): string {
-  // 简单的伪随机哈希生成
-  const chars = '0123456789abcdef'
-  let hash = ''
-  for (let i = 0; i < 7; i++) {
-    const randomIndex = (seed + i * 11) % chars.length
-    hash += chars[randomIndex]
+  if (!branchDefinition.trim()) {
+    message.warning('请输入分支定义')
+    return
   }
-  return hash
+  
+  try {
+    // 这里是简单的示例输出，实际应用需要解析分支定义并生成图形
+    const lines = branchDefinition.split('\n')
+    const branches = [mainBranch]
+    
+    // 提取所有分支名
+    lines.forEach(line => {
+      if (line.includes(':')) {
+        const branch = line.split(':')[0].trim()
+        if (!branches.includes(branch)) {
+          branches.push(branch)
+        }
+      }
+    })
+    
+    // 生成一个简单的ASCII图
+    let graph = ''
+    branches.forEach((branch, index) => {
+      const indent = ' '.repeat(index * 2)
+      graph += `${indent}${branch} ${'---'.repeat(4 - index)}\n`
+      if (index < branches.length - 1) {
+        graph += `${indent}|\n`
+      }
+    })
+    
+    branchGraphOutput.value = graph
+    message.success('分支图生成成功')
+  } catch (error) {
+    message.error('分支图生成失败')
+    branchGraphOutput.value = error instanceof Error ? `错误: ${error.message}` : '未知错误'
+  }
 }
 
-// Commit 模板生成器
+// Commit 模板
 const commitTemplate = ref({
   type: 'feat',
   scope: '',
@@ -405,9 +380,9 @@ const commitTemplate = ref({
 
 const commitTypeOptions = [
   { label: '✨ feat: 新功能', value: 'feat' },
-  { label: '🐛 fix: 修复Bug', value: 'fix' },
-  { label: '📚 docs: 文档更新', value: 'docs' },
-  { label: '💎 style: 代码格式', value: 'style' },
+  { label: '🐛 fix: 修复', value: 'fix' },
+  { label: '📝 docs: 文档', value: 'docs' },
+  { label: '💄 style: 样式', value: 'style' },
   { label: '♻️ refactor: 重构', value: 'refactor' },
   { label: '⚡ perf: 性能优化', value: 'perf' },
   { label: '✅ test: 测试', value: 'test' },
@@ -457,8 +432,18 @@ function copyToClipboard(text: string) {
 </script>
 
 <style scoped>
-.git-tools-container {
-  padding: 10px;
+.tools-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  background-color: white;
+  overflow-y: auto;
+}
+
+.content-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px;
 }
 
 .command-grid {
@@ -506,5 +491,15 @@ function copyToClipboard(text: string) {
   min-height: 200px;
   max-height: 400px;
   border: 1px solid #eee;
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    padding: 15px;
+  }
+  
+  .command-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style> 
