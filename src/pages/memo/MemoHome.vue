@@ -87,7 +87,12 @@
                   @click="viewMemo(memo)"
                 >
                   <div class="memo-header">
-                    <div class="memo-title">{{ memo.title }}</div>
+                    <div class="memo-title">
+                      <span v-if="memo.isTodo && !memo.completed" class="todo-icon">
+                        <i class="fas fa-tasks"></i>
+                      </span>
+                      {{ memo.title }}
+                    </div>
                     <div class="memo-category">
                       <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
                     </div>
@@ -125,7 +130,12 @@
                   @click="viewMemo(memo)"
                 >
                   <div class="memo-header">
-                    <div class="memo-title">{{ memo.title }}</div>
+                    <div class="memo-title">
+                      <span v-if="memo.isTodo && !memo.completed" class="todo-icon">
+                        <i class="fas fa-tasks"></i>
+                      </span>
+                      {{ memo.title }}
+                    </div>
                     <div class="memo-category">
                       <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
                     </div>
@@ -2470,5 +2480,43 @@ function toggleSimpleMode() {
   border: 1px solid #eee;
   border-radius: 6px;
   overflow-wrap: break-word;
+}
+
+/* 待办标记样式 */
+.todo-badge {
+  display: inline-flex;
+  margin-left: 6px;
+  vertical-align: middle;
+  font-size: 16px;
+  line-height: 1;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+
+
+/* 方案2：左侧竖条 + 图标样式 */
+.memo-card.todo-memo {
+  border-left: 5px solid #3b82f6;
+  position: relative;
+}
+
+.todo-icon {
+  color: #3b82f6;
+  margin-right: 8px;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
 }
 </style> 
