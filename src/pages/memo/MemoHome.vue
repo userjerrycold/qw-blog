@@ -72,115 +72,32 @@
             <p>暂无备忘录，点击 + 按钮添加</p>
           </div>
           <div v-else>
-            <!-- 今日待办 - 最高优先级 -->
-            <div v-if="todayTodos.length > 0" class="memo-group">
-              <h2 class="group-title urgent-title">
-                <span class="title-icon"><i class="fas fa-exclamation-circle"></i></span>
-                <span class="title-text">今日待办</span>
-                <span class="title-badge">{{ todayTodos.length }}</span>
+            <!-- 待办事项区域 -->
+            <div v-if="activeTodos.length > 0" class="memo-group">
+              <h2 class="group-title todo-title">
+                <span class="title-icon"><i class="fas fa-tasks"></i></span>
+                <span class="title-text">待办事项</span>
+                <span class="title-badge">{{ activeTodos.length }}</span>
+                <span v-if="hasTodayTodos" class="today-indicator">今日待办!</span>
               </h2>
               <div class="memo-list">
                 <div 
-                  v-for="memo in todayTodos" 
-                  :key="memo.id" 
-                  class="memo-card today-todo-card"
-                  :class="[`memo-card-${memo.tagCode}`]"
-                  @click="viewMemo(memo)"
-                >
-                  <div class="memo-header">
-                    <div class="memo-title">
-                      <span class="priority-icon">
-                        <i class="fas fa-calendar-day"></i>
-                      </span>
-                      {{ memo.title }}
-                    </div>
-                    <div class="memo-category">
-                      <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
-                    </div>
-                  </div>
-                  
-                  <div class="memo-content">
-                    {{ getContentSnippet(memo.content) }}
-                  </div>
-                  
-                  <div class="memo-footer">
-                    <div class="memo-date">
-                      <i class="fas fa-hourglass-half"></i> 
-                      <span class="due-date">截止今日</span>
-                    </div>
-                    <div class="memo-actions">
-                      <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
-                      <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="group-divider" v-if="todayTodos.length > 0 && (todayMemos.length > 0 || upcomingTodos.length > 0 || pastMemos.length > 0)"></div>
-            
-            <!-- 今日备忘录 -->
-            <div v-if="todayMemos.length > 0" class="memo-group">
-              <h2 class="group-title today-title">
-                <span class="title-icon"><i class="fas fa-sun"></i></span>
-                <span class="title-text">今日创建</span>
-              </h2>
-              <div class="memo-list">
-                <div 
-                  v-for="memo in todayMemos" 
+                  v-for="memo in activeTodos" 
                   :key="memo.id" 
                   class="memo-card"
-                  :class="[`memo-card-${memo.tagCode}`, {'todo-memo': memo.isTodo && !memo.completed, 'completed-memo': memo.isTodo && memo.completed}]"
+                  :class="[
+                    `memo-card-${memo.tagCode}`, 
+                    {
+                      'today-todo-card': memo.dueDate && isToday(memo.dueDate),
+                      'todo-card': memo.dueDate && !isToday(memo.dueDate)
+                    }
+                  ]"
                   @click="viewMemo(memo)"
                 >
                   <div class="memo-header">
                     <div class="memo-title">
-                      <span v-if="memo.isTodo && !memo.completed" class="todo-icon">
-                        <i class="fas fa-tasks"></i>
-                      </span>
-                      {{ memo.title }}
-                    </div>
-                    <div class="memo-category">
-                      <i :class="getTagIcon(memo.tagCode)"></i> {{ getTagName(memo.tagCode) }}
-                    </div>
-                  </div>
-                  
-                  <div class="memo-content">
-                    {{ getContentSnippet(memo.content) }}
-                  </div>
-                  
-                  <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> {{ formatFullDate(memo.createdAt) }}</div>
-                    <div class="memo-actions">
-                      <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
-                      <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="group-divider" v-if="todayMemos.length > 0 && (upcomingTodos.length > 0 || pastMemos.length > 0)"></div>
-            
-            <!-- 未来待办 -->
-            <div v-if="upcomingTodos.length > 0" class="memo-group">
-              <h2 class="group-title todo-title">
-                <span class="title-icon"><i class="fas fa-calendar-alt"></i></span>
-                <span class="title-text">待办事项</span>
-                <span class="title-badge">{{ upcomingTodos.length }}</span>
-              </h2>
-              <div class="memo-list">
-                <div 
-                  v-for="memo in upcomingTodos" 
-                  :key="memo.id" 
-                  class="memo-card todo-card"
-                  :class="[`memo-card-${memo.tagCode}`]"
-                  @click="viewMemo(memo)"
-                >
-                  <div class="memo-header">
-                    <div class="memo-title">
-                      <span class="todo-icon">
-                        <i class="fas fa-tasks"></i>
+                      <span :class="memo.dueDate && isToday(memo.dueDate) ? 'priority-icon' : 'todo-icon'">
+                        <i :class="memo.dueDate && isToday(memo.dueDate) ? 'fas fa-calendar-day' : 'fas fa-tasks'"></i>
                       </span>
                       {{ memo.title }}
                     </div>
@@ -195,10 +112,13 @@
                   
                   <div class="memo-footer">
                     <div class="memo-date">
-                      <i class="fas fa-calendar-check"></i>
-                      <span class="due-date">{{ formatDueDate(memo.dueDate || null) }}</span>
+                      <i :class="memo.dueDate && isToday(memo.dueDate) ? 'fas fa-hourglass-half' : 'fas fa-calendar-check'"></i>
+                      <span class="due-date" :class="{'today-due': memo.dueDate && isToday(memo.dueDate)}">
+                        {{ memo.dueDate ? (isToday(memo.dueDate) ? '今日截止' : formatDueDate(memo.dueDate)) : '无截止日期' }}
+                      </span>
                     </div>
                     <div class="memo-actions">
+                      <i class="fas fa-check-circle" @click.stop="toggleTodoStatus(memo)"></i>
                       <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
                       <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
                     </div>
@@ -207,17 +127,17 @@
               </div>
             </div>
             
-            <div class="group-divider" v-if="upcomingTodos.length > 0 && pastMemos.length > 0"></div>
+            <div class="group-divider" v-if="activeTodos.length > 0 && regularMemos.length > 0"></div>
             
-            <!-- 过去备忘录 -->
-            <div v-if="pastMemos.length > 0" class="memo-group">
-              <h2 class="group-title history-title">
-                <span class="title-icon"><i class="fas fa-history"></i></span>
-                <span class="title-text">其他备忘录</span>
+            <!-- 一般备忘录（非待办或已完成） -->
+            <div v-if="regularMemos.length > 0" class="memo-group">
+              <h2 class="group-title notes-title">
+                <span class="title-icon"><i class="fas fa-sticky-note"></i></span>
+                <span class="title-text">备忘录</span>
               </h2>
               <div class="memo-list">
                 <div 
-                  v-for="memo in pastMemos" 
+                  v-for="memo in regularMemos" 
                   :key="memo.id" 
                   class="memo-card"
                   :class="[`memo-card-${memo.tagCode}`, {'completed-memo': memo.isTodo && memo.completed}]"
@@ -240,8 +160,11 @@
                   </div>
                   
                   <div class="memo-footer">
-                    <div class="memo-date"><i class="far fa-clock"></i> {{ formatFullDate(memo.createdAt) }}</div>
+                    <div class="memo-date">
+                      <i class="far fa-clock"></i> {{ formatFullDate(memo.createdAt) }}
+                    </div>
                     <div class="memo-actions">
+                      <i v-if="memo.isTodo" class="fas fa-undo" @click.stop="toggleTodoStatus(memo)" title="恢复为待办"></i>
                       <i class="fas fa-edit" @click.stop="editMemo(memo)"></i>
                       <i class="fas fa-trash-alt" @click.stop="confirmDelete(memo)"></i>
                     </div>
@@ -656,8 +579,42 @@ const filteredMemos = computed(() => {
   return sortMemos(memos.value);
 });
 
-// 今日待办优先，按截止时间排序
-const todayTodos = computed(() => {
+// 待办事项（未完成的）
+const activeTodos = computed(() => {
+  // 筛选所有未完成的待办事项并按截止日期排序
+  return filteredMemos.value.filter(memo => 
+    memo.isTodo && !memo.completed
+  ).sort((a, b) => {
+    // 先排序今日待办
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = today.getTime();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowTimestamp = tomorrow.getTime();
+    
+    const aIsToday = a.dueDate && a.dueDate >= todayTimestamp && a.dueDate < tomorrowTimestamp;
+    const bIsToday = b.dueDate && b.dueDate >= todayTimestamp && b.dueDate < tomorrowTimestamp;
+    
+    if (aIsToday && !bIsToday) return -1;
+    if (bIsToday && !aIsToday) return 1;
+    
+    // 然后按照截止日期排序
+    if (a.dueDate && b.dueDate) {
+      return a.dueDate - b.dueDate;
+    } else if (a.dueDate) {
+      return -1;
+    } else if (b.dueDate) {
+      return 1;
+    }
+    
+    // 没有截止日期则按创建时间
+    return b.createdAt - a.createdAt;
+  });
+});
+
+// 今日创建的待办是否为空（用于判断标记显示）
+const hasTodayTodos = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayTimestamp = today.getTime();
@@ -665,56 +622,16 @@ const todayTodos = computed(() => {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowTimestamp = tomorrow.getTime();
   
-  // 筛选出今天待办的事项（截止日期为今天，且未完成）
-  return filteredMemos.value.filter(memo => 
-    memo.isTodo && 
-    !memo.completed && 
-    memo.dueDate && 
-    memo.dueDate >= todayTimestamp && 
-    memo.dueDate < tomorrowTimestamp
+  return activeTodos.value.some(memo => 
+    memo.dueDate && memo.dueDate >= todayTimestamp && memo.dueDate < tomorrowTimestamp
   );
 });
 
-// 今日创建的备忘录
-const todayMemos = computed(() => {
-  // 获取今天的起始时间
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayTimestamp = today.getTime();
-  
-  // 今日创建的非待办事项，或待办但不是今日到期的
+// 所有备忘录（非待办或已完成待办）
+const regularMemos = computed(() => {
+  // 所有非待办事项或已完成的待办事项
   return filteredMemos.value.filter(memo => 
-    memo.createdAt >= todayTimestamp && 
-    !todayTodos.value.some(todo => todo.id === memo.id)
-  );
-});
-
-// 待办事项（非今日到期）
-const upcomingTodos = computed(() => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayTimestamp = today.getTime();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowTimestamp = tomorrow.getTime();
-  
-  // 筛选出非今天到期，但有截止日期的待办事项（未完成）
-  return filteredMemos.value.filter(memo => 
-    memo.isTodo && 
-    !memo.completed && 
-    memo.dueDate && 
-    !(memo.dueDate >= todayTimestamp && memo.dueDate < tomorrowTimestamp) && 
-    !todayTodos.value.some(todo => todo.id === memo.id)
-  );
-});
-
-// 过去的备忘录（既不是今日创建也不是待办事项）
-const pastMemos = computed(() => {
-  // 既不在今日创建列表，也不在待办列表
-  return filteredMemos.value.filter(memo => 
-    !todayMemos.value.some(m => m.id === memo.id) && 
-    !todayTodos.value.some(m => m.id === memo.id) && 
-    !upcomingTodos.value.some(m => m.id === memo.id)
+    !memo.isTodo || (memo.isTodo && memo.completed)
   );
 });
 
@@ -1039,6 +956,17 @@ function formatTimeAgo(timestamp: number): string {
   
   // 年级
   return `${Math.floor(diff / 31536000000)}年前`;
+}
+
+// 判断日期是否为今天
+function isToday(timestamp: number): boolean {
+  const date = new Date(timestamp);
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
 }
 
 // 格式化截止日期
@@ -1534,38 +1462,45 @@ function toggleSimpleMode() {
   position: relative;
 }
 
-/* 今日待办标题样式 - 突出显示 */
-.urgent-title .title-icon {
+/* 待办事项标题样式 */
+.todo-title .title-icon {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: white;
+}
+
+.todo-title .title-text {
+  background: linear-gradient(to right, #3b82f6, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.todo-title .title-text::after {
+  background: linear-gradient(to right, #3b82f6, #60a5fa);
+}
+
+/* 今日待办提示 */
+.today-indicator {
   background: linear-gradient(135deg, #ef4444, #f87171);
   color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-left: 10px;
+  animation: pulse 1.5s infinite;
 }
 
-.urgent-title .title-text {
-  background: linear-gradient(to right, #ef4444, #f87171);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 800;
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
 }
 
-.urgent-title .title-text::after {
-  background: linear-gradient(to right, #ef4444, #f87171);
-}
-
-/* 今日创建标题样式 */
-.today-title .title-icon {
-  background: linear-gradient(135deg, #ffd34e, #ff9b44);
-  color: white;
-}
-
-.today-title .title-text {
-  background: linear-gradient(to right, #ff9a44, #ff3d77);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 800;
-}
-
-.today-title .title-text::after {
-  background: linear-gradient(to right, #ff9a44, #ff3d77);
+/* 今日到期文字 */
+.today-due {
+  color: #ef4444;
+  font-weight: bold;
 }
 
 /* 待办事项标题样式 */
@@ -1585,21 +1520,21 @@ function toggleSimpleMode() {
   background: linear-gradient(to right, #3b82f6, #60a5fa);
 }
 
-/* 其他备忘录标题样式 */
-.history-title .title-icon {
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
+/* 备忘录标题样式 */
+.notes-title .title-icon {
+  background: linear-gradient(135deg, #10b981, #34d399);
   color: white;
 }
 
-.history-title .title-text {
-  background: linear-gradient(to right, #6e8efb, #a777e3);
+.notes-title .title-text {
+  background: linear-gradient(to right, #10b981, #34d399);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
 }
 
-.history-title .title-text::after {
-  background: linear-gradient(to right, #6e8efb, #a777e3);
+.notes-title .title-text::after {
+  background: linear-gradient(to right, #10b981, #34d399);
 }
 
 /* 标题数量提示 */
