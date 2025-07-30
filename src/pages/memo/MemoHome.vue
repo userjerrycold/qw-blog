@@ -1082,29 +1082,29 @@ function toggleSimpleMode() {
 }
 
 .memo-container {
-  padding: 0 20px;
+  padding: 0 16px;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   max-width: 1400px;
   margin: 0 auto;
-  padding-bottom: 80px;
+  padding-bottom: 60px;
 }
 
 .page-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 4px;
-  padding: 24px 0 16px 0;
+  padding: 16px 0 12px 0;
 }
 
 .page-title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: #333;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   text-align: left;
 }
 
@@ -1118,13 +1118,13 @@ function toggleSimpleMode() {
 .search-and-tags {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .search-and-add {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* 搜索框容器 */
@@ -1137,9 +1137,9 @@ function toggleSimpleMode() {
 .search-box {
   position: relative;
   width: 100%;
-  max-width: 400px;
-  height: 38px;
-  border-radius: 8px;
+  max-width: 360px;
+  height: 34px;
+  border-radius: 6px;
   background: #f7f7f7;
   transition: all 0.2s ease;
   display: flex;
@@ -1153,11 +1153,11 @@ function toggleSimpleMode() {
 .search-input {
   width: 100%;
   height: 100%;
-  padding: 0 16px 0 40px;
+  padding: 0 14px 0 34px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
-  font-size: 14px;
+  font-size: 13px;
   color: #333;
 }
 
@@ -1167,7 +1167,7 @@ function toggleSimpleMode() {
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: #666;
@@ -1178,9 +1178,9 @@ function toggleSimpleMode() {
 
 /* 添加按钮 */
 .add-button {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
   background-color: #3B82F6;
   color: white;
   border: none;
@@ -1203,7 +1203,7 @@ function toggleSimpleMode() {
 
 /* 标签栏 */
 .tags-container {
-  margin-top: 16px;
+  margin-top: 8px;
   width: 100%;
   overflow-x: auto;
 }
@@ -1211,33 +1211,33 @@ function toggleSimpleMode() {
 .tag-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
 
 .tag {
   cursor: pointer;
-  padding: 6px 14px;
+  padding: 5px 12px;
   background: rgba(244, 244, 245, 0.8);
   color: #666;
-  font-size: 14px;
-  border-radius: 20px;
+  font-size: 13px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   font-weight: 500;
 }
 
 .tag i {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.8;
 }
 
 .tag:hover {
   background: rgba(234, 234, 235, 0.9);
   transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .tag.active {
@@ -1300,10 +1300,10 @@ function toggleSimpleMode() {
 
 /* 分组标题样式 */
 .group-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: #333;
-  margin: 28px 0 20px;
+  margin: 20px 0 16px;
   padding: 0 4px;
   display: flex;
   align-items: center;
@@ -1311,15 +1311,15 @@ function toggleSimpleMode() {
 }
 
 .title-icon {
-  margin-right: 12px;
+  margin-right: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .title-text {
@@ -1330,7 +1330,7 @@ function toggleSimpleMode() {
 .title-text::after {
   content: '';
   position: absolute;
-  bottom: -4px;
+  bottom: -3px;
   left: 0;
   width: 100%;
   height: 2px;
@@ -1340,7 +1340,7 @@ function toggleSimpleMode() {
 .title-decoration {
   flex: 1;
   height: 1px;
-  margin-left: 15px;
+  margin-left: 12px;
   background: rgba(0, 0, 0, 0.06);
   position: relative;
 }
@@ -1380,7 +1380,7 @@ function toggleSimpleMode() {
 .group-divider {
   height: 1px;
   background: rgba(0, 0, 0, 0.06);
-  margin: 30px 0;
+  margin: 20px 0;
   position: relative;
 }
 
@@ -1390,8 +1390,8 @@ function toggleSimpleMode() {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 40px;
-  height: 4px;
+  width: 30px;
+  height: 3px;
   border-radius: 2px;
   background: linear-gradient(to right, rgba(110, 142, 251, 0.4), rgba(167, 119, 227, 0.4));
 }
@@ -1399,21 +1399,21 @@ function toggleSimpleMode() {
 /* 备忘录列表 */
 .memo-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  padding: 4px 0;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 2px 0;
 }
 
 .memo-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  height: 220px;
+  height: 190px;
   position: relative;
 }
 
@@ -1434,8 +1434,8 @@ function toggleSimpleMode() {
 }
 
 .memo-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* 工作类别 - 蓝色渐变 */
@@ -1467,7 +1467,7 @@ function toggleSimpleMode() {
 }
 
 .memo-header {
-  padding: 16px;
+  padding: 12px 14px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1475,7 +1475,7 @@ function toggleSimpleMode() {
 }
 
 .memo-title {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
   color: #333;
   margin: 0;
@@ -1486,16 +1486,16 @@ function toggleSimpleMode() {
 }
 
 .memo-category {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 3px 6px;
+  border-radius: 10px;
   color: white;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   background: rgba(0, 0, 0, 0.15);
-  margin-left: 8px;
+  margin-left: 6px;
 }
 
 .memo-card-1 .memo-category {
@@ -1515,10 +1515,10 @@ function toggleSimpleMode() {
 }
 
 .memo-content {
-  padding: 16px;
-  font-size: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
   color: #555;
-  line-height: 1.5;
+  line-height: 1.4;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -1527,31 +1527,31 @@ function toggleSimpleMode() {
 }
 
 .memo-footer {
-  padding: 12px 16px;
+  padding: 10px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
 }
 
 .memo-date {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .memo-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .memo-actions i {
   cursor: pointer;
   transition: all 0.2s ease;
   opacity: 0.7;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .memo-actions i:hover {
@@ -1596,7 +1596,6 @@ function toggleSimpleMode() {
 /* 修改这里可以改变弹窗大小 */
 .memo-modal .modal-container {
   position: relative;
-
   margin: 0 auto;
 }
 
@@ -1624,8 +1623,8 @@ function toggleSimpleMode() {
 .memo-modal .modal-inner {
   width: 100%;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -1633,18 +1632,18 @@ function toggleSimpleMode() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .memo-modal .modal-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #333;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .required {
@@ -1654,28 +1653,28 @@ function toggleSimpleMode() {
 }
 
 .memo-modal .close-btn {
-  margin-right: -8px;
+  margin-right: -6px;
   color: #999;
 }
 
 .memo-modal .modal-content {
-  padding: 24px;
+  padding: 18px 20px;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .memo-modal .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   text-align: left;
   width: 100%;
 }
 
 .memo-modal .form-label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 13px;
   color: #333;
   font-weight: 500;
   text-align: left;
@@ -1693,9 +1692,9 @@ function toggleSimpleMode() {
 .memo-modal .modal-footer {
   display: flex;
   justify-content: flex-end;
-  padding: 16px 24px 20px;
+  padding: 14px 20px 16px;
   border-top: 1px solid #f0f0f0;
-  gap: 12px;
+  gap: 10px;
 }
 
 

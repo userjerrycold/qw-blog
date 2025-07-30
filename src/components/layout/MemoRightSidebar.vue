@@ -509,8 +509,8 @@ export default {
 .sidebar-container {
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding: 20px 16px 300px 0; /* 大幅增加底部内边距，确保可以滚动到底部 */
+  gap: 24px;
+  padding: 16px 14px 260px 0; /* 减少内边距和底部内边距 */
   height: auto;
   min-height: 100%;
   overflow-x: hidden; /* 防止水平滚动 */
@@ -538,10 +538,10 @@ export default {
 }
 
 .section-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   margin-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   color: #333;
   position: relative;
   display: inline-block;
@@ -550,9 +550,9 @@ export default {
 .section-title::after {
   content: '';
   position: absolute;
-  bottom: -6px;
+  bottom: -5px;
   left: 0;
-  width: 24px;
+  width: 20px;
   height: 2px;
   background-color: #333;
   border-radius: 2px;
@@ -562,20 +562,20 @@ export default {
 .todo-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .todo-stat-card {
   background-color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 16px 10px;
+  border-radius: 12px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.03),
-    0 1px 3px rgba(0, 0, 0, 0.02),
+    0 3px 8px rgba(0, 0, 0, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.7);
   position: relative;
@@ -585,21 +585,21 @@ export default {
 .todo-stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 
-    0 6px 16px rgba(0, 0, 0, 0.06),
-    0 2px 5px rgba(0, 0, 0, 0.03),
+    0 5px 12px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
 .todo-stat-number {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: #333;
 }
 
 .todo-stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .todo-stat-badge {
@@ -618,11 +618,11 @@ export default {
 .progress-container {
   background-color: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 16px;
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.03),
-    0 1px 3px rgba(0, 0, 0, 0.02),
+    0 3px 10px rgba(0, 0, 0, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.7);
   max-width: 100%;
@@ -632,34 +632,34 @@ export default {
 
 .progress-stats {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .progress-percentage {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #333;
   line-height: 1;
 }
 
 .progress-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .progress-bar-container {
-  height: 8px;
+  height: 6px;
   background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #3B82F6, #10B981);
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 0.5s ease;
 }
 
@@ -673,13 +673,13 @@ export default {
 }
 
 .progress-item-label {
-  font-size: 11px;
+  font-size: 10px;
   color: #666;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .progress-item-value {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #333;
 }
@@ -688,14 +688,14 @@ export default {
 .tag-stats {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   background-color: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 14px;
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.03),
-    0 1px 3px rgba(0, 0, 0, 0.02),
+    0 3px 10px rgba(0, 0, 0, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.7);
   max-width: 100%;
@@ -706,7 +706,7 @@ export default {
 .tag-stat-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .tag-stat-info {
@@ -718,59 +718,59 @@ export default {
 .tag-stat-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .tag-stat-indicator {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
 
 .tag-stat-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #333;
 }
 
 .tag-stat-bar-container {
-  height: 6px;
+  height: 5px;
   background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
   flex-grow: 1;
-  margin: 0 8px;
+  margin: 0 6px;
 }
 
 .tag-stat-bar {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: width 0.5s ease;
 }
 
 .tag-stat-count {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #555;
   background-color: rgba(0, 0, 0, 0.05);
-  height: 24px;
-  min-width: 24px;
-  border-radius: 12px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 8px;
+  padding: 0 6px;
 }
 
 /* 日历样式 */
 .calendar-container {
   background-color: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 14px;
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.03),
-    0 1px 3px rgba(0, 0, 0, 0.02),
+    0 3px 10px rgba(0, 0, 0, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.02),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.7);
   max-width: 100%;
@@ -782,19 +782,19 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .calendar-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #333;
 }
 
 .calendar-nav-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
   border: none;
   background-color: rgba(0, 0, 0, 0.05);
   color: #666;
@@ -813,21 +813,21 @@ export default {
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .calendar-weekday {
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: #666;
-  padding: 4px 0;
+  padding: 3px 0;
 }
 
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 3px;
 }
 
 .calendar-day {
@@ -837,7 +837,7 @@ export default {
   align-items: center;
   justify-content: center;
   position: relative;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -847,7 +847,7 @@ export default {
 }
 
 .calendar-day-number {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: #333;
 }
@@ -866,28 +866,28 @@ export default {
 }
 
 .calendar-day-indicator {
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
   background-color: #f56c6c;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 /* 快速添加样式 */
 .quick-add-container {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .quick-add-input {
   flex-grow: 1;
-  height: 38px;
-  border-radius: 8px;
+  height: 34px;
+  border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   background-color: rgba(255, 255, 255, 0.8);
-  padding: 0 12px;
-  font-size: 14px;
+  padding: 0 10px;
+  font-size: 13px;
   color: #333;
   outline: none;
   transition: all 0.2s ease;
@@ -899,9 +899,9 @@ export default {
 }
 
 .quick-add-button {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
   border: none;
   background-color: #3B82F6;
   color: white;
@@ -910,12 +910,12 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 3px rgba(59, 130, 246, 0.3);
 }
 
 .quick-add-button:hover {
   background-color: #2563EB;
   transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.4);
 }
 </style> 
