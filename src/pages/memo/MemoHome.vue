@@ -585,12 +585,41 @@ function getTagColor(code: number): { color: string, textColor: string } {
   return colors[code] || colors[4];
 }
 
-// 获取内容摘要
+// 获取内容摘要（优化展示格式，特别是列表）
 function getContentSnippet(content: string): string {
   if (!content) return '';
   
-  // 截取前100个字符，如果超过100个字符则添加省略号
-  return content.length > 100 ? content.substring(0, 100) + '...' : content;
+  // 提取前4行，每行最多40个字符
+  const lines = content.split('\n').slice(0, 4);
+  const formattedLines = lines.map(line => {
+    let formattedLine = line.trim();
+    
+    // 检测是否为数字列表（如 1. 2. 3.）
+    if (/^\d+\.\s+/.test(formattedLine)) {
+      // 为列表项添加特殊标记，方便识别
+      const match = formattedLine.match(/^\d+\./);
+      const num = match ? match[0] : '';
+      const text = formattedLine.replace(/^\d+\.\s+/, '').trim();
+      return `${num} ${text}`;
+    }
+    // 检测是否为无序列表（如 - * +）
+    else if (/^[-*+]\s+/.test(formattedLine)) {
+      const bullet = formattedLine.charAt(0);
+      const text = formattedLine.substring(1).trim();
+      return `${bullet} ${text}`;
+    }
+    
+    // 截取每行的长度
+    return formattedLine.length > 40 ? formattedLine.substring(0, 40) + '...' : formattedLine;
+  });
+  
+  // 如果原内容有更多行，添加省略号提示
+  if (content.split('\n').length > 4) {
+    formattedLines.push('...');
+  }
+  
+  // 使用特殊分隔符，保留换行效果
+  return formattedLines.join('\n');
 }
 
 // 编辑备忘录
@@ -1520,10 +1549,22 @@ function toggleSimpleMode() {
   color: #555;
   line-height: 1.4;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  white-space: pre-line;
   flex-grow: 1;
+  max-height: 100px;
+  position: relative;
+}
+
+/* 确保内容超出时有渐变消失效果 */
+.memo-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.9));
+  pointer-events: none;
 }
 
 .memo-footer {
