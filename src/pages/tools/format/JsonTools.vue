@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { 
@@ -255,6 +255,11 @@ import {
 
 const router = useRouter()
 const message = useMessage()
+
+// 设置页面标题
+onMounted(() => {
+  document.title = '薯条-JSON工具'
+})
 
 // JSON 格式化部分
 const jsonInput = ref('')

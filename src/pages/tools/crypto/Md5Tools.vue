@@ -241,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { 
@@ -253,6 +253,11 @@ import { enc } from 'crypto-js'
 
 const router = useRouter()
 const message = useMessage()
+
+// 设置页面标题
+onMounted(() => {
+  document.title = '薯条-MD5加密工具'
+})
 
 // 文本 MD5
 const textInput = ref('')

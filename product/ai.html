@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态搜索框</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 40px;
+            color: #333;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .search-container {
+            position: relative;
+            display: flex;
+            max-width: 650px;
+            margin: 0 auto;
+            height: 70px;
+            background: #fff;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 2px solid #eef2f7;
+            transition: all 0.3s ease;
+        }
+        
+        .search-container:focus-within {
+            border-color: #6a11cb;
+            box-shadow: 0 10px 25px rgba(106, 17, 203, 0.15);
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 0 30px;
+            font-size: 18px;
+            background: transparent;
+            transition: all 0.3s ease;
+            color: #333;
+        }
+        
+        .placeholder-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .placeholder-text {
+            color: #aaa;
+            font-size: 18px;
+            transition: all 0.5s ease;
+            opacity: 1;
+        }
+        
+        .placeholder-text.fade-out {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        .search-button {
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            background: #f0f4f8;
+            margin: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .search-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .search-button.active {
+            background: #333;
+        }
+        
+        .arrow {
+            font-size: 24px;
+            font-weight: bold;
+            color: #777;
+            transition: all 0.3s ease;
+        }
+        
+        .search-button.active .arrow {
+            color: white;
+            transform: translateX(3px);
+        }
+        
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .feature {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            width: 180px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .feature i {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #6a11cb;
+        }
+        
+        .feature h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .feature p {
+            font-size: 14px;
+            color: #777;
+        }
+        
+        .animation-container {
+            margin-top: 40px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .bouncing-arrow {
+            font-size: 36px;
+            animation: bounce 2s infinite;
+            color: #6a11cb;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .search-container {
+                height: 60px;
+            }
+            
+            .search-input {
+                font-size: 16px;
+            }
+            
+            .placeholder-text {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ask Anything Silly</h1>
+        
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput">
+            <div class="placeholder-container">
+                <span class="placeholder-text" id="placeholder">What makes you laugh?</span>
+            </div>
+            <button class="search-button" id="searchButton">
+                <span class="arrow">></span>
+            </button>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <i>🎭</i>
+                <h3>幽默解答</h3>
+                <p>用轻松的方式回答你的问题</p>
+            </div>
+            <div class="feature">
+                <i>🚀</i>
+                <h3>快速响应</h3>
+                <p>毫秒级响应你的每个问题</p>
+            </div>
+            <div class="feature">
+                <i>🤖</i>
+                <h3>AI 驱动</h3>
+                <p>人工智能生成创意回答</p>
+            </div>
+        </div>
+        
+        <div class="animation-container">
+            <div class="bouncing-arrow">↓</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const placeholder = document.getElementById('placeholder');
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const arrow = document.querySelector('.arrow');
+            
+            // 占位文本数组
+            const placeholders = [
+                "What makes you laugh?",
+                "Tell me a joke?",
+                "Why is the sky blue?",
+                "Can cats fly?",
+                "What's the meaning of life?",
+                "How to become a superhero?",
+                "Do aliens exist?",
+                "What if pigs could fly?"
+            ];
+            
+            let currentIndex = 0;
+            
+            // 更新占位文本
+            function updatePlaceholder() {
+                placeholder.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % placeholders.length;
+                    placeholder.textContent = placeholders[currentIndex];
+                    placeholder.classList.remove('fade-out');
+                }, 500);
+            }
+            
+            // 每5秒更新一次占位文本
+            setInterval(updatePlaceholder, 5000);
+            
+            // 输入框事件监听
+            searchInput.addEventListener('input', function() {
+                if (searchInput.value.length > 0) {
+                    searchButton.classList.add('active');
+                    arrow.textContent = '→';
+                } else {
+                    searchButton.classList.remove('active');
+                    arrow.textContent = '>';
+                }
+            });
+            
+            // 搜索按钮事件
+            searchButton.addEventListener('click', function() {
+                if (searchInput.value.trim() !== '') {
+                    alert(`Searching for: "${searchInput.value}"\n(实际应用中，这里会执行搜索操作)`);
+                } else {
+                    searchInput.focus();
+                }
+            });
+            
+            // 按Enter键搜索
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && searchInput.value.trim() !== '') {
+                    alert(`Searching for: "${searchInput.value}"\n(实际应用中，这里会执行搜索操作)`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

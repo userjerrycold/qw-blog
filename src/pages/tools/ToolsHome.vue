@@ -218,10 +218,10 @@ const router = useRouter()
 const activeTab = ref('all')
 
 // 在新窗口打开工具并设置标题
-function openTool(url: string, title: string = 'QH DevTools') {
+function openTool(url: string, title: string = '薯条-工具') {
   const newWindow = window.open(url, '_blank')
   if (newWindow) {
-    newWindow.document.title = title
+    newWindow.document.title = '薯条-' + title
   }
 }
 </script>
@@ -252,7 +252,6 @@ function openTool(url: string, title: string = 'QH DevTools') {
   color: #333;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #eaeaea;
 }
 
 .tools-grid {

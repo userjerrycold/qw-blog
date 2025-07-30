@@ -260,7 +260,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { 
@@ -420,6 +420,11 @@ function copyToClipboard(text: string) {
     message.error('复制失败')
   })
 }
+
+// 设置页面标题
+onMounted(() => {
+  document.title = '薯条-Maven工具'
+})
 </script>
 
 <style scoped>

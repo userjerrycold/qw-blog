@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { 
@@ -129,6 +129,11 @@ import ToolsRightSidebar from '@/components/layout/ToolsRightSidebar.vue'
 
 const router = useRouter()
 const message = useMessage()
+
+// 设置页面标题
+onMounted(() => {
+  document.title = '薯条-Java类生成器'
+})
 
 // 实体类生成器
 const entityConfig = ref({

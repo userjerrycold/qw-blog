@@ -3,7 +3,7 @@
     <div class="profile">
       <img :src="avatar" alt="avatar" />
       <div class="profile-info">
-        <h1>QH DevOS</h1>
+        <h1>薯条</h1>
         <p>开发者</p>
       </div>
     </div>
