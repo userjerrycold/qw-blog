@@ -241,7 +241,7 @@ CREATE TABLE aaa_hbyd.git_command_detail (
 
 **接口说明**：获取用户Git命令的统计信息，包括总数、分类分布、使用频率等
 
-**请求路径**：`/api/git/command/statistics`
+**请求路径**：`/api/git/statistics`
 
 **请求方式**：`POST`
 
@@ -315,7 +315,7 @@ CREATE TABLE aaa_hbyd.git_command_detail (
 
 **接口说明**：快速切换Git命令的收藏状态
 
-**请求路径**：`/api/git/command/toggleFavorite`
+**请求路径**：`/api/git/toggleFavorite`
 
 **请求方式**：`POST`
 
@@ -340,7 +340,7 @@ CREATE TABLE aaa_hbyd.git_command_detail (
 
 **接口说明**：记录Git命令的执行次数
 
-**请求路径**：`/api/git/command/recordExecution`
+**请求路径**：`/api/git/recordExecution`
 
 **请求方式**：`POST`
 
@@ -482,7 +482,7 @@ export interface GitCommandStatistics {
 // 搜索Git命令
 export function searchGitCommands(params: GitCommandSearchParams) {
   return request({
-    url: '/api/git/command/search',
+    url: '/api/git/search',
     method: 'post',
     data: params
   });
@@ -491,7 +491,7 @@ export function searchGitCommands(params: GitCommandSearchParams) {
 // 创建Git命令
 export function createGitCommand(params: GitCommandCreateParams) {
   return request({
-    url: '/api/git/command/create',
+    url: '/api/git/create',
     method: 'post',
     data: params
   });
@@ -500,7 +500,7 @@ export function createGitCommand(params: GitCommandCreateParams) {
 // 更新Git命令
 export function updateGitCommand(params: GitCommandUpdateParams) {
   return request({
-    url: '/api/git/command/update',
+    url: '/api/git/update',
     method: 'post',
     data: params
   });
@@ -518,7 +518,7 @@ export function deleteGitCommand(id: number) {
 // 获取Git命令统计
 export function getGitCommandStatistics(username: string) {
   return request({
-    url: '/api/git/command/statistics',
+    url: '/api/git/statistics',
     method: 'post',
     data: { username }
   });
@@ -527,7 +527,7 @@ export function getGitCommandStatistics(username: string) {
 // 切换收藏状态
 export function toggleGitCommandFavorite(id: number, isFavorite: boolean) {
   return request({
-    url: '/api/git/command/toggleFavorite',
+    url: '/api/git/toggleFavorite',
     method: 'post',
     data: { id, isFavorite }
   });
@@ -536,7 +536,7 @@ export function toggleGitCommandFavorite(id: number, isFavorite: boolean) {
 // 记录命令执行
 export function recordGitCommandExecution(id: number) {
   return request({
-    url: '/api/git/command/recordExecution',
+    url: '/api/git/recordExecution',
     method: 'post',
     data: { id }
   });

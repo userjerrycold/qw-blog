@@ -321,37 +321,37 @@ export function searchGitCommands(params: GitCommandSearchParams) {
     total: number;
     page: number;
     pageSize: number;
-  }>>('/git/command/search', params);
+  }>>('/git/search', params);
 }
 
 // 创建Git命令
 export function createGitCommand(params: GitCommandCreateParams) {
-  return http.post<ApiResponse<{ id: number }>>('/git/command/create', params);
+  return http.post<ApiResponse<{ id: number }>>('/git/create', params);
 }
 
 // 更新Git命令
 export function updateGitCommand(params: GitCommandUpdateParams) {
-  return http.post<ApiResponse<boolean>>('/git/command/update', params);
+  return http.post<ApiResponse<boolean>>('/git/update', params);
 }
 
 // 删除Git命令
 export function deleteGitCommand(id: number) {
-  return http.post<ApiResponse<boolean>>('/git/command/delete', { id });
+  return http.post<ApiResponse<boolean>>('/git/delete', { id });
 }
 
 // 获取Git命令统计
 export function getGitCommandStatistics(username: string) {
-  return http.post<ApiResponse<GitCommandStatistics>>('/git/command/statistics', { username });
+  return http.post<ApiResponse<GitCommandStatistics>>('/git/statistics', { username });
 }
 
 // 切换收藏状态
 export function toggleGitCommandFavorite(id: number, isFavorite: boolean) {
-  return http.post<ApiResponse<boolean>>('/git/command/toggleFavorite', { id, isFavorite });
+  return http.post<ApiResponse<boolean>>('/git/toggleFavorite', { id, isFavorite });
 }
 
 // 记录命令执行
 export function recordGitCommandExecution(id: number) {
-  return http.post<ApiResponse<{ executionCount: number }>>('/git/command/recordExecution', { id });
+  return http.post<ApiResponse<{ executionCount: number }>>('/git/recordExecution', { id });
 }
 
 export default http 

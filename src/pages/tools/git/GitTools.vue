@@ -22,47 +22,116 @@
               <div class="search-container">
                 <input
                   v-model="searchQuery"
-                  placeholder="搜索命令组合..."
+                  placeholder="搜索Git命令..."
                   class="search-input"
                   @input="handleSearchInput"
                 />
               </div>
-              <button class="add-button" @click="showAddCommandModal = true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
+              <div class="flex items-center">
+                <n-button type="primary" size="small" class="mr-2" @click="searchParams.isFavorite = !searchParams.isFavorite; loadGitCommands()">
+                  {{ searchParams.isFavorite ? '显示全部' : '仅显示收藏' }}
+                </n-button>
+                <n-button type="info" size="small" class="mr-2" @click="loadGitCommands()">
+                  <template #icon>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 4V9H4.582M19.418 9H20V4H15M15 20H20V15M4 15V20H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </template>
+                  刷新数据
+                </n-button>
+                <button class="add-button" @click="addCommand">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <!-- 自定义命令组合展示 -->
+            <!-- 命令统计信息 -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div class="grid grid-cols-4 gap-4">
+                <div class="stat-item">
+                  <div class="stat-title">命令总数</div>
+                  <div class="stat-value">{{ statistics.total }}</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-title">收藏数量</div>
+                  <div class="stat-value">{{ statistics.favoriteCount }}</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-title">组合命令</div>
+                  <div class="stat-value">{{ statistics.compositeCount }}</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-title">请求状态</div>
+                  <div class="stat-value">{{ loading ? '加载中' : '已完成' }}</div>
+                </div>
+              </div>
+
+              <!-- 分类分布 -->
+              <div class="mt-4" v-if="statistics.categoryDistribution && statistics.categoryDistribution.length > 0">
+                <div class="text-sm font-medium mb-2">分类分布</div>
+                <div class="flex flex-wrap gap-2">
+                  <div v-for="cat in statistics.categoryDistribution" :key="cat.categoryCode" 
+                       class="px-3 py-1 bg-blue-50 rounded-full text-sm flex items-center gap-1">
+                    {{ cat.categoryName }}
+                    <span class="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{{ cat.count }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Git命令列表 -->
             <div class="mb-6">
-              <div v-if="filteredCustomCommands.length === 0" class="text-center py-12 text-gray-400">
-                <p>暂无命令组合，点击右上角"+"按钮创建</p>
+              <div v-if="loading" class="text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+                <p class="mt-2 text-gray-600">加载中...</p>
+              </div>
+              <div v-else-if="filteredGitCommands.length === 0" class="text-center py-12 text-gray-400">
+                <p>暂无命令，点击右上角"+"按钮创建</p>
               </div>
               <div v-else class="command-grid">
-                <div v-for="(cmd, index) in filteredCustomCommands" :key="index" class="custom-command-item">
+                <div v-for="cmd in filteredGitCommands" :key="cmd.id" class="custom-command-item">
                   <div class="flex justify-between items-center mb-3">
-                    <div class="command-title">{{ cmd.title }}</div>
+                    <div class="command-title flex items-center">
+                      <span>{{ cmd.commandName }}</span>
+                      <span v-if="cmd.isComposite" class="ml-2 text-xs py-0.5 px-1.5 bg-blue-100 text-blue-700 rounded">组合</span>
+                    </div>
                     <div class="flex gap-2">
-                      <button class="icon-button" @click="editCustomCommand(index)">
+                      <button class="icon-button text-yellow-500" @click="toggleFavorite(cmd)">
+                        <svg v-if="cmd.isFavorite" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button class="icon-button" @click="editCommand(cmd)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                           <path d="M17 3L21 7L12 16H8V12L17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                       </button>
-                      <button class="icon-button" @click="showDeleteConfirm(index)">
+                      <button class="icon-button" @click="showDeleteConfirm(cmd)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                       </button>
                     </div>
                   </div>
+                  <div class="command-info mb-2 text-xs text-gray-500 flex items-center gap-2">
+                    <span class="bg-gray-100 px-2 py-0.5 rounded">{{ getCategoryName(cmd.categoryCode) }}</span>
+                    <span>执行次数: {{ cmd.executionCount }}</span>
+                  </div>
+                  <div v-if="cmd.description" class="command-desc mb-2 text-sm text-gray-600">
+                    {{ cmd.description }}
+                  </div>
                   <div class="command-steps">
-                    <div v-for="(step, stepIndex) in cmd.steps" :key="`${index}-${stepIndex}`" class="command-step">
-                      <div class="step-desc">{{ stepIndex + 1 }}. {{ step.description }}</div>
+                    <div v-if="!cmd.isComposite" class="command-step">
                       <div class="step-command-box">
-                        <div class="command-code">{{ step.command }}</div>
-                        <button class="copy-button" @click="copyToClipboard(step.command)">
+                        <div class="command-code">{{ cmd.commandContent }}</div>
+                        <button class="copy-button" @click="copyToClipboard(cmd.commandContent, cmd)">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -71,55 +140,142 @@
                         </button>
                       </div>
                     </div>
+                    <div v-else-if="cmd.subCommands && cmd.subCommands.length > 0">
+                      <div v-for="(step, stepIndex) in cmd.subCommands" :key="`${cmd.id}-${stepIndex}`" class="command-step">
+                        <div class="step-desc">{{ stepIndex + 1 }}. {{ step.description }}</div>
+                        <div class="step-command-box">
+                          <div class="command-code">{{ step.subCommandContent }}</div>
+                          <button class="copy-button" @click="copyToClipboard(step.subCommandContent, cmd)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            
+            <!-- 调试信息 -->
+            <div class="mt-4 p-4 bg-gray-100 rounded-lg overflow-auto" style="max-height: 300px;">
+              <div class="text-sm font-bold mb-2">调试信息</div>
+              <div class="text-xs font-mono whitespace-pre">搜索参数: {{ JSON.stringify(searchParams, null, 2) }}</div>
+              <div class="text-xs font-mono mt-2">总数: {{ totalCommands }}</div>
+              <div class="text-xs font-mono mt-2">命令列表长度: {{ filteredGitCommands.length }}</div>
+              <div class="mt-2">
+                <n-button size="small" @click="debugMode = !debugMode">
+                  {{ debugMode ? '隐藏详细数据' : '显示详细数据' }}
+                </n-button>
+              </div>
+              <div v-if="debugMode" class="mt-2 text-xs font-mono whitespace-pre">
+                {{ JSON.stringify(gitCommands, null, 2) }}
+              </div>
+            </div>
+
+            <!-- 分页 -->
+            <div v-if="totalCommands > searchParams.pageSize" class="flex justify-center mt-6">
+              <div class="flex items-center space-x-2">
+                <button 
+                  class="pagination-button" 
+                  :disabled="searchParams.page === 1"
+                  @click="searchParams.page--; loadGitCommands()"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <span class="text-sm">{{ searchParams.page }} / {{ Math.ceil(totalCommands / searchParams.pageSize) }}</span>
+                <button 
+                  class="pagination-button" 
+                  :disabled="searchParams.page >= Math.ceil(totalCommands / searchParams.pageSize)"
+                  @click="searchParams.page++; loadGitCommands()"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- 添加/编辑自定义命令组合的模态框 -->
+          <!-- 添加/编辑自定义命令的模态框 -->
           <n-modal
             v-model:show="showAddCommandModal"
             preset="card"
-            title="自定义命令组合"
-            style="width: 500px;"
+            :title="isEditing ? '编辑Git命令' : '添加Git命令'"
+            style="width: 600px;"
             :bordered="false"
           >
             <div class="modal-content">
               <div class="form-section">
                 <div class="form-item">
-                  <label>标题</label>
-                  <input v-model="currentCommand.title" placeholder="请输入命令组合标题" class="form-input" />
+                  <label>命令名称 <span class="text-red-500">*</span></label>
+                  <input v-model="currentCommand.commandName" placeholder="请输入命令名称" class="form-input" />
                 </div>
 
-                <div class="step-container">
+                <div class="form-item">
+                  <label>分类 <span class="text-red-500">*</span></label>
+                  <select v-model="currentCommand.categoryCode" class="form-input">
+                    <option v-for="cat in categoryOptions" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
+                  </select>
+                </div>
+
+                <div class="form-item">
+                  <label>描述</label>
+                  <input v-model="currentCommand.description" placeholder="请输入命令描述" class="form-input" />
+                </div>
+
+                <div class="form-item">
+                  <label>使用场景</label>
+                  <input v-model="currentCommand.usageScenario" placeholder="请输入使用场景" class="form-input" />
+                </div>
+
+                <div class="form-item">
+                  <div class="flex items-center">
+                    <input type="checkbox" id="is-favorite" v-model="currentCommand.isFavorite" class="mr-2" />
+                    <label for="is-favorite">收藏</label>
+                  </div>
+                </div>
+
+                <div class="form-item">
+                  <div class="flex items-center">
+                    <input type="checkbox" id="is-composite" v-model="currentCommand.isComposite" class="mr-2" />
+                    <label for="is-composite">组合命令（多个步骤）</label>
+                  </div>
+                </div>
+
+                <div class="step-container mt-4">
                   <div class="step-header">
-                    <h3>步骤 {{ currentStepIndex + 1 }}</h3>
-                    <div class="step-indicator">
-                      {{ currentStepIndex + 1 }} / {{ currentCommand.steps.length }}
+                    <h3>{{ currentCommand.isComposite ? `步骤 ${currentStepIndex + 1}` : '命令内容' }}</h3>
+                    <div v-if="currentCommand.isComposite" class="step-indicator">
+                      {{ currentStepIndex + 1 }} / {{ currentCommand.subCommands.length }}
                     </div>
                   </div>
                   
                   <div class="form-item">
-                    <label>说明</label>
+                    <label>{{ currentCommand.isComposite ? '步骤说明' : '命令说明' }} <span class="text-red-500">*</span></label>
                     <input 
-                      v-model="currentCommand.steps[currentStepIndex].description" 
-                      placeholder="请输入步骤说明" 
+                      v-model="currentCommand.subCommands[currentStepIndex].description" 
+                      :placeholder="currentCommand.isComposite ? '请输入步骤说明' : '请输入命令说明'"
                       class="form-input" 
                     />
                   </div>
                   
                   <div class="form-item">
-                    <label>命令</label>
+                    <label>{{ currentCommand.isComposite ? '步骤命令' : '命令内容' }} <span class="text-red-500">*</span></label>
                     <input 
-                      v-model="currentCommand.steps[currentStepIndex].command" 
-                      placeholder="请输入命令" 
+                      v-model="currentCommand.subCommands[currentStepIndex].subCommandContent" 
+                      :placeholder="currentCommand.isComposite ? '请输入步骤命令' : '请输入命令内容'"
                       class="form-input" 
                     />
                   </div>
                 </div>
 
-                <div class="step-navigation">
+                <div v-if="currentCommand.isComposite" class="step-navigation">
                   <button 
                     class="nav-button" 
                     :disabled="currentStepIndex === 0"
@@ -133,7 +289,7 @@
                   
                   <button 
                     class="nav-button" 
-                    :disabled="currentStepIndex === currentCommand.steps.length - 1"
+                    :disabled="currentStepIndex === currentCommand.subCommands.length - 1"
                     @click="currentStepIndex++"
                   >
                     下一步
@@ -143,7 +299,7 @@
                   </button>
                 </div>
                 
-                <div class="step-actions">
+                <div v-if="currentCommand.isComposite" class="step-actions">
                   <button class="action-button add" @click="addStep">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -152,7 +308,7 @@
                   </button>
                   
                   <button 
-                    v-if="currentCommand.steps.length > 1"
+                    v-if="currentCommand.subCommands.length > 1"
                     class="action-button remove" 
                     @click="removeCurrentStep"
                   >
@@ -166,13 +322,13 @@
 
               <div class="modal-footer">
                 <button class="cancel-button" @click="showAddCommandModal = false">取消</button>
-                <button class="save-button" @click="saveCustomCommand">保存</button>
+                <button class="save-button" @click="saveCommand">保存</button>
               </div>
             </div>
           </n-modal>
 
           <!-- 删除确认模态框 -->
-          <n-modal v-model:show="showDeleteModal" preset="dialog" title="确认删除" content="确定要删除这个命令组合吗？" positive-text="确定" negative-text="取消" @positive-click="confirmDelete" @negative-click="cancelDelete" />
+          <n-modal v-model:show="showDeleteModal" preset="dialog" title="确认删除" content="确定要删除这个命令吗？" positive-text="确定" negative-text="取消" @positive-click="confirmDelete" @negative-click="cancelDelete" />
         </n-tab-pane>
 
         <!-- 相关文档 -->
@@ -215,49 +371,76 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { 
   NCard, NButton, NTabs, NTabPane, NModal, NSpace
 } from 'naive-ui'
+import {
+  searchGitCommands, createGitCommand, updateGitCommand, deleteGitCommand,
+  getGitCommandStatistics, toggleGitCommandFavorite, recordGitCommandExecution,
+  GitCommand, GitCommandSearchParams, GitCommandCreateParams, GitCommandUpdateParams,
+  GitSubCommandCreateParams, GitSubCommandUpdateParams
+} from '@/services/api'
+
+// 定义API实际返回类型
+interface ApiGitResponse {
+  code: number;
+  data: {
+    code: number;
+    data: GitCommand[];
+    msg: string;
+    page: number;
+    size: number;
+    total: number;
+  };
+  msg: string;
+}
 
 const router = useRouter()
 const message = useMessage()
 
-// 设置页面标题
-onMounted(() => {
-  document.title = '薯条-Git工具集'
-  // 从本地存储加载自定义命令
-  const savedCommands = localStorage.getItem('gitCustomCommands')
-  if (savedCommands) {
-    try {
-      customCommands.value = JSON.parse(savedCommands)
-    } catch (e) {
-      console.error('Failed to parse saved commands', e)
-    }
-  }
+// 当前用户
+const currentUser = ref('qianhu')
+
+// 搜索参数
+const searchParams = reactive<GitCommandSearchParams>({
+  username: currentUser.value,
+  categoryCode: 0,
+  keyword: '',
+  isFavorite: false,
+  isComposite: undefined, // 修改为undefined而不是null
+  page: 1,
+  pageSize: 10
 })
 
-// 搜索功能
-const searchQuery = ref('')
+// 命令数据
+const gitCommands = ref<GitCommand[]>([])
+const totalCommands = ref(0)
+const loading = ref(false)
+const debugMode = ref(false)
+const statistics = ref<{
+  total: number,
+  favoriteCount: number,
+  compositeCount: number,
+  categoryDistribution: { categoryCode: number, categoryName: string, count: number }[],
+  mostUsedCommands: { id: number, commandName: string, commandContent: string, executionCount: number, isComposite: boolean }[],
+  recentlyAddedCommands: { id: number, commandName: string, createDt: string, isComposite: boolean }[]
+}>({
+  total: 0,
+  favoriteCount: 0,
+  compositeCount: 0,
+  categoryDistribution: [],
+  mostUsedCommands: [],
+  recentlyAddedCommands: []
+})
 
-function handleSearchInput() {
-  // 搜索功能相关逻辑，可以留空，主要是为了UI交互
-}
-
-// 自定义命令组合
-interface CommandStep {
-  description: string
-  command: string
-}
-
-interface CustomCommand {
-  title: string
-  steps: CommandStep[]
-}
-
-const customCommands = ref<CustomCommand[]>([
+// 本地存储的自定义命令（作为备用数据）
+const customCommands = ref<{
+  title: string;
+  steps: { description: string; command: string; }[];
+}[]>([
   {
     title: '初始化项目并提交',
     steps: [
@@ -298,19 +481,13 @@ const customCommands = ref<CustomCommand[]>([
   }
 ])
 
-// 过滤后的自定义命令
-const filteredCustomCommands = computed(() => {
-  if (!searchQuery.value) return customCommands.value
-  
-  const query = searchQuery.value.toLowerCase()
-  return customCommands.value.filter(cmd => 
-    cmd.title.toLowerCase().includes(query) || 
-    cmd.steps.some(step => 
-      step.description.toLowerCase().includes(query) || 
-      step.command.toLowerCase().includes(query)
-    )
-  )
-})
+// 搜索功能
+const searchQuery = ref('')
+
+function handleSearchInput() {
+  searchParams.keyword = searchQuery.value
+  loadGitCommands()
+}
 
 // 添加/编辑命令相关
 const showAddCommandModal = ref(false)
@@ -322,24 +499,165 @@ const currentStepIndex = ref(0)
 const showDeleteModal = ref(false)
 const deleteIndex = ref(-1)
 
-const currentCommand = ref<CustomCommand>({
-  title: '',
-  steps: [
+// 命令分类选项
+const categoryOptions = [
+  { label: '常用命令', value: 1 },
+  { label: '分支操作', value: 2 },
+  { label: '提交管理', value: 3 },
+  { label: '远程仓库', value: 4 },
+  { label: '高级操作', value: 5 }
+]
+
+// 当前命令
+const currentCommand = ref({
+  id: 0,
+  commandName: '',
+  commandContent: '',
+  description: '',
+  categoryCode: 1,
+  usageScenario: '',
+  isFavorite: false,
+  isComposite: false,
+  subCommands: [
     {
-      description: '',
-      command: ''
+      id: 0,
+      subCommandContent: '',
+      sequenceNumber: 1,
+      description: ''
     }
   ]
 })
 
-function addCustomCommand() {
+// 调试模式
+// const debugMode = ref(false)
+
+// 初始化
+onMounted(() => {
+  document.title = '薯条-Git工具集'
+  
+  // 加载Git命令
+  loadGitCommands()
+  
+  // 加载统计数据
+  loadGitStatistics()
+  
+  // 从本地存储加载自定义命令作为备用
+  const savedCommands = localStorage.getItem('gitCustomCommands')
+  if (savedCommands) {
+    try {
+      customCommands.value = JSON.parse(savedCommands)
+    } catch (e) {
+      console.error('Failed to parse saved commands', e)
+    }
+  }
+})
+
+// 加载Git命令列表
+async function loadGitCommands() {
+  loading.value = true
+  try {
+    const response = await searchGitCommands(searchParams) as any
+    console.log('Git命令查询结果:', response.data)
+    if (response.data && response.data.code === 200) {
+      // 处理嵌套的数据结构
+      if (response.data.data && response.data.data.code === 200) {
+        // 将嵌套的data数组作为列表数据
+        gitCommands.value = response.data.data.data || []
+        // 使用嵌套结构中的total
+        totalCommands.value = response.data.data.total || 0
+        // 更新页码信息
+        searchParams.page = response.data.data.page || 1
+        searchParams.pageSize = response.data.data.size || 10
+      } else {
+        message.error('加载Git命令失败: ' + (response.data.data?.msg || '未知错误'))
+        // 使用本地备用数据
+        useBackupData()
+      }
+    } else {
+      message.error('加载Git命令失败: ' + (response.data?.msg || '未知错误'))
+      // 使用本地备用数据
+      useBackupData()
+    }
+  } catch (error) {
+    console.error('加载Git命令出错:', error)
+    message.error('加载Git命令出错，使用备用数据')
+    // 使用本地备用数据
+    useBackupData()
+  } finally {
+    loading.value = false
+  }
+}
+
+// 加载Git命令统计数据
+async function loadGitStatistics() {
+  try {
+    const response = await getGitCommandStatistics(currentUser.value)
+    if (response.data && response.data.code === 200 && response.data.data) {
+      statistics.value = response.data.data
+    }
+  } catch (error) {
+    console.error('加载统计数据出错:', error)
+  }
+}
+
+// 使用备用数据（当API调用失败时）
+function useBackupData() {
+  // 将本地存储的自定义命令转换为Git命令格式
+  gitCommands.value = customCommands.value.map((cmd, index) => {
+    const isComposite = cmd.steps.length > 1
+    const commandContent = isComposite 
+      ? `组合命令：${cmd.title}` 
+      : cmd.steps[0].command
+    
+    return {
+      id: -(index + 1), // 使用负数ID避免与API返回的ID冲突
+      commandName: cmd.title,
+      commandContent: commandContent,
+      description: cmd.title,
+      categoryCode: 1, // 默认为常用命令
+      categoryName: '常用命令',
+      usageScenario: '',
+      isFavorite: false,
+      isComposite: isComposite,
+      subCommands: isComposite ? cmd.steps.map((step, stepIndex) => ({
+        id: -(stepIndex + 1),
+        subCommandContent: step.command,
+        sequenceNumber: stepIndex + 1,
+        description: step.description
+      })) : [],
+      executionCount: 0,
+      author: currentUser.value,
+      createDt: new Date().toISOString().split('T')[0] + ' 00:00:00',
+      updateDt: new Date().toISOString().split('T')[0] + ' 00:00:00'
+    }
+  })
+  
+  totalCommands.value = gitCommands.value.length
+}
+
+// 过滤后的命令列表
+const filteredGitCommands = computed(() => {
+  return gitCommands.value
+})
+
+// 添加新命令
+function addCommand() {
   isEditing.value = false
   currentCommand.value = {
-    title: '',
-    steps: [
+    id: 0,
+    commandName: '',
+    commandContent: '',
+    description: '',
+    categoryCode: 1,
+    usageScenario: '',
+    isFavorite: false,
+    isComposite: false,
+    subCommands: [
       {
-        description: '',
-        command: ''
+        id: 0,
+        subCommandContent: '',
+        sequenceNumber: 1,
+        description: ''
       }
     ]
   }
@@ -347,83 +665,234 @@ function addCustomCommand() {
   showAddCommandModal.value = true
 }
 
-function editCustomCommand(index: number) {
+// 编辑命令
+function editCommand(command: GitCommand) {
   isEditing.value = true
-  editingIndex.value = index
-  currentCommand.value = JSON.parse(JSON.stringify(customCommands.value[index]))
+  // 创建一个新对象避免直接修改原始对象
+  currentCommand.value = {
+    id: command.id,
+    commandName: command.commandName,
+    commandContent: command.commandContent,
+    description: command.description || '',
+    categoryCode: command.categoryCode,
+    usageScenario: command.usageScenario || '',
+    isFavorite: command.isFavorite,
+    isComposite: command.isComposite,
+    subCommands: command.isComposite && command.subCommands ? 
+      command.subCommands.map(sc => ({
+        id: sc.id || 0, // 确保id有值，如果为undefined则使用0
+        subCommandContent: sc.subCommandContent,
+        sequenceNumber: sc.sequenceNumber,
+        description: sc.description || ''
+      })) : 
+      [{
+        id: 0,
+        subCommandContent: command.commandContent,
+        sequenceNumber: 1,
+        description: '执行命令'
+      }]
+  }
   currentStepIndex.value = 0
   showAddCommandModal.value = true
 }
 
-function showDeleteConfirm(index: number) {
-  deleteIndex.value = index
+// 删除确认
+function showDeleteConfirm(command: GitCommand) {
+  deleteIndex.value = command.id
   showDeleteModal.value = true
 }
 
-function confirmDelete() {
-  customCommands.value.splice(deleteIndex.value, 1)
-  saveToLocalStorage()
-  message.success('命令组合已删除')
+// 确认删除
+async function confirmDelete() {
+  try {
+    const response = await deleteGitCommand(deleteIndex.value)
+    if (response.data && response.data.code === 200 && response.data.data) {
+      message.success('命令已删除')
+      loadGitCommands()
+      loadGitStatistics()
+    } else {
+      message.error('删除命令失败: ' + (response.data?.msg || '未知错误'))
+    }
+  } catch (error) {
+    console.error('删除命令出错:', error)
+    message.error('删除命令出错')
+  }
   showDeleteModal.value = false
 }
 
+// 取消删除
 function cancelDelete() {
   showDeleteModal.value = false
 }
 
+// 添加命令步骤
 function addStep() {
-  currentCommand.value.steps.push({
-    description: '',
-    command: ''
+  if (!currentCommand.value.isComposite) {
+    currentCommand.value.isComposite = true
+  }
+  
+  currentCommand.value.subCommands.push({
+    id: 0,
+    subCommandContent: '',
+    sequenceNumber: currentCommand.value.subCommands.length + 1,
+    description: ''
   })
-  currentStepIndex.value = currentCommand.value.steps.length - 1
+  currentStepIndex.value = currentCommand.value.subCommands.length - 1
 }
 
+// 移除当前步骤
 function removeCurrentStep() {
-  if (currentCommand.value.steps.length > 1) {
-    currentCommand.value.steps.splice(currentStepIndex.value, 1)
-    if (currentStepIndex.value >= currentCommand.value.steps.length) {
-      currentStepIndex.value = currentCommand.value.steps.length - 1
+  if (currentCommand.value.subCommands.length > 1) {
+    currentCommand.value.subCommands.splice(currentStepIndex.value, 1)
+    
+    // 重新排序
+    currentCommand.value.subCommands.forEach((step, index) => {
+      step.sequenceNumber = index + 1
+    })
+    
+    if (currentStepIndex.value >= currentCommand.value.subCommands.length) {
+      currentStepIndex.value = currentCommand.value.subCommands.length - 1
     }
   } else {
     message.warning('至少需要保留一个步骤')
   }
 }
 
-function saveCustomCommand() {
+// 保存命令
+async function saveCommand() {
   // 验证表单
-  if (!currentCommand.value.title.trim()) {
-    message.warning('请填写命令组合标题')
+  if (!currentCommand.value.commandName.trim()) {
+    message.warning('请填写命令名称')
     return
   }
 
-  for (const step of currentCommand.value.steps) {
-    if (!step.description.trim()) {
-      message.warning('请填写所有步骤的说明')
-      return
+  if (currentCommand.value.isComposite) {
+    for (const step of currentCommand.value.subCommands) {
+      if (!step.description.trim()) {
+        message.warning('请填写所有步骤的说明')
+        return
+      }
+      if (!step.subCommandContent.trim()) {
+        message.warning('请填写所有步骤的命令')
+        return
+      }
     }
-    if (!step.command.trim()) {
-      message.warning('请填写所有步骤的命令')
-      return
-    }
-  }
-
-  if (isEditing.value) {
-    // 更新现有命令
-    customCommands.value[editingIndex.value] = JSON.parse(JSON.stringify(currentCommand.value))
-    message.success('命令组合已更新')
+    
+    // 组合命令内容使用第一个子命令的内容（实际内容由后端组合）
+    currentCommand.value.commandContent = `组合命令：${currentCommand.value.commandName}`
   } else {
-    // 添加新命令
-    customCommands.value.push(JSON.parse(JSON.stringify(currentCommand.value)))
-    message.success('命令组合已添加')
+    // 非组合命令，使用第一个子命令内容作为命令内容
+    if (!currentCommand.value.subCommands[0].subCommandContent.trim()) {
+      message.warning('请填写命令内容')
+      return
+    }
+    currentCommand.value.commandContent = currentCommand.value.subCommands[0].subCommandContent
   }
 
-  saveToLocalStorage()
-  showAddCommandModal.value = false
+  try {
+    let response
+    
+    if (isEditing.value) {
+      // 更新现有命令
+      const updateParams: GitCommandUpdateParams = {
+        id: currentCommand.value.id,
+        commandName: currentCommand.value.commandName,
+        commandContent: currentCommand.value.commandContent,
+        description: currentCommand.value.description,
+        categoryCode: currentCommand.value.categoryCode,
+        usageScenario: currentCommand.value.usageScenario,
+        isFavorite: currentCommand.value.isFavorite,
+        isComposite: currentCommand.value.isComposite
+      }
+      
+      if (currentCommand.value.isComposite) {
+        updateParams.subCommands = currentCommand.value.subCommands.map(step => ({
+          id: step.id,
+          subCommandContent: step.subCommandContent,
+          sequenceNumber: step.sequenceNumber,
+          description: step.description
+        }))
+      }
+      
+      response = await updateGitCommand(updateParams)
+    } else {
+      // 添加新命令
+      const createParams: GitCommandCreateParams = {
+        commandName: currentCommand.value.commandName,
+        commandContent: currentCommand.value.commandContent,
+        description: currentCommand.value.description,
+        categoryCode: currentCommand.value.categoryCode,
+        usageScenario: currentCommand.value.usageScenario,
+        isFavorite: currentCommand.value.isFavorite,
+        isComposite: currentCommand.value.isComposite,
+        author: currentUser.value
+      }
+      
+      if (currentCommand.value.isComposite) {
+        createParams.subCommands = currentCommand.value.subCommands.map(step => ({
+          subCommandContent: step.subCommandContent,
+          sequenceNumber: step.sequenceNumber,
+          description: step.description
+        }))
+      }
+      
+      response = await createGitCommand(createParams)
+    }
+    
+    if (response.data && response.data.code === 200) {
+      message.success(isEditing.value ? '命令已更新' : '命令已添加')
+      loadGitCommands()
+      loadGitStatistics()
+      showAddCommandModal.value = false
+    } else {
+      message.error((isEditing.value ? '更新' : '添加') + '命令失败: ' + (response.data?.msg || '未知错误'))
+    }
+  } catch (error) {
+    console.error((isEditing.value ? '更新' : '添加') + '命令出错:', error)
+    message.error((isEditing.value ? '更新' : '添加') + '命令出错')
+  }
 }
 
-function saveToLocalStorage() {
-  localStorage.setItem('gitCustomCommands', JSON.stringify(customCommands.value))
+// 切换收藏状态
+async function toggleFavorite(command: GitCommand) {
+  try {
+    const newState = !command.isFavorite
+    const response = await toggleGitCommandFavorite(command.id, newState)
+    if (response.data && response.data.code === 200 && response.data.data) {
+      command.isFavorite = newState
+      message.success(newState ? '已添加到收藏' : '已从收藏中移除')
+      loadGitStatistics()
+    } else {
+      message.error('切换收藏状态失败: ' + (response.data?.msg || '未知错误'))
+    }
+  } catch (error) {
+    console.error('切换收藏状态出错:', error)
+    message.error('切换收藏状态出错')
+  }
+}
+
+// 记录命令执行
+async function recordExecution(command: GitCommand) {
+  try {
+    const response = await recordGitCommandExecution(command.id)
+    if (response.data && response.data.code === 200 && response.data.data) {
+      command.executionCount = response.data.data.executionCount
+    }
+  } catch (error) {
+    console.error('记录命令执行出错:', error)
+  }
+}
+
+// 复制到剪贴板
+function copyToClipboard(text: string, command?: GitCommand) {
+  navigator.clipboard.writeText(text).then(() => {
+    message.success('已复制到剪贴板')
+    if (command) {
+      recordExecution(command)
+    }
+  }).catch(() => {
+    message.error('复制失败')
+  })
 }
 
 // 官方文档链接
@@ -484,13 +953,10 @@ const gitFAQs = [
   }
 ]
 
-// 复制到剪贴板
-function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text).then(() => {
-    message.success('已复制到剪贴板')
-  }).catch(() => {
-    message.error('复制失败')
-  })
+// 根据分类代码获取分类名称
+function getCategoryName(code: number): string {
+  const category = categoryOptions.find(c => c.value === code)
+  return category ? category.label : '未知分类'
 }
 </script>
 
@@ -660,6 +1126,52 @@ function copyToClipboard(text: string) {
 .copy-button:hover {
   background-color: #e2e8f0;
   color: #334155;
+}
+
+/* 统计数据项样式 */
+.stat-item {
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* 分页按钮样式 */
+.pagination-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-button:not(:disabled):hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 /* 模态框样式 */
