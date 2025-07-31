@@ -116,6 +116,117 @@ export interface MemoStatistics {
   dueDateDistribution: DateStat[];
 }
 
+// Git命令接口类型
+export interface GitSubCommand {
+  id?: number;
+  subCommandContent: string;
+  sequenceNumber: number;
+  description?: string;
+}
+
+export interface GitCommand {
+  id: number;
+  commandName: string;
+  commandContent: string;
+  description?: string;
+  categoryCode: number;
+  categoryName?: string;
+  usageScenario?: string;
+  isFavorite: boolean;
+  isComposite: boolean;
+  subCommands?: GitSubCommand[];
+  executionCount: number;
+  author: string;
+  createDt: string;
+  updateDt: string;
+}
+
+// Git命令搜索参数
+export interface GitCommandSearchParams {
+  username: string;
+  categoryCode?: number;
+  keyword?: string;
+  isFavorite?: boolean;
+  isComposite?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+// Git子命令创建参数
+export interface GitSubCommandCreateParams {
+  subCommandContent: string;
+  sequenceNumber: number;
+  description?: string;
+}
+
+// Git子命令更新参数
+export interface GitSubCommandUpdateParams {
+  id?: number;
+  subCommandContent: string;
+  sequenceNumber: number;
+  description?: string;
+}
+
+// Git命令创建参数
+export interface GitCommandCreateParams {
+  commandName: string;
+  commandContent: string;
+  description?: string;
+  categoryCode: number;
+  usageScenario?: string;
+  isFavorite?: boolean;
+  isComposite?: boolean;
+  subCommands?: GitSubCommandCreateParams[];
+  author: string;
+}
+
+// Git命令更新参数
+export interface GitCommandUpdateParams {
+  id: number;
+  commandName: string;
+  commandContent: string;
+  description?: string;
+  categoryCode: number;
+  usageScenario?: string;
+  isFavorite: boolean;
+  isComposite: boolean;
+  subCommands?: GitSubCommandUpdateParams[];
+}
+
+// 分类统计接口
+export interface CategoryStat {
+  categoryCode: number;
+  categoryName: string;
+  count: number;
+}
+
+// 常用命令统计
+export interface MostUsedCommand {
+  id: number;
+  commandName: string;
+  commandContent: string;
+  executionCount: number;
+  isComposite: boolean;
+}
+
+// 最近添加命令
+export interface RecentCommand {
+  id: number;
+  commandName: string;
+  createDt: string;
+  isComposite: boolean;
+}
+
+// Git命令统计响应接口
+export interface GitCommandStatistics {
+  total: number;
+  favoriteCount: number;
+  compositeCount: number;
+  mostUsedCommands: MostUsedCommand[];
+  categoryDistribution: CategoryStat[];
+  recentlyAddedCommands: RecentCommand[];
+}
+
 export function fetchPosts(params: { page?: number; pageSize?: number; tag?: string }) {
   return http.get<Pagination<Post>>('/posts', { params })
 }
@@ -200,6 +311,47 @@ export function getMemoStatistics(username: string) {
 // 切换待办状态
 export function toggleMemoStatus(id: number, completed: boolean) {
   return http.post<ApiResponse<boolean>>('/memo/toggleStatus', { id, completed });
+}
+
+// Git命令API
+// 搜索Git命令
+export function searchGitCommands(params: GitCommandSearchParams) {
+  return http.post<ApiResponse<{
+    list: GitCommand[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }>>('/git/command/search', params);
+}
+
+// 创建Git命令
+export function createGitCommand(params: GitCommandCreateParams) {
+  return http.post<ApiResponse<{ id: number }>>('/git/command/create', params);
+}
+
+// 更新Git命令
+export function updateGitCommand(params: GitCommandUpdateParams) {
+  return http.post<ApiResponse<boolean>>('/git/command/update', params);
+}
+
+// 删除Git命令
+export function deleteGitCommand(id: number) {
+  return http.post<ApiResponse<boolean>>('/git/command/delete', { id });
+}
+
+// 获取Git命令统计
+export function getGitCommandStatistics(username: string) {
+  return http.post<ApiResponse<GitCommandStatistics>>('/git/command/statistics', { username });
+}
+
+// 切换收藏状态
+export function toggleGitCommandFavorite(id: number, isFavorite: boolean) {
+  return http.post<ApiResponse<boolean>>('/git/command/toggleFavorite', { id, isFavorite });
+}
+
+// 记录命令执行
+export function recordGitCommandExecution(id: number) {
+  return http.post<ApiResponse<{ executionCount: number }>>('/git/command/recordExecution', { id });
 }
 
 export default http 

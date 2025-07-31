@@ -14,179 +14,197 @@
       </div>
 
       <n-tabs type="line" animated>
-        <!-- Git 常用命令 -->
+        <!-- 常用命令 -->
         <n-tab-pane name="commands" tab="常用命令">
           <div class="command-section">
-            <n-card title="基础操作" class="mb-4">
-              <div class="command-grid">
-                <div v-for="(cmd, index) in basicCommands" :key="index" class="command-item">
-                  <div class="flex justify-between">
-                    <div class="command-name">{{ cmd.name }}</div>
-                    <n-button text size="small" @click="copyToClipboard(cmd.command)">
-                      <template #icon>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </template>
-                      复制
-                    </n-button>
-                  </div>
-                  <div class="command-code">{{ cmd.command }}</div>
-                  <div class="command-desc">{{ cmd.description }}</div>
-                </div>
+            <!-- 搜索和添加区域 -->
+            <div class="flex justify-between items-center mb-6">
+              <div class="search-container">
+                <input
+                  v-model="searchQuery"
+                  placeholder="搜索命令组合..."
+                  class="search-input"
+                  @input="handleSearchInput"
+                />
               </div>
-            </n-card>
-
-            <n-card title="分支操作" class="mb-4">
-              <div class="command-grid">
-                <div v-for="(cmd, index) in branchCommands" :key="index" class="command-item">
-                  <div class="flex justify-between">
-                    <div class="command-name">{{ cmd.name }}</div>
-                    <n-button text size="small" @click="copyToClipboard(cmd.command)">
-                      <template #icon>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </template>
-                      复制
-                    </n-button>
-                  </div>
-                  <div class="command-code">{{ cmd.command }}</div>
-                  <div class="command-desc">{{ cmd.description }}</div>
-                </div>
-              </div>
-            </n-card>
-
-            <n-card title="高级操作" class="mb-4">
-              <div class="command-grid">
-                <div v-for="(cmd, index) in advancedCommands" :key="index" class="command-item">
-                  <div class="flex justify-between">
-                    <div class="command-name">{{ cmd.name }}</div>
-                    <n-button text size="small" @click="copyToClipboard(cmd.command)">
-                      <template #icon>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </template>
-                      复制
-                    </n-button>
-                  </div>
-                  <div class="command-code">{{ cmd.command }}</div>
-                  <div class="command-desc">{{ cmd.description }}</div>
-                </div>
-              </div>
-            </n-card>
-          </div>
-        </n-tab-pane>
-
-        <!-- 分支图生成 -->
-        <n-tab-pane name="branch-graph" tab="分支图生成">
-          <n-card title="分支图生成器" class="mb-4">
-            <div class="mb-4">
-              <n-alert type="info">
-                输入您的分支结构，系统将自动生成 ASCII 图形展示分支合并历史
-              </n-alert>
+              <button class="add-button" @click="showAddCommandModal = true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 class="text-base font-medium mb-2">分支配置</h3>
-                <n-form>
-                  <n-form-item label="主分支名称">
-                    <n-input v-model:value="branchGraphConfig.mainBranch" placeholder="main" />
-                  </n-form-item>
-                  
-                  <n-form-item label="分支与合并定义">
-                    <n-input
-                      v-model:value="branchGraphConfig.branchDefinition"
-                      type="textarea"
-                      :autosize="{ minRows: 6, maxRows: 10 }"
-                      placeholder="每行一个操作，例如:
-feature: main 50
-bugfix: feature 30
-merge bugfix feature
-merge feature main"
-                    />
-                  </n-form-item>
-                  
-                  <n-form-item>
-                    <n-button type="primary" @click="generateBranchGraph">生成分支图</n-button>
-                  </n-form-item>
-                </n-form>
+            <!-- 自定义命令组合展示 -->
+            <div class="mb-6">
+              <div v-if="filteredCustomCommands.length === 0" class="text-center py-12 text-gray-400">
+                <p>暂无命令组合，点击右上角"+"按钮创建</p>
               </div>
-              
-              <div>
-                <h3 class="text-base font-medium mb-2">生成的分支图</h3>
-                <div class="branch-graph-output">
-                  <pre>{{ branchGraphOutput }}</pre>
+              <div v-else class="command-grid">
+                <div v-for="(cmd, index) in filteredCustomCommands" :key="index" class="custom-command-item">
+                  <div class="flex justify-between items-center mb-3">
+                    <div class="command-title">{{ cmd.title }}</div>
+                    <div class="flex gap-2">
+                      <button class="icon-button" @click="editCustomCommand(index)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M17 3L21 7L12 16H8V12L17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button class="icon-button" @click="showDeleteConfirm(index)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="command-steps">
+                    <div v-for="(step, stepIndex) in cmd.steps" :key="`${index}-${stepIndex}`" class="command-step">
+                      <div class="step-desc">{{ stepIndex + 1 }}. {{ step.description }}</div>
+                      <div class="step-command-box">
+                        <div class="command-code">{{ step.command }}</div>
+                        <button class="copy-button" @click="copyToClipboard(step.command)">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <n-button class="mt-2" size="small" @click="copyToClipboard(branchGraphOutput)">
-                  复制分支图
+              </div>
+            </div>
+          </div>
+
+          <!-- 添加/编辑自定义命令组合的模态框 -->
+          <n-modal
+            v-model:show="showAddCommandModal"
+            preset="card"
+            title="自定义命令组合"
+            style="width: 500px;"
+            :bordered="false"
+          >
+            <div class="modal-content">
+              <div class="form-section">
+                <div class="form-item">
+                  <label>标题</label>
+                  <input v-model="currentCommand.title" placeholder="请输入命令组合标题" class="form-input" />
+                </div>
+
+                <div class="step-container">
+                  <div class="step-header">
+                    <h3>步骤 {{ currentStepIndex + 1 }}</h3>
+                    <div class="step-indicator">
+                      {{ currentStepIndex + 1 }} / {{ currentCommand.steps.length }}
+                    </div>
+                  </div>
+                  
+                  <div class="form-item">
+                    <label>说明</label>
+                    <input 
+                      v-model="currentCommand.steps[currentStepIndex].description" 
+                      placeholder="请输入步骤说明" 
+                      class="form-input" 
+                    />
+                  </div>
+                  
+                  <div class="form-item">
+                    <label>命令</label>
+                    <input 
+                      v-model="currentCommand.steps[currentStepIndex].command" 
+                      placeholder="请输入命令" 
+                      class="form-input" 
+                    />
+                  </div>
+                </div>
+
+                <div class="step-navigation">
+                  <button 
+                    class="nav-button" 
+                    :disabled="currentStepIndex === 0"
+                    @click="currentStepIndex--"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    上一步
+                  </button>
+                  
+                  <button 
+                    class="nav-button" 
+                    :disabled="currentStepIndex === currentCommand.steps.length - 1"
+                    @click="currentStepIndex++"
+                  >
+                    下一步
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+                
+                <div class="step-actions">
+                  <button class="action-button add" @click="addStep">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    添加步骤
+                  </button>
+                  
+                  <button 
+                    v-if="currentCommand.steps.length > 1"
+                    class="action-button remove" 
+                    @click="removeCurrentStep"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 12H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    删除当前步骤
+                  </button>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button class="cancel-button" @click="showAddCommandModal = false">取消</button>
+                <button class="save-button" @click="saveCustomCommand">保存</button>
+              </div>
+            </div>
+          </n-modal>
+
+          <!-- 删除确认模态框 -->
+          <n-modal v-model:show="showDeleteModal" preset="dialog" title="确认删除" content="确定要删除这个命令组合吗？" positive-text="确定" negative-text="取消" @positive-click="confirmDelete" @negative-click="cancelDelete" />
+        </n-tab-pane>
+
+        <!-- 相关文档 -->
+        <n-tab-pane name="documentation" tab="相关文档">
+          <n-card title="Git 官方文档与学习资源" class="mb-4">
+            <div class="docs-links">
+              <div v-for="(doc, index) in officialDocs" :key="index" class="doc-item">
+                <div class="doc-title">{{ doc.title }}</div>
+                <div class="doc-desc">{{ doc.description }}</div>
+                <n-button text type="primary" tag="a" :href="doc.url" target="_blank">
+                  <template #icon>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 6H6C4.89543 6 4 6.89543 4 8V18C4 19.1046 4.89543 20 6 20H16C17.1046 20 18 19.1046 18 18V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14 4H20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M20 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </template>
+                  访问链接
                 </n-button>
               </div>
             </div>
           </n-card>
-        </n-tab-pane>
 
-        <!-- Commit 模板 -->
-        <n-tab-pane name="commit-template" tab="Commit 模板">
-          <n-card title="Commit 消息生成器" class="mb-4">
-            <div class="mb-4">
-              <n-alert type="info">
-                生成规范的 Git Commit 消息，遵循 Conventional Commits 规范
-              </n-alert>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 class="text-base font-medium mb-2">Commit 配置</h3>
-                <n-form>
-                  <n-form-item label="类型">
-                    <n-select v-model:value="commitTemplate.type" :options="commitTypeOptions" />
-                  </n-form-item>
-                  
-                  <n-form-item label="范围 (可选)">
-                    <n-input v-model:value="commitTemplate.scope" placeholder="auth" />
-                  </n-form-item>
-                  
-                  <n-form-item label="简短描述">
-                    <n-input v-model:value="commitTemplate.subject" placeholder="添加用户登录功能" />
-                  </n-form-item>
-                  
-                  <n-form-item label="详细描述 (可选)">
-                    <n-input
-                      v-model:value="commitTemplate.body"
-                      type="textarea"
-                      :autosize="{ minRows: 3, maxRows: 6 }"
-                      placeholder="实现了基于JWT的认证系统，包括登录表单和Token存储。
-添加了记住密码功能和自动登录选项。"
-                    />
-                  </n-form-item>
-                  
-                  <n-form-item label="页脚注释 (可选)">
-                    <n-input v-model:value="commitTemplate.footer" placeholder="Closes #123" />
-                  </n-form-item>
-                  
-                  <n-form-item>
-                    <n-button type="primary" @click="generateCommitMessage">生成 Commit 消息</n-button>
-                  </n-form-item>
-                </n-form>
-              </div>
-              
-              <div>
-                <h3 class="text-base font-medium mb-2">生成的 Commit 消息</h3>
-                <div class="commit-message-output">
-                  <pre>{{ commitMessageOutput }}</pre>
+          <n-card title="常见问题与解决方案" class="mb-4">
+            <div class="faq-section">
+              <div v-for="(faq, index) in gitFAQs" :key="index" class="faq-item">
+                <div class="faq-question">{{ faq.question }}</div>
+                <div class="faq-answer">{{ faq.answer }}</div>
+                <div class="faq-command" v-if="faq.command">
+                  <div class="command-code">{{ faq.command }}</div>
+                  <n-button text size="small" @click="copyToClipboard(faq.command)">复制</n-button>
                 </div>
-                <n-button class="mt-2" size="small" @click="copyToClipboard(commitMessageOutput)">
-                  复制 Commit 消息
-                </n-button>
               </div>
             </div>
           </n-card>
@@ -197,12 +215,11 @@ merge feature main"
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { 
-  NCard, NButton, NTabs, NTabPane, NForm, NFormItem, 
-  NInput, NAlert, NSelect
+  NCard, NButton, NTabs, NTabPane, NModal, NSpace
 } from 'naive-ui'
 
 const router = useRouter()
@@ -211,220 +228,261 @@ const message = useMessage()
 // 设置页面标题
 onMounted(() => {
   document.title = '薯条-Git工具集'
+  // 从本地存储加载自定义命令
+  const savedCommands = localStorage.getItem('gitCustomCommands')
+  if (savedCommands) {
+    try {
+      customCommands.value = JSON.parse(savedCommands)
+    } catch (e) {
+      console.error('Failed to parse saved commands', e)
+    }
+  }
 })
 
-// Git 常用命令
-const basicCommands = [
-  { 
-    name: '初始化仓库', 
-    command: 'git init', 
-    description: '创建一个新的Git仓库' 
-  },
-  { 
-    name: '克隆仓库', 
-    command: 'git clone https://github.com/username/repository.git', 
-    description: '克隆远程仓库到本地' 
-  },
-  { 
-    name: '添加文件', 
-    command: 'git add <filename>', 
-    description: '将文件添加到暂存区' 
-  },
-  { 
-    name: '添加所有', 
-    command: 'git add .', 
-    description: '将所有更改添加到暂存区' 
-  },
-  { 
-    name: '提交更改', 
-    command: 'git commit -m "提交信息"', 
-    description: '提交暂存区的更改' 
-  },
-  { 
-    name: '查看状态', 
-    command: 'git status', 
-    description: '显示工作区和暂存区的状态' 
-  }
-]
+// 搜索功能
+const searchQuery = ref('')
 
-const branchCommands = [
-  { 
-    name: '列出分支', 
-    command: 'git branch', 
-    description: '列出本地所有分支' 
-  },
-  { 
-    name: '列出远程分支', 
-    command: 'git branch -r', 
-    description: '列出所有远程分支' 
-  },
-  { 
-    name: '创建分支', 
-    command: 'git branch <branch-name>', 
-    description: '创建新的分支' 
-  },
-  { 
-    name: '切换分支', 
-    command: 'git checkout <branch-name>', 
-    description: '切换到指定分支' 
-  },
-  { 
-    name: '创建并切换', 
-    command: 'git checkout -b <branch-name>', 
-    description: '创建并切换到新分支' 
-  },
-  { 
-    name: '合并分支', 
-    command: 'git merge <branch-name>', 
-    description: '合并指定分支到当前分支' 
-  }
-]
+function handleSearchInput() {
+  // 搜索功能相关逻辑，可以留空，主要是为了UI交互
+}
 
-const advancedCommands = [
-  { 
-    name: '添加远程仓库', 
-    command: 'git remote add origin https://github.com/username/repository.git', 
-    description: '添加远程仓库' 
-  },
-  { 
-    name: '推送到远程', 
-    command: 'git push -u origin main', 
-    description: '推送本地分支到远程仓库' 
-  },
-  { 
-    name: '拉取更新', 
-    command: 'git pull origin main', 
-    description: '从远程仓库拉取并合并更新' 
-  },
-  { 
-    name: '查看日志', 
-    command: 'git log --oneline --graph', 
-    description: '以图形方式查看提交历史' 
-  },
-  { 
-    name: '撤销提交', 
-    command: 'git revert <commit-hash>', 
-    description: '撤销指定的提交' 
-  },
-  { 
-    name: '变基操作', 
-    command: 'git rebase main', 
-    description: '将当前分支变基到main分支' 
-  }
-]
+// 自定义命令组合
+interface CommandStep {
+  description: string
+  command: string
+}
 
-// 分支图生成器
-const branchGraphConfig = ref({
-  mainBranch: 'main',
-  branchDefinition: `feature: main 50
-bugfix: feature 30
-merge bugfix feature
-merge feature main`
+interface CustomCommand {
+  title: string
+  steps: CommandStep[]
+}
+
+const customCommands = ref<CustomCommand[]>([
+  {
+    title: '初始化项目并提交',
+    steps: [
+      {
+        description: '初始化Git仓库',
+        command: 'git init',
+      },
+      {
+        description: '添加所有文件',
+        command: 'git add .',
+      },
+      {
+        description: '提交首次更改',
+        command: 'git commit -m "Initial commit"',
+      }
+    ]
+  },
+  {
+    title: '合并发布分支',
+    steps: [
+      {
+        description: '确保开发分支代码是最新的',
+        command: 'git checkout develop && git pull',
+      },
+      {
+        description: '切换到主分支并更新',
+        command: 'git checkout main && git pull',
+      },
+      {
+        description: '合并开发分支到主分支',
+        command: 'git merge develop',
+      },
+      {
+        description: '推送到远程仓库',
+        command: 'git push origin main',
+      }
+    ]
+  }
+])
+
+// 过滤后的自定义命令
+const filteredCustomCommands = computed(() => {
+  if (!searchQuery.value) return customCommands.value
+  
+  const query = searchQuery.value.toLowerCase()
+  return customCommands.value.filter(cmd => 
+    cmd.title.toLowerCase().includes(query) || 
+    cmd.steps.some(step => 
+      step.description.toLowerCase().includes(query) || 
+      step.command.toLowerCase().includes(query)
+    )
+  )
 })
 
-const branchGraphOutput = ref(`main ----------------------------+
-                            |
-feature         +------------+-----+
-                |                  |
-bugfix          +-------+          |
-                        |          |
-                        +----------+
-                                   |
-                                   +`)
+// 添加/编辑命令相关
+const showAddCommandModal = ref(false)
+const isEditing = ref(false)
+const editingIndex = ref(-1)
+const currentStepIndex = ref(0)
 
-function generateBranchGraph() {
-  // 简易实现，实际应用需要更复杂的算法
-  const { mainBranch, branchDefinition } = branchGraphConfig.value
-  
-  if (!branchDefinition.trim()) {
-    message.warning('请输入分支定义')
-    return
+// 删除确认
+const showDeleteModal = ref(false)
+const deleteIndex = ref(-1)
+
+const currentCommand = ref<CustomCommand>({
+  title: '',
+  steps: [
+    {
+      description: '',
+      command: ''
+    }
+  ]
+})
+
+function addCustomCommand() {
+  isEditing.value = false
+  currentCommand.value = {
+    title: '',
+    steps: [
+      {
+        description: '',
+        command: ''
+      }
+    ]
   }
-  
-  try {
-    // 这里是简单的示例输出，实际应用需要解析分支定义并生成图形
-    const lines = branchDefinition.split('\n')
-    const branches = [mainBranch]
-    
-    // 提取所有分支名
-    lines.forEach(line => {
-      if (line.includes(':')) {
-        const branch = line.split(':')[0].trim()
-        if (!branches.includes(branch)) {
-          branches.push(branch)
-        }
-      }
-    })
-    
-    // 生成一个简单的ASCII图
-    let graph = ''
-    branches.forEach((branch, index) => {
-      const indent = ' '.repeat(index * 2)
-      graph += `${indent}${branch} ${'---'.repeat(4 - index)}\n`
-      if (index < branches.length - 1) {
-        graph += `${indent}|\n`
-      }
-    })
-    
-    branchGraphOutput.value = graph
-    message.success('分支图生成成功')
-  } catch (error) {
-    message.error('分支图生成失败')
-    branchGraphOutput.value = error instanceof Error ? `错误: ${error.message}` : '未知错误'
+  currentStepIndex.value = 0
+  showAddCommandModal.value = true
+}
+
+function editCustomCommand(index: number) {
+  isEditing.value = true
+  editingIndex.value = index
+  currentCommand.value = JSON.parse(JSON.stringify(customCommands.value[index]))
+  currentStepIndex.value = 0
+  showAddCommandModal.value = true
+}
+
+function showDeleteConfirm(index: number) {
+  deleteIndex.value = index
+  showDeleteModal.value = true
+}
+
+function confirmDelete() {
+  customCommands.value.splice(deleteIndex.value, 1)
+  saveToLocalStorage()
+  message.success('命令组合已删除')
+  showDeleteModal.value = false
+}
+
+function cancelDelete() {
+  showDeleteModal.value = false
+}
+
+function addStep() {
+  currentCommand.value.steps.push({
+    description: '',
+    command: ''
+  })
+  currentStepIndex.value = currentCommand.value.steps.length - 1
+}
+
+function removeCurrentStep() {
+  if (currentCommand.value.steps.length > 1) {
+    currentCommand.value.steps.splice(currentStepIndex.value, 1)
+    if (currentStepIndex.value >= currentCommand.value.steps.length) {
+      currentStepIndex.value = currentCommand.value.steps.length - 1
+    }
+  } else {
+    message.warning('至少需要保留一个步骤')
   }
 }
 
-// Commit 模板
-const commitTemplate = ref({
-  type: 'feat',
-  scope: '',
-  subject: '',
-  body: '',
-  footer: ''
-})
-
-const commitTypeOptions = [
-  { label: '✨ feat: 新功能', value: 'feat' },
-  { label: '🐛 fix: 修复', value: 'fix' },
-  { label: '📝 docs: 文档', value: 'docs' },
-  { label: '💄 style: 样式', value: 'style' },
-  { label: '♻️ refactor: 重构', value: 'refactor' },
-  { label: '⚡ perf: 性能优化', value: 'perf' },
-  { label: '✅ test: 测试', value: 'test' },
-  { label: '🔧 chore: 构建/依赖', value: 'chore' }
-]
-
-const commitMessageOutput = ref(`feat: 添加用户登录功能
-
-实现了基于JWT的认证系统，包括登录表单和Token存储。
-添加了记住密码功能和自动登录选项。
-
-Closes #123`)
-
-function generateCommitMessage() {
-  const { type, scope, subject, body, footer } = commitTemplate.value
-  
-  if (!subject) {
-    message.warning('请填写简短描述')
+function saveCustomCommand() {
+  // 验证表单
+  if (!currentCommand.value.title.trim()) {
+    message.warning('请填写命令组合标题')
     return
   }
-  
-  let output = `${type}`
-  if (scope) {
-    output += `(${scope})`
+
+  for (const step of currentCommand.value.steps) {
+    if (!step.description.trim()) {
+      message.warning('请填写所有步骤的说明')
+      return
+    }
+    if (!step.command.trim()) {
+      message.warning('请填写所有步骤的命令')
+      return
+    }
   }
-  output += `: ${subject}`
-  
-  if (body) {
-    output += `\n\n${body}`
+
+  if (isEditing.value) {
+    // 更新现有命令
+    customCommands.value[editingIndex.value] = JSON.parse(JSON.stringify(currentCommand.value))
+    message.success('命令组合已更新')
+  } else {
+    // 添加新命令
+    customCommands.value.push(JSON.parse(JSON.stringify(currentCommand.value)))
+    message.success('命令组合已添加')
   }
-  
-  if (footer) {
-    output += `\n\n${footer}`
-  }
-  
-  commitMessageOutput.value = output
+
+  saveToLocalStorage()
+  showAddCommandModal.value = false
 }
+
+function saveToLocalStorage() {
+  localStorage.setItem('gitCustomCommands', JSON.stringify(customCommands.value))
+}
+
+// 官方文档链接
+const officialDocs = [
+  {
+    title: 'Git 官方文档',
+    description: 'Git的完整官方文档，包含所有命令和概念的详细解释',
+    url: 'https://git-scm.com/doc'
+  },
+  {
+    title: 'Pro Git 书籍',
+    description: '免费电子书，从基础到高级全面介绍Git的使用',
+    url: 'https://git-scm.com/book/zh/v2'
+  },
+  {
+    title: 'Git 速查表',
+    description: '常用Git命令的快速参考表',
+    url: 'https://training.github.com/downloads/zh_CN/github-git-cheat-sheet/'
+  },
+  {
+    title: 'Git 交互式学习',
+    description: '通过可视化和交互式练习学习Git分支操作',
+    url: 'https://learngitbranching.js.org/?locale=zh_CN'
+  },
+  {
+    title: 'GitHub 文档',
+    description: 'GitHub平台使用指南和最佳实践',
+    url: 'https://docs.github.com/cn'
+  }
+]
+
+// Git常见问题
+const gitFAQs = [
+  {
+    question: '如何撤销最后一次提交？',
+    answer: '如果想保留修改的文件但撤销提交，可以使用以下命令：',
+    command: 'git reset --soft HEAD~1'
+  },
+  {
+    question: '如何恢复已删除的文件？',
+    answer: '如果文件已被Git跟踪，可以使用以下命令恢复：',
+    command: 'git checkout -- <file>'
+  },
+  {
+    question: '如何查看特定文件的修改历史？',
+    answer: '使用以下命令可以查看特定文件的所有修改历史：',
+    command: 'git log --follow -p -- <file>'
+  },
+  {
+    question: '如何比较两个分支的差异？',
+    answer: '使用以下命令可以查看两个分支之间的差异：',
+    command: 'git diff branch1..branch2'
+  },
+  {
+    question: '如何修改最后一次提交的信息？',
+    answer: '如果需要修改最后一次提交的信息，可以使用：',
+    command: 'git commit --amend'
+  }
+]
 
 // 复制到剪贴板
 function copyToClipboard(text: string) {
@@ -453,49 +511,387 @@ function copyToClipboard(text: string) {
 
 .command-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
-.command-item {
-  padding: 12px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  background-color: #fafafa;
+/* 搜索框样式 */
+.search-container {
+  position: relative;
+  width: 220px;
 }
 
-.command-name {
+.search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 40px 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background-color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: #cbd5e1;
+  box-shadow: 0 0 0 2px rgba(203, 213, 225, 0.2);
+}
+
+/* 添加按钮样式 */
+.add-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #334155;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.add-button:hover {
+  background-color: #1e293b;
+  transform: scale(1.05);
+}
+
+/* 自定义命令组合样式 */
+.custom-command-item {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: white;
+  transition: all 0.2s ease;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-command-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.command-title {
   font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover {
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+.command-steps {
+  flex-grow: 1;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  margin-right: -4px;
+  padding-right: 4px;
+}
+
+.command-steps::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.command-step {
+  margin-top: 12px;
+}
+
+.step-desc {
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.step-command-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
 }
 
 .command-code {
   font-family: monospace;
-  background-color: #f0f0f0;
-  padding: 6px;
-  border-radius: 4px;
-  margin-bottom: 8px;
+  background-color: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-right: 8px;
   font-size: 13px;
   white-space: nowrap;
   overflow: auto;
+  color: #334155;
+  flex-grow: 1;
 }
 
-.command-desc {
-  font-size: 13px;
-  color: #666;
+.copy-button {
+  min-width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.branch-graph-output,
-.commit-message-output {
-  font-family: monospace;
-  background-color: #f5f5f5;
-  padding: 16px;
+.copy-button:hover {
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+/* 模态框样式 */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-item label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.form-input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  white-space: pre;
-  overflow: auto;
-  min-height: 200px;
-  max-height: 400px;
-  border: 1px solid #eee;
+  background-color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #cbd5e1;
+  box-shadow: 0 0 0 2px rgba(203, 213, 225, 0.2);
+}
+
+.step-container {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f8fafc;
+}
+
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.step-header h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.step-indicator {
+  font-size: 14px;
+  color: #64748b;
+  background-color: #e2e8f0;
+  border-radius: 12px;
+  padding: 2px 10px;
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nav-button:not(:disabled):hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-button.add {
+  background-color: #e2e8f0;
+  color: #334155;
+  border: none;
+}
+
+.action-button.add:hover {
+  background-color: #cbd5e1;
+}
+
+.action-button.remove {
+  background-color: #fecaca;
+  color: #b91c1c;
+  border: none;
+}
+
+.action-button.remove:hover {
+  background-color: #fca5a5;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-button {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: white;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.save-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #334155;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button:hover {
+  background-color: #1e293b;
+}
+
+/* 文档样式 */
+.docs-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.doc-item {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+}
+
+.doc-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #334155;
+}
+
+.doc-desc {
+  color: #64748b;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+/* FAQ样式 */
+.faq-item {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  margin-bottom: 16px;
+}
+
+.faq-question {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #334155;
+}
+
+.faq-answer {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.faq-command {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 @media (max-width: 768px) {
@@ -504,6 +900,10 @@ function copyToClipboard(text: string) {
   }
   
   .command-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-links {
     grid-template-columns: 1fr;
   }
 }
