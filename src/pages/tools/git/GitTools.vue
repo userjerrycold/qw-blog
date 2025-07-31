@@ -2,371 +2,284 @@
   <div class="tools-container">
     <div class="content-container">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold">Git 工具集</h1>
-        <n-button @click="router.push('/tools')" size="small">
-          <template #icon>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </template>
-          返回工具列表
-        </n-button>
+        <h1 class="text-2xl font-bold text-gray-800">Git 命令管理</h1>
+        <button @click="router.push('/tools')" class="back-button glass-button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>返回工具列表</span>
+        </button>
       </div>
 
-      <n-tabs type="line" animated>
-        <!-- 常用命令 -->
-        <n-tab-pane name="commands" tab="常用命令">
-          <div class="command-section">
-            <!-- 搜索和添加区域 -->
-            <div class="flex justify-between items-center mb-6">
-              <div class="search-container">
-                <input
-                  v-model="searchQuery"
-                  placeholder="搜索Git命令..."
-                  class="search-input"
-                  @input="handleSearchInput"
-                />
-              </div>
-              <div class="flex items-center">
-                <n-button type="primary" size="small" class="mr-2" @click="searchParams.isFavorite = !searchParams.isFavorite; loadGitCommands()">
-                  {{ searchParams.isFavorite ? '显示全部' : '仅显示收藏' }}
-                </n-button>
-                <n-button type="info" size="small" class="mr-2" @click="loadGitCommands()">
-                  <template #icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 4V9H4.582M19.418 9H20V4H15M15 20H20V15M4 15V20H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <div class="command-section no-border">
+        <!-- 搜索和添加区域 -->
+        <div class="flex justify-between items-start mb-6">
+          <div class="search-area">
+            <div class="search-container">
+              <input
+                v-model="searchQuery"
+                placeholder="搜索Git命令..."
+                class="search-input glass-input"
+                @input="handleSearchInput"
+              />
+            </div>
+            <div class="action-icons mt-2 flex">
+              <button class="icon-button mr-2" @click="searchParams.isFavorite = !searchParams.isFavorite; loadGitCommands()" :title="searchParams.isFavorite ? '显示全部' : '仅显示收藏'">
+                <svg v-if="searchParams.isFavorite" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-500" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="icon-button" @click="loadGitCommands()" title="刷新命令列表">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 4V9H4.582M19.418 9H20V4H15M15 20H20V15M4 15V20H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button class="add-button glass-button" @click="addCommand" title="添加命令">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Git命令列表 -->
+        <div class="mb-6">
+          <div v-if="loading" class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-700"></div>
+            <p class="mt-2 text-gray-600">加载中...</p>
+          </div>
+          <div v-else-if="filteredGitCommands.length === 0" class="text-center py-12 text-gray-400">
+            <p>暂无命令，点击右上角"+"按钮创建</p>
+          </div>
+          <div v-else class="command-grid">
+            <div v-for="cmd in filteredGitCommands" :key="cmd.id" class="custom-command-item glass-card">
+              <div class="flex justify-between items-center mb-3">
+                <div class="command-title flex items-center">
+                  <span>{{ cmd.commandName }}</span>
+                  <span v-if="cmd.isComposite" class="ml-2 text-xs py-0.5 px-1.5 bg-blue-50 text-blue-600 rounded">组合</span>
+                </div>
+                <div class="flex gap-2">
+                  <button class="icon-button text-yellow-500" @click="toggleFavorite(cmd)">
+                    <svg v-if="cmd.isFavorite" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                  </template>
-                  刷新数据
-                </n-button>
-                <button class="add-button" @click="addCommand">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- 命令统计信息 -->
-            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div class="grid grid-cols-4 gap-4">
-                <div class="stat-item">
-                  <div class="stat-title">命令总数</div>
-                  <div class="stat-value">{{ statistics.total }}</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-title">收藏数量</div>
-                  <div class="stat-value">{{ statistics.favoriteCount }}</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-title">组合命令</div>
-                  <div class="stat-value">{{ statistics.compositeCount }}</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-title">请求状态</div>
-                  <div class="stat-value">{{ loading ? '加载中' : '已完成' }}</div>
+                    <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <button class="icon-button" @click="editCommand(cmd)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M17 3L21 7L12 16H8V12L17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <button class="icon-button" @click="showDeleteConfirm(cmd)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
-
-              <!-- 分类分布 -->
-              <div class="mt-4" v-if="statistics.categoryDistribution && statistics.categoryDistribution.length > 0">
-                <div class="text-sm font-medium mb-2">分类分布</div>
-                <div class="flex flex-wrap gap-2">
-                  <div v-for="cat in statistics.categoryDistribution" :key="cat.categoryCode" 
-                       class="px-3 py-1 bg-blue-50 rounded-full text-sm flex items-center gap-1">
-                    {{ cat.categoryName }}
-                    <span class="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{{ cat.count }}</span>
+              <div class="command-info mb-2 text-xs text-gray-500 flex items-center gap-2">
+                <span class="glass-tag">{{ getCategoryName(cmd.categoryCode) }}</span>
+                <span>执行次数: {{ cmd.executionCount }}</span>
+              </div>
+              <div v-if="cmd.description" class="command-desc mb-2 text-sm text-gray-600">
+                {{ cmd.description }}
+              </div>
+              <div class="command-steps">
+                <div v-if="!cmd.isComposite" class="command-step">
+                  <div class="step-command-box">
+                    <div class="command-code glass-code">{{ cmd.commandContent }}</div>
+                    <button class="copy-button" @click="copyToClipboard(cmd.commandContent, cmd)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Git命令列表 -->
-            <div class="mb-6">
-              <div v-if="loading" class="text-center py-8">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
-                <p class="mt-2 text-gray-600">加载中...</p>
-              </div>
-              <div v-else-if="filteredGitCommands.length === 0" class="text-center py-12 text-gray-400">
-                <p>暂无命令，点击右上角"+"按钮创建</p>
-              </div>
-              <div v-else class="command-grid">
-                <div v-for="cmd in filteredGitCommands" :key="cmd.id" class="custom-command-item">
-                  <div class="flex justify-between items-center mb-3">
-                    <div class="command-title flex items-center">
-                      <span>{{ cmd.commandName }}</span>
-                      <span v-if="cmd.isComposite" class="ml-2 text-xs py-0.5 px-1.5 bg-blue-100 text-blue-700 rounded">组合</span>
-                    </div>
-                    <div class="flex gap-2">
-                      <button class="icon-button text-yellow-500" @click="toggleFavorite(cmd)">
-                        <svg v-if="cmd.isFavorite" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </button>
-                      <button class="icon-button" @click="editCommand(cmd)">
+                <div v-else-if="cmd.subCommands && cmd.subCommands.length > 0">
+                  <div v-for="(step, stepIndex) in cmd.subCommands" :key="`${cmd.id}-${stepIndex}`" class="command-step">
+                    <div class="step-desc">{{ stepIndex + 1 }}. {{ step.description }}</div>
+                    <div class="step-command-box">
+                      <div class="command-code glass-code">{{ step.subCommandContent }}</div>
+                      <button class="copy-button" @click="copyToClipboard(step.subCommandContent, cmd)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M17 3L21 7L12 16H8V12L17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                       </button>
-                      <button class="icon-button" @click="showDeleteConfirm(cmd)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="command-info mb-2 text-xs text-gray-500 flex items-center gap-2">
-                    <span class="bg-gray-100 px-2 py-0.5 rounded">{{ getCategoryName(cmd.categoryCode) }}</span>
-                    <span>执行次数: {{ cmd.executionCount }}</span>
-                  </div>
-                  <div v-if="cmd.description" class="command-desc mb-2 text-sm text-gray-600">
-                    {{ cmd.description }}
-                  </div>
-                  <div class="command-steps">
-                    <div v-if="!cmd.isComposite" class="command-step">
-                      <div class="step-command-box">
-                        <div class="command-code">{{ cmd.commandContent }}</div>
-                        <button class="copy-button" @click="copyToClipboard(cmd.commandContent, cmd)">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div v-else-if="cmd.subCommands && cmd.subCommands.length > 0">
-                      <div v-for="(step, stepIndex) in cmd.subCommands" :key="`${cmd.id}-${stepIndex}`" class="command-step">
-                        <div class="step-desc">{{ stepIndex + 1 }}. {{ step.description }}</div>
-                        <div class="step-command-box">
-                          <div class="command-code">{{ step.subCommandContent }}</div>
-                          <button class="copy-button" @click="copyToClipboard(step.subCommandContent, cmd)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M8 4V16C8 17.1 8.9 18 10 18H18C19.1 18 20 17.1 20 16V7.4L16.6 4H10C8.9 4 8 4.9 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                              <path d="M16 4V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                              <path d="M16 18V20C16 21.1 15.1 22 14 22H6C4.9 22 4 21.1 4 20V9C4 7.9 4.9 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            <!-- 调试信息 -->
-            <div class="mt-4 p-4 bg-gray-100 rounded-lg overflow-auto" style="max-height: 300px;">
-              <div class="text-sm font-bold mb-2">调试信息</div>
-              <div class="text-xs font-mono whitespace-pre">搜索参数: {{ JSON.stringify(searchParams, null, 2) }}</div>
-              <div class="text-xs font-mono mt-2">总数: {{ totalCommands }}</div>
-              <div class="text-xs font-mono mt-2">命令列表长度: {{ filteredGitCommands.length }}</div>
-              <div class="mt-2">
-                <n-button size="small" @click="debugMode = !debugMode">
-                  {{ debugMode ? '隐藏详细数据' : '显示详细数据' }}
-                </n-button>
-              </div>
-              <div v-if="debugMode" class="mt-2 text-xs font-mono whitespace-pre">
-                {{ JSON.stringify(gitCommands, null, 2) }}
-              </div>
-            </div>
-
-            <!-- 分页 -->
-            <div v-if="totalCommands > searchParams.pageSize" class="flex justify-center mt-6">
-              <div class="flex items-center space-x-2">
-                <button 
-                  class="pagination-button" 
-                  :disabled="searchParams.page === 1"
-                  @click="searchParams.page--; loadGitCommands()"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-                <span class="text-sm">{{ searchParams.page }} / {{ Math.ceil(totalCommands / searchParams.pageSize) }}</span>
-                <button 
-                  class="pagination-button" 
-                  :disabled="searchParams.page >= Math.ceil(totalCommands / searchParams.pageSize)"
-                  @click="searchParams.page++; loadGitCommands()"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- 添加/编辑自定义命令的模态框 -->
-          <n-modal
-            v-model:show="showAddCommandModal"
-            preset="card"
-            :title="isEditing ? '编辑Git命令' : '添加Git命令'"
-            style="width: 600px;"
-            :bordered="false"
-          >
-            <div class="modal-content">
-              <div class="form-section">
-                <div class="form-item">
-                  <label>命令名称 <span class="text-red-500">*</span></label>
-                  <input v-model="currentCommand.commandName" placeholder="请输入命令名称" class="form-input" />
-                </div>
-
-                <div class="form-item">
-                  <label>分类 <span class="text-red-500">*</span></label>
-                  <select v-model="currentCommand.categoryCode" class="form-input">
-                    <option v-for="cat in categoryOptions" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
-                  </select>
-                </div>
-
-                <div class="form-item">
-                  <label>描述</label>
-                  <input v-model="currentCommand.description" placeholder="请输入命令描述" class="form-input" />
-                </div>
-
-                <div class="form-item">
-                  <label>使用场景</label>
-                  <input v-model="currentCommand.usageScenario" placeholder="请输入使用场景" class="form-input" />
-                </div>
-
-                <div class="form-item">
-                  <div class="flex items-center">
-                    <input type="checkbox" id="is-favorite" v-model="currentCommand.isFavorite" class="mr-2" />
-                    <label for="is-favorite">收藏</label>
-                  </div>
-                </div>
-
-                <div class="form-item">
-                  <div class="flex items-center">
-                    <input type="checkbox" id="is-composite" v-model="currentCommand.isComposite" class="mr-2" />
-                    <label for="is-composite">组合命令（多个步骤）</label>
-                  </div>
-                </div>
-
-                <div class="step-container mt-4">
-                  <div class="step-header">
-                    <h3>{{ currentCommand.isComposite ? `步骤 ${currentStepIndex + 1}` : '命令内容' }}</h3>
-                    <div v-if="currentCommand.isComposite" class="step-indicator">
-                      {{ currentStepIndex + 1 }} / {{ currentCommand.subCommands.length }}
-                    </div>
-                  </div>
-                  
-                  <div class="form-item">
-                    <label>{{ currentCommand.isComposite ? '步骤说明' : '命令说明' }} <span class="text-red-500">*</span></label>
-                    <input 
-                      v-model="currentCommand.subCommands[currentStepIndex].description" 
-                      :placeholder="currentCommand.isComposite ? '请输入步骤说明' : '请输入命令说明'"
-                      class="form-input" 
-                    />
-                  </div>
-                  
-                  <div class="form-item">
-                    <label>{{ currentCommand.isComposite ? '步骤命令' : '命令内容' }} <span class="text-red-500">*</span></label>
-                    <input 
-                      v-model="currentCommand.subCommands[currentStepIndex].subCommandContent" 
-                      :placeholder="currentCommand.isComposite ? '请输入步骤命令' : '请输入命令内容'"
-                      class="form-input" 
-                    />
-                  </div>
-                </div>
-
-                <div v-if="currentCommand.isComposite" class="step-navigation">
-                  <button 
-                    class="nav-button" 
-                    :disabled="currentStepIndex === 0"
-                    @click="currentStepIndex--"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    上一步
-                  </button>
-                  
-                  <button 
-                    class="nav-button" 
-                    :disabled="currentStepIndex === currentCommand.subCommands.length - 1"
-                    @click="currentStepIndex++"
-                  >
-                    下一步
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-                
-                <div v-if="currentCommand.isComposite" class="step-actions">
-                  <button class="action-button add" @click="addStep">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    添加步骤
-                  </button>
-                  
-                  <button 
-                    v-if="currentCommand.subCommands.length > 1"
-                    class="action-button remove" 
-                    @click="removeCurrentStep"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 12H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    删除当前步骤
-                  </button>
-                </div>
-              </div>
-
-              <div class="modal-footer">
-                <button class="cancel-button" @click="showAddCommandModal = false">取消</button>
-                <button class="save-button" @click="saveCommand">保存</button>
-              </div>
-            </div>
-          </n-modal>
-
-          <!-- 删除确认模态框 -->
-          <n-modal v-model:show="showDeleteModal" preset="dialog" title="确认删除" content="确定要删除这个命令吗？" positive-text="确定" negative-text="取消" @positive-click="confirmDelete" @negative-click="cancelDelete" />
-        </n-tab-pane>
-
-        <!-- 相关文档 -->
-        <n-tab-pane name="documentation" tab="相关文档">
-          <n-card title="Git 官方文档与学习资源" class="mb-4">
-            <div class="docs-links">
-              <div v-for="(doc, index) in officialDocs" :key="index" class="doc-item">
-                <div class="doc-title">{{ doc.title }}</div>
-                <div class="doc-desc">{{ doc.description }}</div>
-                <n-button text type="primary" tag="a" :href="doc.url" target="_blank">
-                  <template #icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M10 6H6C4.89543 6 4 6.89543 4 8V18C4 19.1046 4.89543 20 6 20H16C17.1046 20 18 19.1046 18 18V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M14 4H20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M20 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </template>
-                  访问链接
-                </n-button>
-              </div>
-            </div>
-          </n-card>
-
-          <n-card title="常见问题与解决方案" class="mb-4">
-            <div class="faq-section">
-              <div v-for="(faq, index) in gitFAQs" :key="index" class="faq-item">
-                <div class="faq-question">{{ faq.question }}</div>
-                <div class="faq-answer">{{ faq.answer }}</div>
-                <div class="faq-command" v-if="faq.command">
-                  <div class="command-code">{{ faq.command }}</div>
-                  <n-button text size="small" @click="copyToClipboard(faq.command)">复制</n-button>
-                </div>
-              </div>
-            </div>
-          </n-card>
-        </n-tab-pane>
-      </n-tabs>
+        <!-- 分页 -->
+        <div v-if="totalCommands > searchParams.pageSize" class="flex justify-center mt-6">
+          <div class="flex items-center space-x-2">
+            <button 
+              class="pagination-button glass-button" 
+              :disabled="searchParams.page === 1"
+              @click="searchParams.page--; loadGitCommands()"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <span class="text-sm">{{ searchParams.page }} / {{ Math.ceil(totalCommands / searchParams.pageSize) }}</span>
+            <button 
+              class="pagination-button glass-button" 
+              :disabled="searchParams.page >= Math.ceil(totalCommands / searchParams.pageSize)"
+              @click="searchParams.page++; loadGitCommands()"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- 添加/编辑命令的模态框 -->
+    <n-modal
+      v-model:show="showAddCommandModal"
+      preset="card"
+      :title="isEditing ? '编辑Git命令' : '添加Git命令'"
+      style="width: 600px;"
+      :bordered="false"
+      class="ultra-glass-modal"
+    >
+      <div class="modal-content">
+        <div class="form-section">
+          <div class="form-item">
+            <label>命令名称 <span class="text-red-500">*</span></label>
+            <input v-model="currentCommand.commandName" placeholder="请输入命令名称" class="form-input glass-input" />
+          </div>
+
+          <div class="form-item">
+            <label>分类 <span class="text-red-500">*</span></label>
+            <select v-model="currentCommand.categoryCode" class="form-input glass-input">
+              <option v-for="cat in categoryOptions" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
+            </select>
+          </div>
+
+          <div class="form-item">
+            <label>描述</label>
+            <input v-model="currentCommand.description" placeholder="请输入命令描述" class="form-input glass-input" />
+          </div>
+
+          <div class="form-item">
+            <label>使用场景</label>
+            <input v-model="currentCommand.usageScenario" placeholder="请输入使用场景" class="form-input glass-input" />
+          </div>
+
+          <div class="form-item">
+            <div class="flex items-center">
+              <input type="checkbox" id="is-favorite" v-model="currentCommand.isFavorite" class="mr-2" />
+              <label for="is-favorite">收藏</label>
+            </div>
+          </div>
+
+          <div class="form-item">
+            <div class="flex items-center">
+              <input type="checkbox" id="is-composite" v-model="currentCommand.isComposite" class="mr-2" />
+              <label for="is-composite">组合命令（多个步骤）</label>
+            </div>
+          </div>
+
+          <div class="step-container mt-4 glass-card">
+            <div class="step-header">
+              <h3>{{ currentCommand.isComposite ? `步骤 ${currentStepIndex + 1}` : '命令内容' }}</h3>
+              <div v-if="currentCommand.isComposite" class="step-indicator">
+                {{ currentStepIndex + 1 }} / {{ currentCommand.subCommands.length }}
+              </div>
+            </div>
+            
+            <div class="form-item">
+              <label>{{ currentCommand.isComposite ? '步骤说明' : '命令说明' }} <span class="text-red-500">*</span></label>
+              <input 
+                v-model="currentCommand.subCommands[currentStepIndex].description" 
+                :placeholder="currentCommand.isComposite ? '请输入步骤说明' : '请输入命令说明'"
+                class="form-input glass-input" 
+              />
+            </div>
+            
+            <div class="form-item">
+              <label>{{ currentCommand.isComposite ? '步骤命令' : '命令内容' }} <span class="text-red-500">*</span></label>
+              <input 
+                v-model="currentCommand.subCommands[currentStepIndex].subCommandContent" 
+                :placeholder="currentCommand.isComposite ? '请输入步骤命令' : '请输入命令内容'"
+                class="form-input glass-input" 
+              />
+            </div>
+          </div>
+
+          <div v-if="currentCommand.isComposite" class="step-navigation">
+            <button 
+              class="nav-button glass-button" 
+              :disabled="currentStepIndex === 0"
+              @click="currentStepIndex--"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              上一步
+            </button>
+            
+            <button 
+              class="nav-button glass-button" 
+              :disabled="currentStepIndex === currentCommand.subCommands.length - 1"
+              @click="currentStepIndex++"
+            >
+              下一步
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div v-if="currentCommand.isComposite" class="step-actions">
+            <button class="action-button add glass-button" @click="addStep">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              添加步骤
+            </button>
+            
+            <button 
+              v-if="currentCommand.subCommands.length > 1"
+              class="action-button remove glass-button" 
+              @click="removeCurrentStep"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 12H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              删除当前步骤
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="cancel-button glass-button" @click="showAddCommandModal = false">取消</button>
+          <button class="save-button glass-button" @click="saveCommand">保存</button>
+        </div>
+      </div>
+    </n-modal>
+
+    <!-- 删除确认模态框 -->
+    <n-modal v-model:show="showDeleteModal" preset="dialog" title="确认删除" content="确定要删除这个命令吗？" positive-text="确定" negative-text="取消" @positive-click="confirmDelete" @negative-click="cancelDelete" class="ultra-glass-modal" />
   </div>
 </template>
 
@@ -962,17 +875,128 @@ function getCategoryName(code: number): string {
 
 <style scoped>
 .tools-container {
-  width: 100%;
-  min-height: 100vh;
-  padding: 0;
-  background-color: white;
+  padding: 20px;
+  height: 100%;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .content-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 30px;
+  width: 100%;
+}
+
+.command-section {
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.command-section.no-border {
+  border: none;
+  box-shadow: none;
+}
+
+.search-area {
+  flex: 1;
+  max-width: 600px;
+  position: relative;
+}
+
+.search-container {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 15px;
+  border-radius: 20px;
+  outline: none;
+  border: 1px solid rgba(160, 160, 160, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  border-color: rgba(100, 100, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(100, 100, 255, 0.2);
+}
+
+.action-icons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.icon-button {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(160, 160, 160, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.3s;
+}
+
+.icon-button:hover {
+  background: rgba(240, 240, 255, 0.8);
+  color: #333;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(248, 248, 248, 0.7);
+  border: 1px solid rgba(160, 160, 160, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.back-button:hover {
+  background: rgba(240, 240, 255, 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.add-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  color: white;
+  background: linear-gradient(135deg, rgba(79, 121, 255, 0.8), rgba(79, 91, 255, 0.8));
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 91, 255, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s;
+}
+
+.add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 91, 255, 0.4);
 }
 
 .command-grid {
@@ -981,206 +1005,115 @@ function getCategoryName(code: number): string {
   gap: 20px;
 }
 
-/* 搜索框样式 */
-.search-container {
-  position: relative;
-  width: 220px;
-}
-
-.search-input {
-  width: 100%;
-  height: 36px;
-  padding: 0 40px 0 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  background-color: white;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  border-color: #cbd5e1;
-  box-shadow: 0 0 0 2px rgba(203, 213, 225, 0.2);
-}
-
-/* 添加按钮样式 */
-.add-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #334155;
-  color: white;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.add-button:hover {
-  background-color: #1e293b;
-  transform: scale(1.05);
-}
-
-/* 自定义命令组合样式 */
 .custom-command-item {
   padding: 16px;
-  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  background-color: white;
-  transition: all 0.2s ease;
-  height: 280px;
-  display: flex;
-  flex-direction: column;
+  transition: all 0.3s;
+  overflow: hidden;
+  border: 1px solid rgba(160, 160, 160, 0.3);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .custom-command-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .command-title {
   font-weight: 600;
-  font-size: 16px;
-  color: #1e293b;
-}
-
-.icon-button {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background-color: #f1f5f9;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.icon-button:hover {
-  background-color: #e2e8f0;
-  color: #334155;
-}
-
-.command-steps {
-  flex-grow: 1;
-  overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  margin-right: -4px;
-  padding-right: 4px;
-}
-
-.command-steps::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  font-size: 1rem;
 }
 
 .command-step {
-  margin-top: 12px;
+  margin-bottom: 10px;
 }
 
 .step-desc {
-  font-weight: 500;
+  font-size: 0.9rem;
+  color: #666;
   margin-bottom: 4px;
-  color: #334155;
-  font-size: 14px;
 }
 
 .step-command-box {
+  position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
 }
 
 .command-code {
+  flex: 1;
   font-family: monospace;
-  background-color: #f8fafc;
-  padding: 6px 10px;
-  border-radius: 6px;
-  margin-right: 8px;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: auto;
-  color: #334155;
-  flex-grow: 1;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #333;
+  background: rgba(240, 240, 240, 0.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(160, 160, 160, 0.2);
 }
 
 .copy-button {
-  min-width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
   border: none;
-  background-color: #f1f5f9;
-  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  color: #555;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.step-command-box:hover .copy-button {
+  opacity: 1;
 }
 
 .copy-button:hover {
-  background-color: #e2e8f0;
-  color: #334155;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
 }
 
-/* 统计数据项样式 */
-.stat-item {
-  padding: 12px;
-  background-color: white;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  text-align: center;
-}
-
-.stat-title {
-  font-size: 14px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.stat-value {
-  font-size: 18px;
-  font-weight: 600;
-  color: #334155;
-}
-
-/* 分页按钮样式 */
 .pagination-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e2e8f0;
-  background-color: white;
-  color: #64748b;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(160, 160, 160, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  color: #555;
+  transition: all 0.3s;
 }
 
-.pagination-button:disabled {
+.pagination-button:hover:not([disabled]) {
+  background: rgba(240, 240, 255, 0.8);
+  color: #333;
+}
+
+.pagination-button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.pagination-button:not(:disabled):hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
-/* 模态框样式 */
-.modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
+/* 表单样式 */
 .form-section {
   display: flex;
   flex-direction: column;
@@ -1190,36 +1123,37 @@ function getCategoryName(code: number): string {
 .form-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .form-item label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #334155;
+  font-size: 0.9rem;
+  color: #555;
 }
 
 .form-input {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
   border-radius: 8px;
-  background-color: white;
-  font-size: 14px;
+  border: 1px solid rgba(160, 160, 160, 0.4);
   outline: none;
-  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s;
 }
 
 .form-input:focus {
-  border-color: #cbd5e1;
-  box-shadow: 0 0 0 2px rgba(203, 213, 225, 0.2);
+  border-color: rgba(100, 100, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(100, 100, 255, 0.2);
 }
 
 .step-container {
   padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: #f8fafc;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(160, 160, 160, 0.3);
 }
 
 .step-header {
@@ -1229,18 +1163,12 @@ function getCategoryName(code: number): string {
   margin-bottom: 12px;
 }
 
-.step-header h3 {
-  font-size: 16px;
-  font-weight: 500;
-  color: #334155;
-}
-
 .step-indicator {
-  font-size: 14px;
-  color: #64748b;
-  background-color: #e2e8f0;
+  font-size: 0.8rem;
+  color: #666;
+  padding: 2px 8px;
   border-radius: 12px;
-  padding: 2px 10px;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .step-navigation {
@@ -1252,171 +1180,161 @@ function getCategoryName(code: number): string {
 .nav-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  background-color: white;
-  color: #334155;
-  font-size: 14px;
-  font-weight: 500;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(160, 160, 160, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  color: #555;
+  transition: all 0.3s;
 }
 
-.nav-button:disabled {
+.nav-button:hover:not([disabled]) {
+  background: rgba(240, 240, 255, 0.8);
+  color: #333;
+}
+
+.nav-button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.nav-button:not(:disabled):hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
 .step-actions {
   display: flex;
-  justify-content: space-between;
+  gap: 8px;
   margin-top: 16px;
 }
 
 .action-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s;
 }
 
 .action-button.add {
-  background-color: #e2e8f0;
-  color: #334155;
-  border: none;
+  background: rgba(100, 200, 100, 0.2);
+  border: 1px solid rgba(100, 200, 100, 0.3);
+  color: #2c8c2c;
 }
 
 .action-button.add:hover {
-  background-color: #cbd5e1;
+  background: rgba(100, 200, 100, 0.3);
 }
 
 .action-button.remove {
-  background-color: #fecaca;
-  color: #b91c1c;
-  border: none;
+  background: rgba(200, 100, 100, 0.2);
+  border: 1px solid rgba(200, 100, 100, 0.3);
+  color: #8c2c2c;
 }
 
 .action-button.remove:hover {
-  background-color: #fca5a5;
+  background: rgba(200, 100, 100, 0.3);
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  margin-top: 20px;
 }
 
 .cancel-button {
-  padding: 8px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background-color: white;
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(160, 160, 160, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  color: #555;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s;
 }
 
 .cancel-button:hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
+  background: rgba(240, 240, 240, 0.8);
 }
 
 .save-button {
-  padding: 8px 16px;
+  padding: 6px 16px;
+  border-radius: 8px;
   border: none;
-  border-radius: 6px;
-  background-color: #334155;
+  background: linear-gradient(135deg, rgba(79, 121, 255, 0.8), rgba(79, 91, 255, 0.8));
   color: white;
-  font-size: 14px;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s;
 }
 
 .save-button:hover {
-  background-color: #1e293b;
+  background: linear-gradient(135deg, rgba(79, 121, 255, 0.9), rgba(79, 91, 255, 0.9));
+  box-shadow: 0 2px 8px rgba(79, 91, 255, 0.4);
 }
 
-/* 文档样式 */
-.docs-links {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+.glass-button {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(160, 160, 160, 0.3);
+  transition: all 0.3s;
 }
 
-.doc-item {
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: white;
+.glass-input {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(160, 160, 160, 0.4);
 }
 
-.doc-title {
-  font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 16px;
-  color: #334155;
+.glass-tag {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(240, 240, 255, 0.5);
+  border: 1px solid rgba(160, 160, 160, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
 }
 
-.doc-desc {
-  color: #64748b;
-  margin-bottom: 12px;
-  font-size: 14px;
+.glass-card {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(160, 160, 160, 0.3);
 }
 
-/* FAQ样式 */
-.faq-item {
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: white;
-  margin-bottom: 16px;
+.glass-code {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(240, 240, 240, 0.5);
+  border: 1px solid rgba(160, 160, 160, 0.3);
 }
 
-.faq-question {
-  font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 16px;
-  color: #334155;
+/* 增强毛玻璃模态框效果 */
+:deep(.ultra-glass-modal .n-modal) {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(200, 200, 200, 0.3) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
-.faq-answer {
-  margin-bottom: 12px;
-  font-size: 14px;
-  color: #64748b;
+:deep(.ultra-glass-modal .n-dialog) {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(200, 200, 200, 0.3) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
-.faq-command {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-@media (max-width: 768px) {
-  .content-container {
-    padding: 15px;
-  }
-  
-  .command-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .docs-links {
-    grid-template-columns: 1fr;
-  }
+:deep(.ultra-glass-modal .n-card) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 </style> 
