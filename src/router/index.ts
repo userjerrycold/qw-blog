@@ -49,6 +49,10 @@ const routes: RouteRecordRaw[] = [
     path: '/memo',
     component: () => import('@/pages/memo/MemoHome.vue'),
   },
+  {
+    path: '/quiz',
+    component: () => import('@/pages/quiz/QuizHome.vue'),
+  },
 ]
 
 const router = createRouter({

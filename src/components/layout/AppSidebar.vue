@@ -36,6 +36,7 @@ import toolsSvg from '@/assets/tools.svg'
 import docsSvg from '@/assets/docs.svg'
 import serverSvg from '@/assets/server.svg'
 import beiwangluSvg from '@/assets/beiwanglu.svg'
+import questionSvg from '@/assets/question.svg'
 
 const collapsed = ref(false)
 
@@ -61,6 +62,11 @@ const menuOptions: MenuOption[] = [
     label: '备忘录',
     key: '/memo',
     icon: () => h('img', { src: beiwangluSvg, class: 'w-4 h-4' }),
+  },
+  {
+    label: '动态题集',
+    key: '/quiz',
+    icon: () => h('img', { src: questionSvg, class: 'w-4 h-4' }),
   },
   {
     label: '工具',
@@ -91,6 +97,7 @@ const activeKey = computed(() => {
   if (route.path.startsWith('/docs')) return '/docs'
   if (route.path.startsWith('/mock')) return '/mock'
   if (route.path.startsWith('/memo')) return '/memo'
+  if (route.path.startsWith('/quiz')) return '/quiz'
   return '/blog'
 })
 
