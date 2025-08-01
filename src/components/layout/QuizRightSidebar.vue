@@ -222,11 +222,11 @@
       </h3>
       <div class="tips-card">
         <div class="tip-item">
-          <i class="fas fa-target"></i>
+          <i class="fas fa-eye"></i>
           <span>专注答题，避免分心</span>
         </div>
         <div class="tip-item">
-          <i class="fas fa-think"></i>
+          <i class="fas fa-search"></i>
           <span>仔细审题，理解题意</span>
         </div>
         <div class="tip-item">

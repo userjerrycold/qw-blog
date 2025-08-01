@@ -298,32 +298,64 @@
           </div>
           
           <div class="question-card">
-            <div class="question-header">
-              <div class="question-meta">
-                <span class="question-type">{{ currentQuestion.type }}</span>
-                <div class="question-difficulty">
-                  <span v-for="i in currentQuestion.difficulty" :key="i" class="star active">
-                    <i class="fas fa-star"></i>
-                  </span>
-                  <span v-for="i in (5 - currentQuestion.difficulty)" :key="`empty-${i}`" class="star">
-                    <i class="far fa-star"></i>
-                  </span>
-                </div>
-                <div class="question-tags" v-if="currentQuestion.tags">
-                  <span 
-                    v-for="tag in currentQuestion.tags" 
-                    :key="tag" 
-                    class="tag-badge"
-                  >
-                    {{ tag }}
-                  </span>
-                </div>
+                      <div class="question-header">
+            <div class="question-meta">
+              <span class="question-type">{{ currentQuestion.type }}</span>
+              <div class="question-difficulty">
+                <span v-for="i in currentQuestion.difficulty" :key="i" class="star active">
+                  <i class="fas fa-star"></i>
+                </span>
+                <span v-for="i in (5 - currentQuestion.difficulty)" :key="`empty-${i}`" class="star">
+                  <i class="far fa-star"></i>
+                </span>
               </div>
-              <div class="question-timer" v-if="selectedMode === 'timed'">
-                <i class="fas fa-clock"></i>
-                {{ formatTime(remainingTime) }}
+              <div class="question-tags" v-if="currentQuestion.tags">
+                <span 
+                  v-for="tag in currentQuestion.tags" 
+                  :key="tag" 
+                  class="tag-badge"
+                >
+                  {{ tag }}
+                </span>
               </div>
             </div>
+            
+            <!-- 题目倒计时器 -->
+            <div class="question-countdown">
+              <div class="countdown-circle" :class="timerColorClass">
+                <svg class="countdown-ring" width="60" height="60">
+                  <circle
+                    class="countdown-ring-bg"
+                    stroke="rgba(0, 0, 0, 0.1)"
+                    stroke-width="4"
+                    fill="transparent"
+                    r="26"
+                    cx="30"
+                    cy="30"
+                  />
+                  <circle
+                    class="countdown-ring-progress"
+                    stroke-width="4"
+                    fill="transparent"
+                    r="26"
+                    cx="30"
+                    cy="30"
+                    :stroke-dasharray="`${163} ${163}`"
+                    :stroke-dashoffset="163 - (163 * timerPercentage / 100)"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <div class="countdown-text">
+                  <span class="countdown-number">{{ questionTimer }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="question-timer" v-if="selectedMode === 'timed'">
+              <i class="fas fa-clock"></i>
+              {{ formatTime(remainingTime) }}
+            </div>
+          </div>
             
             <div class="question-content">
               <h3 class="question-text">{{ currentQuestion.text }}</h3>
@@ -405,7 +437,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import QuizRightSidebar from '@/components/layout/QuizRightSidebar.vue'
 
@@ -420,6 +452,8 @@ const selectedBooleanAnswer = ref<boolean | null>(null)  // 判断题答案
 const selectedTextAnswer = ref('')  // 填空题/简答题答案
 
 const remainingTime = ref(300) // 5分钟
+const questionTimer = ref(0) // 新增：单题倒计时
+const questionTimerInterval = ref<NodeJS.Timeout | null>(null) // 新增：倒计时定时器
 const selectedCategories = ref<number[]>([])  // 选中的题库分类
 const selectedSubjects = ref<number[]>([])  // 选中的知识领域
 const selectedSubDomains = ref<number[]>([])  // 新增：选中的子领域
@@ -776,6 +810,26 @@ const totalQuestions = computed(() => {
   return questionCount.value
 })
 
+// 新增：根据难度计算题目时间
+const questionTimeLimit = computed(() => {
+  const difficulty = currentQuestion.value.difficulty
+  return difficulty * 60 // 1星60秒，2星120秒，以此类推
+})
+
+// 新增：倒计时百分比（用于圆圈进度）
+const timerPercentage = computed(() => {
+  if (questionTimeLimit.value === 0) return 0
+  return (questionTimer.value / questionTimeLimit.value) * 100
+})
+
+// 新增：倒计时颜色状态
+const timerColorClass = computed(() => {
+  const percentage = timerPercentage.value
+  if (percentage > 66) return 'timer-green'
+  if (percentage > 33) return 'timer-yellow'
+  return 'timer-red'
+})
+
 const quizConfig = computed(() => ({
   categories: selectedCategories.value,
   subjects: selectedSubjects.value,
@@ -871,11 +925,43 @@ function selectOption(index: number) {
   }
 }
 
+// 新增：开始题目倒计时
+function startQuestionTimer() {
+  // 清除之前的定时器
+  if (questionTimerInterval.value) {
+    clearInterval(questionTimerInterval.value)
+  }
+  
+  // 设置初始时间
+  questionTimer.value = questionTimeLimit.value
+  
+  // 开始倒计时
+  questionTimerInterval.value = setInterval(() => {
+    if (questionTimer.value > 0) {
+      questionTimer.value--
+    } else {
+      // 时间到，自动跳到下一题
+      clearInterval(questionTimerInterval.value!)
+      questionTimerInterval.value = null
+      skipQuestion()
+    }
+  }, 1000)
+}
+
+// 新增：停止题目倒计时
+function stopQuestionTimer() {
+  if (questionTimerInterval.value) {
+    clearInterval(questionTimerInterval.value)
+    questionTimerInterval.value = null
+  }
+}
+
 function startQuiz() {
   if (canStart.value) {
     quizStarted.value = true
     currentQuestionIndex.value = 0
     resetAnswers()
+    startQuestionTimer() // 开始第一题倒计时
   }
 }
 
@@ -896,6 +982,7 @@ function handleStartQuiz(config: any) {
 function resetQuiz() {
   quizStarted.value = false
   currentQuestionIndex.value = 0
+  stopQuestionTimer() // 停止倒计时
   resetAnswers()
   selectedCategories.value = []
   selectedSubjects.value = []
@@ -912,6 +999,7 @@ function resetAnswers() {
 
 function submitAnswer() {
   if (hasAnswer.value) {
+    stopQuestionTimer() // 停止当前题目倒计时
     if (isLastQuestion.value) {
       // 完成答题，显示结果
       completeQuiz()
@@ -925,14 +1013,17 @@ function submitAnswer() {
 function nextQuestion() {
   currentQuestionIndex.value++
   resetAnswers()
+  startQuestionTimer() // 开始新题目倒计时
   // 这里应该加载下一题的数据
 }
 
 function skipQuestion() {
+  stopQuestionTimer() // 停止当前题目倒计时
   nextQuestion()
 }
 
 function completeQuiz() {
+  stopQuestionTimer() // 停止倒计时
   // 答题完成逻辑
   console.log('Quiz completed!')
 }
@@ -954,6 +1045,11 @@ function formatTime(seconds: number): string {
 // 生命周期
 onMounted(() => {
   console.log('Quiz page mounted')
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  stopQuestionTimer()
 })
 </script>
 
@@ -1860,6 +1956,75 @@ onMounted(() => {
 
 .answer-input::placeholder {
   color: #999;
+}
+
+/* 题目倒计时器 */
+.question-countdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-circle {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.countdown-ring {
+  transform: rotate(-90deg);
+}
+
+.countdown-ring-bg {
+  opacity: 0.3;
+}
+
+.countdown-ring-progress {
+  transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+}
+
+.countdown-circle.timer-green .countdown-ring-progress {
+  stroke: #10b981;
+}
+
+.countdown-circle.timer-yellow .countdown-ring-progress {
+  stroke: #f59e0b;
+}
+
+.countdown-circle.timer-red .countdown-ring-progress {
+  stroke: #ef4444;
+}
+
+.countdown-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1;
+}
+
+.countdown-number {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.countdown-unit {
+  display: block;
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.countdown-circle.timer-red .countdown-number {
+  color: #ef4444;
+}
+
+.countdown-circle.timer-red .countdown-unit {
+  color: #ef4444;
 }
 
 /* 题目操作按钮 */
