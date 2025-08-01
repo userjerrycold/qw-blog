@@ -8,56 +8,17 @@
         <div class="page-header">
           <h1 class="page-title">动态题集</h1>
           
-          <!-- 搜索栏和统计 -->
-          <div class="search-and-stats">
-            <div class="search-and-buttons">
-              <!-- 搜索框 -->
-              <div class="search-container">
-                <div class="search-box">
-                  <div class="search-icon">
-                    <i class="fas fa-search"></i>
-                  </div>
-                  <input 
-                    v-model="searchQuery" 
-                    type="text" 
-                    placeholder="搜索题目内容..." 
-                    class="search-input"
-                    @keyup.enter="handleSearch"
-                  />
-                </div>
-              </div>
-              
-              <!-- 操作按钮 -->
-              <div class="action-buttons">
-                <button class="action-button" @click="showHistory" title="答题历史">
-                  <i class="fas fa-history"></i>
-                </button>
-                <button class="action-button" @click="showAnalytics" title="学习分析">
-                  <i class="fas fa-chart-line"></i>
-                </button>
-                <button class="action-button primary" @click="startQuickQuiz" title="快速开始">
-                  <i class="fas fa-play"></i>
-                </button>
-              </div>
-            </div>
-            
-            <!-- 题目类型筛选 -->
-            <div class="type-filters">
-              <div class="filter-tags">
-                <div 
-                  v-for="type in quizTypes" 
-                  :key="type.code"
-                  class="filter-tag"
-                  :class="[
-                    { 'active': activeTypeCode === type.code },
-                    `tag-${type.code}`
-                  ]"
-                  @click="setActiveType(type.code)"
-                >
-                  <i :class="getTypeIcon(type.code)"></i> {{ type.name }}
-                </div>
-              </div>
-            </div>
+          <!-- 快速操作按钮 -->
+          <div class="header-actions">
+            <button class="action-button" @click="showHistory" title="答题历史">
+              <i class="fas fa-history"></i>
+            </button>
+            <button class="action-button" @click="showAnalytics" title="学习分析">
+              <i class="fas fa-chart-line"></i>
+            </button>
+            <button class="action-button primary" @click="startQuickQuiz" title="快速开始">
+              <i class="fas fa-play"></i>
+            </button>
           </div>
         </div>
         
@@ -76,6 +37,34 @@
             </div>
             
             <div class="card-content">
+              <!-- 题库分类选择 -->
+              <div class="config-section">
+                <h3 class="section-title">
+                  <i class="fas fa-layer-group"></i>
+                  题库分类
+                </h3>
+                <div class="category-grid">
+                  <div 
+                    v-for="category in categories" 
+                    :key="category.id"
+                    class="category-card"
+                    :class="{ 'selected': selectedCategories.includes(category.id) }"
+                    @click="toggleCategory(category.id)"
+                  >
+                    <div class="category-icon">
+                      <i :class="category.icon"></i>
+                    </div>
+                    <div class="category-info">
+                      <h4 class="category-name">{{ category.name }}</h4>
+                      <p class="category-desc">{{ category.description }}</p>
+                    </div>
+                    <div v-if="selectedCategories.includes(category.id)" class="selected-indicator">
+                      <i class="fas fa-check"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <!-- 题目分类选择 -->
               <div class="config-section">
                 <h3 class="section-title">
@@ -236,11 +225,15 @@
             <div class="card-footer">
               <div class="config-summary">
                 <div class="summary-item">
+                  <i class="fas fa-layer-group"></i>
+                  <span>{{ selectedCategories.length }} 个分类</span>
+                </div>
+                <div class="summary-item">
                   <i class="fas fa-tags"></i>
                   <span>{{ selectedQuestionTypes.length }} 种题型</span>
                 </div>
                 <div class="summary-item">
-                  <i class="fas fa-layer-group"></i>
+                  <i class="fas fa-book"></i>
                   <span>{{ selectedSubjects.length }} 个领域</span>
                 </div>
                 <div class="summary-item">
@@ -383,13 +376,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import QuizRightSidebar from '@/components/layout/QuizRightSidebar.vue'
 
 // 响应式数据
-const searchQuery = ref('')
-const activeTypeCode = ref(0)
 const quizStarted = ref(false)
 const currentQuestionIndex = ref(0)
 
@@ -400,12 +391,47 @@ const selectedBooleanAnswer = ref<boolean | null>(null)  // 判断题答案
 const selectedTextAnswer = ref('')  // 填空题/简答题答案
 
 const remainingTime = ref(300) // 5分钟
+const selectedCategories = ref<number[]>([])  // 新增：选中的题库分类
 const selectedSubjects = ref<number[]>([])
-const selectedQuestionTypes = ref<number[]>([])  // 新增：选中的题目类型
+const selectedQuestionTypes = ref<number[]>([])  // 选中的题目类型
 const minDifficulty = ref(1)
 const maxDifficulty = ref(5)
 const questionCount = ref(20)
 const selectedMode = ref('normal')
+
+// 题库分类（将原来的quizTypes整合到配置中）
+const categories = [
+  {
+    id: 1,
+    name: 'Java基础',
+    description: 'Java语言核心特性与基础知识',
+    icon: 'fab fa-java'
+  },
+  {
+    id: 2,
+    name: '数据库',
+    description: 'MySQL、Redis等数据存储技术',
+    icon: 'fas fa-database'
+  },
+  {
+    id: 3,
+    name: '中间件',
+    description: 'Spring、消息队列等中间件技术',
+    icon: 'fas fa-server'
+  },
+  {
+    id: 4,
+    name: '系统设计',
+    description: '架构设计与分布式系统',
+    icon: 'fas fa-sitemap'
+  },
+  {
+    id: 5,
+    name: '算法',
+    description: '数据结构与算法设计',
+    icon: 'fas fa-project-diagram'
+  }
+]
 
 // 题目分类（按照优化建议添加）
 const questionTypes = [
@@ -445,16 +471,6 @@ const questionTypes = [
     description: '代码分析，实践能力',
     icon: 'fas fa-code'
   }
-]
-
-// 题目类型
-const quizTypes = [
-  { code: 0, name: '全部', icon: 'fas fa-globe' },
-  { code: 1, name: 'Java基础', icon: 'fab fa-java' },
-  { code: 2, name: '数据库', icon: 'fas fa-database' },
-  { code: 3, name: '中间件', icon: 'fas fa-server' },
-  { code: 4, name: '系统设计', icon: 'fas fa-sitemap' },
-  { code: 5, name: '算法', icon: 'fas fa-project-diagram' }
 ]
 
 // 知识领域（按照优化建议扩展）
@@ -598,7 +614,8 @@ const currentQuestion = ref({
 
 // 计算属性
 const canStart = computed(() => {
-  return selectedSubjects.value.length > 0 && 
+  return selectedCategories.value.length > 0 &&
+         selectedSubjects.value.length > 0 && 
          selectedQuestionTypes.value.length > 0 && 
          minDifficulty.value <= maxDifficulty.value
 })
@@ -630,8 +647,9 @@ const totalQuestions = computed(() => {
 })
 
 const quizConfig = computed(() => ({
+  categories: selectedCategories.value,  // 新增
   subjects: selectedSubjects.value,
-  questionTypes: selectedQuestionTypes.value,  // 新增
+  questionTypes: selectedQuestionTypes.value,
   difficulty: { min: minDifficulty.value, max: maxDifficulty.value },
   count: questionCount.value,
   mode: selectedMode.value
@@ -645,13 +663,13 @@ const quizStatistics = computed(() => ({
 }))
 
 // 方法
-function setActiveType(code: number) {
-  activeTypeCode.value = code
-}
-
-function getTypeIcon(code: number): string {
-  const type = quizTypes.find(t => t.code === code)
-  return type ? type.icon : 'fas fa-question'
+function toggleCategory(id: number) {
+  const index = selectedCategories.value.indexOf(id)
+  if (index > -1) {
+    selectedCategories.value.splice(index, 1)
+  } else {
+    selectedCategories.value.push(id)
+  }
 }
 
 function toggleQuestionType(id: number) {
@@ -672,7 +690,7 @@ function toggleSubject(id: number) {
   }
 }
 
-// 新增：判断选项是否被选中
+// 判断选项是否被选中
 function isOptionSelected(index: number): boolean {
   const questionType = currentQuestion.value.type
   if (questionType === '单选题') {
@@ -683,7 +701,7 @@ function isOptionSelected(index: number): boolean {
   return false
 }
 
-// 新增：选择选项的方法
+// 选择选项的方法
 function selectOption(index: number) {
   const questionType = currentQuestion.value.type
   if (questionType === '单选题') {
@@ -708,6 +726,7 @@ function startQuiz() {
 
 function startQuickQuiz() {
   // 快速开始，使用默认配置
+  selectedCategories.value = [1, 2] // 默认选择Java基础和数据库
   selectedSubjects.value = [1, 2] // 默认选择前两个科目
   selectedQuestionTypes.value = [1, 2] // 默认选择单选题和多选题
   startQuiz()
@@ -723,6 +742,7 @@ function resetQuiz() {
   quizStarted.value = false
   currentQuestionIndex.value = 0
   resetAnswers()
+  selectedCategories.value = []
   selectedSubjects.value = []
   selectedQuestionTypes.value = []
 }
@@ -759,10 +779,6 @@ function skipQuestion() {
 function completeQuiz() {
   // 答题完成逻辑
   console.log('Quiz completed!')
-}
-
-function handleSearch() {
-  console.log('Searching:', searchQuery.value)
 }
 
 function showHistory() {
@@ -807,8 +823,8 @@ onMounted(() => {
 
 .page-header {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 4px;
   padding: 16px 0 12px 0;
 }
@@ -817,7 +833,7 @@ onMounted(() => {
   font-size: 22px;
   font-weight: 700;
   color: #333;
-  margin: 0 0 12px 0;
+  margin: 0;
   text-align: left;
   display: flex;
   align-items: center;
@@ -833,72 +849,7 @@ onMounted(() => {
   opacity: 0.8;
 }
 
-.content-divider {
-  height: 1px;
-  background-color: rgba(0, 0, 0, 0.08);
-  margin: 0;
-}
-
-/* 搜索和筛选区域 */
-.search-and-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.search-and-buttons {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.search-container {
-  flex: 1;
-  max-width: 400px;
-}
-
-.search-box {
-  position: relative;
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-}
-
-.search-box:hover,
-.search-box:focus-within {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.search-input {
-  width: 100%;
-  height: 100%;
-  padding: 0 16px 0 44px;
-  border: none;
-  border-radius: 12px;
-  background: transparent;
-  font-size: 14px;
-  color: #333;
-}
-
-.search-input:focus {
-  outline: none;
-}
-
-.search-icon {
-  position: absolute;
-  left: 14px;
-  color: #666;
-  font-size: 16px;
-}
-
-.action-buttons {
+.header-actions {
   display: flex;
   gap: 8px;
 }
@@ -935,43 +886,10 @@ onMounted(() => {
   background: rgba(37, 99, 235, 0.9);
 }
 
-/* 筛选标签 */
-.type-filters {
-  margin-top: 8px;
-}
-
-.filter-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.filter-tag {
-  cursor: pointer;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  color: #666;
-  font-size: 14px;
-  border-radius: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  font-weight: 500;
-}
-
-.filter-tag:hover {
-  background: rgba(255, 255, 255, 0.9);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.filter-tag.active {
-  background: rgba(59, 130, 246, 0.9);
-  color: white;
-  border-color: rgba(59, 130, 246, 0.3);
+.content-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.08);
+  margin: 0;
 }
 
 /* 配置界面 */
@@ -1031,7 +949,70 @@ onMounted(() => {
   gap: 8px;
 }
 
-/* 题目类型选择 */
+/* 题库分类选择样式 */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.category-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.category-card.selected {
+  border-color: rgba(59, 130, 246, 0.6);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.category-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.category-info {
+  flex: 1;
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.category-desc {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* 题目类型选择样式 */
 .question-type-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -1717,13 +1698,19 @@ onMounted(() => {
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-  .search-and-buttons {
+  .page-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
   
-  .action-buttons {
+  .header-actions {
     justify-content: center;
+  }
+  
+  .category-grid,
+  .question-type-grid {
+    grid-template-columns: 1fr;
   }
   
   .subject-grid {
@@ -1741,6 +1728,21 @@ onMounted(() => {
   
   .mode-options {
     grid-template-columns: 1fr;
+  }
+  
+  .config-summary {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .summary-item {
+    justify-content: center;
+  }
+  
+  .card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
   }
   
   .judgment-options {
