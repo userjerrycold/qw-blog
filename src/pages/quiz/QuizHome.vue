@@ -76,6 +76,34 @@
             </div>
             
             <div class="card-content">
+              <!-- 题目分类选择 -->
+              <div class="config-section">
+                <h3 class="section-title">
+                  <i class="fas fa-tags"></i>
+                  题目类型
+                </h3>
+                <div class="question-type-grid">
+                  <div 
+                    v-for="type in questionTypes" 
+                    :key="type.id"
+                    class="type-card"
+                    :class="{ 'selected': selectedQuestionTypes.includes(type.id) }"
+                    @click="toggleQuestionType(type.id)"
+                  >
+                    <div class="type-icon">
+                      <i :class="type.icon"></i>
+                    </div>
+                    <div class="type-info">
+                      <h4 class="type-name">{{ type.name }}</h4>
+                      <p class="type-desc">{{ type.description }}</p>
+                    </div>
+                    <div v-if="selectedQuestionTypes.includes(type.id)" class="selected-indicator">
+                      <i class="fas fa-check"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <!-- 知识点选择 -->
               <div class="config-section">
                 <h3 class="section-title">
@@ -208,6 +236,10 @@
             <div class="card-footer">
               <div class="config-summary">
                 <div class="summary-item">
+                  <i class="fas fa-tags"></i>
+                  <span>{{ selectedQuestionTypes.length }} 种题型</span>
+                </div>
+                <div class="summary-item">
                   <i class="fas fa-layer-group"></i>
                   <span>{{ selectedSubjects.length }} 个领域</span>
                 </div>
@@ -255,6 +287,15 @@
                     <i class="far fa-star"></i>
                   </span>
                 </div>
+                <div class="question-tags" v-if="currentQuestion.tags">
+                  <span 
+                    v-for="tag in currentQuestion.tags" 
+                    :key="tag" 
+                    class="tag-badge"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
               </div>
               <div class="question-timer" v-if="selectedMode === 'timed'">
                 <i class="fas fa-clock"></i>
@@ -266,13 +307,13 @@
               <h3 class="question-text">{{ currentQuestion.text }}</h3>
               
               <!-- 选择题选项 -->
-              <div v-if="currentQuestion.type === '选择题'" class="options-list">
+              <div v-if="currentQuestion.type === '单选题' || currentQuestion.type === '多选题'" class="options-list">
                 <div 
                   v-for="(option, index) in currentQuestion.options" 
                   :key="index"
                   class="option-item"
-                  :class="{ 'selected': selectedAnswer === index }"
-                  @click="selectAnswer(index)"
+                  :class="{ 'selected': isOptionSelected(index) }"
+                  @click="selectOption(index)"
                 >
                   <div class="option-marker">{{ String.fromCharCode(65 + index) }}</div>
                   <div class="option-text">{{ option }}</div>
@@ -283,26 +324,26 @@
               <div v-else-if="currentQuestion.type === '判断题'" class="judgment-options">
                 <div 
                   class="judgment-option"
-                  :class="{ 'selected': selectedAnswer === true }"
-                  @click="selectedAnswer = true"
+                  :class="{ 'selected': selectedBooleanAnswer === true }"
+                  @click="selectedBooleanAnswer = true"
                 >
                   <i class="fas fa-check"></i>
                   <span>正确</span>
                 </div>
                 <div 
                   class="judgment-option"
-                  :class="{ 'selected': selectedAnswer === false }"
-                  @click="selectedAnswer = false"
+                  :class="{ 'selected': selectedBooleanAnswer === false }"
+                  @click="selectedBooleanAnswer = false"
                 >
                   <i class="fas fa-times"></i>
                   <span>错误</span>
                 </div>
               </div>
               
-              <!-- 填空题 -->
-              <div v-else-if="currentQuestion.type === '填空题'" class="fill-blank">
+              <!-- 填空题/简答题 -->
+              <div v-else-if="currentQuestion.type === '简答题' || currentQuestion.type === '填空题'" class="fill-blank">
                 <textarea 
-                  v-model="selectedAnswer"
+                  v-model="selectedTextAnswer"
                   placeholder="请输入您的答案..."
                   class="answer-input"
                 ></textarea>
@@ -351,56 +392,168 @@ const searchQuery = ref('')
 const activeTypeCode = ref(0)
 const quizStarted = ref(false)
 const currentQuestionIndex = ref(0)
-const selectedAnswer = ref<number | boolean | string | null>(null)
+
+// 为不同题型使用不同的答案存储
+const selectedMultipleAnswer = ref<number[]>([])  // 多选题答案
+const selectedSingleAnswer = ref<number | null>(null)  // 单选题答案
+const selectedBooleanAnswer = ref<boolean | null>(null)  // 判断题答案
+const selectedTextAnswer = ref('')  // 填空题/简答题答案
+
 const remainingTime = ref(300) // 5分钟
 const selectedSubjects = ref<number[]>([])
+const selectedQuestionTypes = ref<number[]>([])  // 新增：选中的题目类型
 const minDifficulty = ref(1)
 const maxDifficulty = ref(5)
 const questionCount = ref(20)
 const selectedMode = ref('normal')
 
+// 题目分类（按照优化建议添加）
+const questionTypes = [
+  {
+    id: 1,
+    name: '单选题',
+    description: '四选一，考察基础概念',
+    icon: 'fas fa-dot-circle'
+  },
+  {
+    id: 2,
+    name: '多选题',
+    description: '多项选择，考察综合理解',
+    icon: 'fas fa-check-square'
+  },
+  {
+    id: 3,
+    name: '判断题',
+    description: '对错判断，快速检验知识点',
+    icon: 'fas fa-question-circle'
+  },
+  {
+    id: 4,
+    name: '简答题',
+    description: '文字表述，考察深度理解',
+    icon: 'fas fa-edit'
+  },
+  {
+    id: 5,
+    name: '填空题',
+    description: '填空补充，精准考察',
+    icon: 'fas fa-pen'
+  },
+  {
+    id: 6,
+    name: '代码题',
+    description: '代码分析，实践能力',
+    icon: 'fas fa-code'
+  }
+]
+
 // 题目类型
 const quizTypes = [
   { code: 0, name: '全部', icon: 'fas fa-globe' },
-  { code: 1, name: '编程基础', icon: 'fas fa-code' },
-  { code: 2, name: '算法设计', icon: 'fas fa-project-diagram' },
-  { code: 3, name: '系统设计', icon: 'fas fa-sitemap' },
-  { code: 4, name: '数据库', icon: 'fas fa-database' }
+  { code: 1, name: 'Java基础', icon: 'fab fa-java' },
+  { code: 2, name: '数据库', icon: 'fas fa-database' },
+  { code: 3, name: '中间件', icon: 'fas fa-server' },
+  { code: 4, name: '系统设计', icon: 'fas fa-sitemap' },
+  { code: 5, name: '算法', icon: 'fas fa-project-diagram' }
 ]
 
-// 知识领域
+// 知识领域（按照优化建议扩展）
 const subjects = [
   {
     id: 1,
     name: 'Java基础',
-    description: '面向对象、集合框架、异常处理',
+    description: '面向对象、数据类型、流程控制、异常处理',
     icon: 'fab fa-java',
     questionCount: 120,
     color: '#f89820'
   },
   {
     id: 2,
-    name: 'Spring框架',
-    description: 'IoC、AOP、SpringBoot',
-    icon: 'fas fa-leaf',
+    name: 'Java集合框架',
+    description: 'List、Set、Map、Iterator、Collections',
+    icon: 'fas fa-layer-group',
     questionCount: 85,
-    color: '#6db33f'
+    color: '#10b981'
   },
   {
     id: 3,
-    name: '数据结构',
-    description: '数组、链表、树、图',
-    icon: 'fas fa-sitemap',
+    name: 'Java多线程',
+    description: 'Thread、synchronized、volatile、线程池、并发工具',
+    icon: 'fas fa-cogs',
     questionCount: 95,
-    color: '#61dafb'
+    color: '#ef4444'
   },
   {
     id: 4,
-    name: '算法思维',
-    description: '排序、搜索、动态规划',
-    icon: 'fas fa-brain',
+    name: 'JVM与性能调优',
+    description: 'JVM结构、类加载、垃圾回收、性能调优',
+    icon: 'fas fa-memory',
     questionCount: 78,
-    color: '#ff6b6b'
+    color: '#8b5cf6'
+  },
+  {
+    id: 5,
+    name: 'Spring框架',
+    description: 'IoC、AOP、SpringBoot、SpringMVC',
+    icon: 'fas fa-leaf',
+    questionCount: 105,
+    color: '#6db33f'
+  },
+  {
+    id: 6,
+    name: 'MySQL数据库',
+    description: '索引、事务、锁机制、查询优化、主从复制',
+    icon: 'fas fa-database',
+    questionCount: 90,
+    color: '#00758f'
+  },
+  {
+    id: 7,
+    name: 'Redis缓存',
+    description: '数据类型、持久化、集群、缓存策略',
+    icon: 'fas fa-memory',
+    questionCount: 65,
+    color: '#dc382d'
+  },
+  {
+    id: 8,
+    name: 'Spring Cloud微服务',
+    description: '注册中心、网关、熔断、配置中心、链路追踪',
+    icon: 'fas fa-cloud',
+    questionCount: 75,
+    color: '#0ea5e9'
+  },
+  {
+    id: 9,
+    name: '消息队列',
+    description: 'Kafka、RabbitMQ、消息可靠性、顺序消息',
+    icon: 'fas fa-exchange-alt',
+    questionCount: 60,
+    color: '#f59e0b'
+  },
+  {
+    id: 10,
+    name: '分布式系统',
+    description: '分布式事务、一致性、CAP理论、分布式锁',
+    icon: 'fas fa-sitemap',
+    questionCount: 55,
+    color: '#84cc16'
+  },
+  {
+    id: 11,
+    name: '算法与数据结构',
+    description: '排序、查找、树、图、动态规划',
+    icon: 'fas fa-project-diagram',
+    questionCount: 80,
+    color: '#06b6d4'
+  },
+  {
+    id: 12,
+    name: '系统设计',
+    description: '高并发、高可用、秒杀系统、短链接系统',
+    icon: 'fas fa-drafting-compass',
+    questionCount: 45,
+    color: '#ec4899'
   }
 ]
 
@@ -426,12 +579,14 @@ const answerModes = [
   }
 ]
 
-// 当前题目模拟数据
+// 当前题目模拟数据（扩展属性）
 const currentQuestion = ref({
   id: 1,
   text: 'Java中String类的特点是什么？',
-  type: '选择题',
+  type: '单选题',
   difficulty: 3,
+  tags: ['Java基础', 'String类'],  // 新增：知识点标签
+  module: 'Java基础',  // 新增：所属模块
   options: [
     'String是可变的',
     'String是不可变的',
@@ -443,11 +598,23 @@ const currentQuestion = ref({
 
 // 计算属性
 const canStart = computed(() => {
-  return selectedSubjects.value.length > 0 && minDifficulty.value <= maxDifficulty.value
+  return selectedSubjects.value.length > 0 && 
+         selectedQuestionTypes.value.length > 0 && 
+         minDifficulty.value <= maxDifficulty.value
 })
 
 const hasAnswer = computed(() => {
-  return selectedAnswer.value !== null && selectedAnswer.value !== undefined && selectedAnswer.value !== ''
+  const questionType = currentQuestion.value.type
+  if (questionType === '单选题') {
+    return selectedSingleAnswer.value !== null
+  } else if (questionType === '多选题') {
+    return selectedMultipleAnswer.value.length > 0
+  } else if (questionType === '判断题') {
+    return selectedBooleanAnswer.value !== null
+  } else if (questionType === '简答题' || questionType === '填空题') {
+    return selectedTextAnswer.value.trim() !== ''
+  }
+  return false
 })
 
 const isLastQuestion = computed(() => {
@@ -464,6 +631,7 @@ const totalQuestions = computed(() => {
 
 const quizConfig = computed(() => ({
   subjects: selectedSubjects.value,
+  questionTypes: selectedQuestionTypes.value,  // 新增
   difficulty: { min: minDifficulty.value, max: maxDifficulty.value },
   count: questionCount.value,
   mode: selectedMode.value
@@ -486,6 +654,15 @@ function getTypeIcon(code: number): string {
   return type ? type.icon : 'fas fa-question'
 }
 
+function toggleQuestionType(id: number) {
+  const index = selectedQuestionTypes.value.indexOf(id)
+  if (index > -1) {
+    selectedQuestionTypes.value.splice(index, 1)
+  } else {
+    selectedQuestionTypes.value.push(id)
+  }
+}
+
 function toggleSubject(id: number) {
   const index = selectedSubjects.value.indexOf(id)
   if (index > -1) {
@@ -495,17 +672,44 @@ function toggleSubject(id: number) {
   }
 }
 
+// 新增：判断选项是否被选中
+function isOptionSelected(index: number): boolean {
+  const questionType = currentQuestion.value.type
+  if (questionType === '单选题') {
+    return selectedSingleAnswer.value === index
+  } else if (questionType === '多选题') {
+    return selectedMultipleAnswer.value.includes(index)
+  }
+  return false
+}
+
+// 新增：选择选项的方法
+function selectOption(index: number) {
+  const questionType = currentQuestion.value.type
+  if (questionType === '单选题') {
+    selectedSingleAnswer.value = index
+  } else if (questionType === '多选题') {
+    const currentIndex = selectedMultipleAnswer.value.indexOf(index)
+    if (currentIndex > -1) {
+      selectedMultipleAnswer.value.splice(currentIndex, 1)
+    } else {
+      selectedMultipleAnswer.value.push(index)
+    }
+  }
+}
+
 function startQuiz() {
   if (canStart.value) {
     quizStarted.value = true
     currentQuestionIndex.value = 0
-    selectedAnswer.value = null
+    resetAnswers()
   }
 }
 
 function startQuickQuiz() {
   // 快速开始，使用默认配置
   selectedSubjects.value = [1, 2] // 默认选择前两个科目
+  selectedQuestionTypes.value = [1, 2] // 默认选择单选题和多选题
   startQuiz()
 }
 
@@ -518,12 +722,16 @@ function handleStartQuiz(config: any) {
 function resetQuiz() {
   quizStarted.value = false
   currentQuestionIndex.value = 0
-  selectedAnswer.value = null
+  resetAnswers()
   selectedSubjects.value = []
+  selectedQuestionTypes.value = []
 }
 
-function selectAnswer(index: number) {
-  selectedAnswer.value = index
+function resetAnswers() {
+  selectedSingleAnswer.value = null
+  selectedMultipleAnswer.value = []
+  selectedBooleanAnswer.value = null
+  selectedTextAnswer.value = ''
 }
 
 function submitAnswer() {
@@ -540,7 +748,7 @@ function submitAnswer() {
 
 function nextQuestion() {
   currentQuestionIndex.value++
-  selectedAnswer.value = null
+  resetAnswers()
   // 这里应该加载下一题的数据
 }
 
@@ -821,6 +1029,86 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 题目类型选择 */
+.question-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.type-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.type-card.selected {
+  border-color: rgba(59, 130, 246, 0.6);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.type-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.type-info {
+  flex: 1;
+}
+
+.type-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.type-desc {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* 知识点标签样式 */
+.question-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.tag-badge {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
 }
 
 /* 知识领域选择 */
@@ -1107,15 +1395,17 @@ onMounted(() => {
 
 .config-summary {
   display: flex;
-  gap: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .summary-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
+  white-space: nowrap;
 }
 
 .start-button {
@@ -1207,6 +1497,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .question-type {
@@ -1450,17 +1741,6 @@ onMounted(() => {
   
   .mode-options {
     grid-template-columns: 1fr;
-  }
-  
-  .config-summary {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .card-footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
   }
   
   .judgment-options {
