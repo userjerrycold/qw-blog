@@ -144,49 +144,7 @@
           <span v-else>已发送</span>
         </button>
         
-        <div class="verification-container" v-show="showVerification">
-          <p style="text-align: center; margin-top: 20px;">请输入发送到您邮箱的6位验证码</p>
-          
-          <div class="verification-group">
-                         <input 
-               v-for="(code, index) in verificationCodes" 
-               :key="index"
-               type="text" 
-               class="verification-input" 
-               maxlength="1"
-               v-model="verificationCodes[index]"
-               @input="handleVerificationInput(index)"
-               @keydown="handleVerificationKeydown(index, $event)"
-               :ref="el => setVerificationInput(index, el)"
-             >
-          </div>
-          
-          <div class="password-instructions">
-            <h3>密码要求:</h3>
-            <ul>
-              <li>至少8个字符</li>
-              <li>包含大写字母和小写字母</li>
-              <li>至少包含一个数字</li>
-              <li>至少包含一个特殊字符（如!@#$%）</li>
-            </ul>
-          </div>
-          
-          <div class="input-group">
-            <i class="fas fa-lock"></i>
-            <input type="password" placeholder="新密码" v-model="newPassword">
-          </div>
-          
-          <div class="input-group">
-            <i class="fas fa-lock"></i>
-            <input type="password" placeholder="确认新密码" v-model="confirmNewPassword">
-          </div>
-          
-          <button class="modal-btn" @click="resetPassword">重置密码</button>
-          
-          <div class="resend-code">
-            没有收到验证码? <a href="#" @click.prevent="resendCode">重新发送</a>
-          </div>
-        </div>
+
       </div>
     </div>
   </div>
@@ -208,13 +166,20 @@ const isLoading = ref(false)
 const loginSuccess = ref(false)
 const isRegistering = ref(false)
 const showRegisterModal = ref(false)
-const showPasswordModal = ref(false)
-const showVerification = ref(false)
+// 忘记密码三层级弹窗状态
+const showPasswordModal = ref(false)      // 第一层：邮箱输入
+const showVerificationModal = ref(false)  // 第二层：验证码输入
+const showResetPasswordModal = ref(false) // 第三层：密码重置
 const codeSent = ref(false)
 
 // 粒子动画控制
 const particlesContainer = ref<HTMLElement>()
-const isModalOpen = computed(() => showRegisterModal.value || showPasswordModal.value)
+const isModalOpen = computed(() => 
+  showRegisterModal.value || 
+  showPasswordModal.value || 
+  showVerificationModal.value || 
+  showResetPasswordModal.value
+)
 
 const loginForm = reactive({
   username: '',
@@ -329,40 +294,206 @@ const socialLogin = (provider: string) => {
   message.info(`${provider} 登录功能开发中...`)
 }
 
-const sendVerificationCode = () => {
-  if (!recoveryEmail.value) return
-  
-  codeSent.value = true
-  showVerification.value = true
-  message.success('验证码已发送到您的邮箱')
-  
-  setTimeout(() => {
-    codeSent.value = false
-  }, 5000)
+// 新的验证码和密码重置状态
+const isVerifying = ref(false)
+const isResetting = ref(false)
+const resendCountdown = ref(0)
+
+// 邮箱验证
+const isValidEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
 }
 
-const resendCode = () => {
-  message.success('验证码已重新发送')
+// 验证码完整性检查
+const isVerificationCodeComplete = computed(() => {
+  return verificationCodes.value.every(code => code.length === 1)
+})
+
+// 密码验证逻辑
+const passwordValidation = reactive({
+  length: false,
+  uppercase: false,
+  lowercase: false,
+  number: false,
+  special: false
+})
+
+const validatePassword = () => {
+  const password = newPassword.value
+  passwordValidation.length = password.length >= 8
+  passwordValidation.uppercase = /[A-Z]/.test(password)
+  passwordValidation.lowercase = /[a-z]/.test(password)
+  passwordValidation.number = /\d/.test(password)
+  passwordValidation.special = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
 }
 
-const resetPassword = () => {
-  if (newPassword.value !== confirmNewPassword.value) {
-    message.error('两次输入的密码不一致')
+const isPasswordValid = computed(() => {
+  return Object.values(passwordValidation).every(valid => valid) && 
+         newPassword.value === confirmNewPassword.value &&
+         newPassword.value.length > 0
+})
+
+// 第一层：发送验证码
+const sendVerificationCode = async () => {
+  if (!recoveryEmail.value || !isValidEmail(recoveryEmail.value)) {
+    message.error('请输入有效的邮箱地址')
     return
   }
   
-  message.success('密码重置成功！')
-  closePasswordModal()
+  codeSent.value = true
+  
+  try {
+    // 模拟发送验证码API调用
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    message.success('验证码已发送到您的邮箱')
+    
+    // 关闭邮箱输入弹窗，打开验证码输入弹窗
+    showPasswordModal.value = false
+    showVerificationModal.value = true
+    codeSent.value = false
+    
+    // 启动重发倒计时
+    startResendCountdown()
+    
+    // 自动聚焦到第一个验证码输入框
+    await nextTick()
+    if (verificationInputs.value[0]) {
+      verificationInputs.value[0].focus()
+    }
+  } catch (error) {
+    message.error('发送验证码失败，请重试')
+    codeSent.value = false
+  }
 }
 
-const closePasswordModal = () => {
-  showPasswordModal.value = false
-  showVerification.value = false
-  codeSent.value = false
-  recoveryEmail.value = ''
+// 重发验证码倒计时
+const startResendCountdown = () => {
+  resendCountdown.value = 60
+  const timer = setInterval(() => {
+    resendCountdown.value--
+    if (resendCountdown.value <= 0) {
+      clearInterval(timer)
+    }
+  }, 1000)
+}
+
+// 重发验证码
+const resendCode = async () => {
+  if (resendCountdown.value > 0) return
+  
+  try {
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    message.success('验证码已重新发送')
+    startResendCountdown()
+  } catch (error) {
+    message.error('重发失败，请重试')
+  }
+}
+
+// 第二层：验证验证码
+const verifyCode = async () => {
+  if (!isVerificationCodeComplete.value) {
+    message.error('请输入完整的6位验证码')
+    return
+  }
+  
+  isVerifying.value = true
+  
+  try {
+    // 模拟验证码验证API调用
+    const code = verificationCodes.value.join('')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // 模拟验证结果 (在实际应用中，这里应该调用后端API)
+    if (code === '123456') { // 模拟正确的验证码
+      message.success('验证码验证成功')
+      
+      // 关闭验证码弹窗，打开密码重置弹窗
+      showVerificationModal.value = false
+      showResetPasswordModal.value = true
+    } else {
+      message.error('验证码错误，请重新输入')
+      // 清空验证码输入
+      verificationCodes.value = ['', '', '', '', '', '']
+      if (verificationInputs.value[0]) {
+        verificationInputs.value[0].focus()
+      }
+    }
+  } catch (error) {
+    message.error('验证失败，请重试')
+  } finally {
+    isVerifying.value = false
+  }
+}
+
+// 第三层：重置密码
+const resetPassword = async () => {
+  if (!isPasswordValid.value) {
+    message.error('请确保密码满足所有要求且两次输入一致')
+    return
+  }
+  
+  isResetting.value = true
+  
+  try {
+    // 模拟重置密码API调用
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    message.success('密码重置成功！请使用新密码登录')
+    
+    // 关闭所有弹窗，清空表单
+    closeAllModals()
+    resetForms()
+  } catch (error) {
+    message.error('密码重置失败，请重试')
+  } finally {
+    isResetting.value = false
+  }
+}
+
+// 弹窗导航方法
+const backToEmailInput = () => {
+  showVerificationModal.value = false
+  showPasswordModal.value = true
+  verificationCodes.value = ['', '', '', '', '', '']
+}
+
+const backToVerification = () => {
+  showResetPasswordModal.value = false
+  showVerificationModal.value = true
   newPassword.value = ''
   confirmNewPassword.value = ''
+}
+
+// 关闭弹窗方法
+const closePasswordModal = () => {
+  showPasswordModal.value = false
+  resetForms()
+}
+
+const closeVerificationModal = () => {
+  showVerificationModal.value = false
+  resetForms()
+}
+
+const closeResetPasswordModal = () => {
+  showResetPasswordModal.value = false
+  resetForms()
+}
+
+const closeAllModals = () => {
+  showPasswordModal.value = false
+  showVerificationModal.value = false
+  showResetPasswordModal.value = false
+}
+
+const resetForms = () => {
+  recoveryEmail.value = ''
   verificationCodes.value = ['', '', '', '', '', '']
+  newPassword.value = ''
+  confirmNewPassword.value = ''
+  codeSent.value = false
+  resendCountdown.value = 0
 }
 
 const handleVerificationInput = async (index: number) => {
@@ -1154,6 +1285,158 @@ onMounted(() => {
 }
 .modal-container .fa-check { 
   color: rgba(0, 0, 0, 0.7) !important; 
+}
+
+/* 🎯 三层级弹窗的专用样式 */
+
+/* 验证码弹窗样式 */
+.verification-modal {
+  width: 90%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  z-index: 1000;
+}
+
+/* 重置密码弹窗样式 */
+.reset-password-modal {
+  width: 90%;
+  max-width: 450px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  z-index: 1000;
+}
+
+/* 验证码输入组样式 */
+.verification-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.verification-input {
+  width: 45px;
+  height: 45px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.verification-input:focus {
+  border-color: #5E81F4;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(94, 129, 244, 0.2);
+  outline: none;
+}
+
+/* 密码要求样式增强 */
+.password-instructions {
+  background: rgba(94, 129, 244, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.password-instructions h3 {
+  margin: 0 0 15px 0;
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.password-instructions ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: none;
+}
+
+.password-instructions li {
+  margin: 8px 0;
+  color: rgba(0, 0, 0, 0.6);
+  position: relative;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.password-instructions li::before {
+  content: "✗";
+  position: absolute;
+  left: -20px;
+  color: #dc2626;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.password-instructions li.valid {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.password-instructions li.valid::before {
+  content: "✓";
+  color: #16a34a;
+}
+
+/* 弹窗底部样式 */
+.modal-footer {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-footer a {
+  color: #5E81F4;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.modal-footer a:hover {
+  color: #4c63d2;
+  text-decoration: underline;
+}
+
+.modal-footer a.disabled {
+  color: rgba(0, 0, 0, 0.4);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 重发验证码区域 */
+.resend-section {
+  margin-bottom: 10px;
+}
+
+.back-section {
+  font-size: 13px;
+}
+
+/* 错误消息样式 */
+.error-message {
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: rgba(220, 38, 38, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
 }
 
 </style> 
