@@ -612,10 +612,15 @@ onMounted(() => {
   color: rgba(0, 0, 0, 0.6);
 }
 
-/* 输入组图标样式优化 */
+/* 输入组图标样式优化 - 保持与登录页一致的位置 */
 .modal-container .input-group i {
+  /* 位置样式与登录页保持一致 */
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
   color: rgba(0, 0, 0, 0.7);
-  position: relative;
+  font-size: 20px;
   z-index: 10;
   
   /* 清除模糊但保持原有样式 */
@@ -626,6 +631,11 @@ onMounted(() => {
   /* 基础清晰化 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 弹窗中图标的悬停效果 */
+.modal-container .input-group input:focus + i {
+  color: #5E81F4;
 }
 
 .options {
