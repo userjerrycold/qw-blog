@@ -227,6 +227,144 @@ export interface GitCommandStatistics {
   recentlyAddedCommands: RecentCommand[];
 }
 
+// 登录认证接口类型定义
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  nickname?: string;
+  avatar?: string;
+  phone?: string;
+  gender?: number;
+  birthday?: string;
+  emailVerified: boolean;
+  lastLoginTime?: string;
+  loginCount?: number;
+  status?: boolean;
+  createDt: string;
+  updateDt?: string;
+}
+
+// 令牌信息接口
+export interface TokenInfo {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+}
+
+// 登录请求参数
+export interface LoginParams {
+  username: string;
+  password: string;
+  remember?: boolean;
+  deviceType?: string;
+  deviceId?: string;
+}
+
+// 登录响应数据
+export interface LoginResponse {
+  user: User;
+  token: TokenInfo;
+}
+
+// 注册请求参数
+export interface RegisterParams {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  agreeTerms: boolean;
+  deviceType?: string;
+  deviceId?: string;
+}
+
+// 发送验证码请求参数
+export interface SendVerificationCodeParams {
+  email: string;
+  verificationType: number; // 1-注册验证 2-密码重置 3-登录验证
+}
+
+// 发送验证码响应
+export interface SendCodeResponse {
+  email: string;
+  expireTime: string;
+  sendCount: number;
+  maxSendCount: number;
+}
+
+// 验证码验证请求参数
+export interface VerifyCodeParams {
+  email: string;
+  verificationCode: string;
+  verificationType: number;
+}
+
+// 验证码验证响应
+export interface VerifyCodeResponse {
+  verified: boolean;
+  resetToken?: string;
+  expiresIn?: number;
+}
+
+// 密码重置请求参数
+export interface ResetPasswordParams {
+  email: string;
+  resetToken: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// 重置密码响应
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+// 刷新令牌参数
+export interface RefreshTokenParams {
+  refreshToken: string;
+}
+
+// 登出参数
+export interface LogoutParams {
+  logoutAll?: boolean;
+}
+
+// 社交登录请求参数
+export interface SocialLoginParams {
+  provider: 'google' | 'github' | 'wechat';
+  code: string;
+  redirectUri?: string;
+}
+
+// 用户资料更新参数
+export interface UpdateProfileParams {
+  id: number;
+  username?: string;
+  email?: string;
+  nickname?: string;
+  avatar?: string;
+}
+
+// 密码修改参数
+export interface ChangePasswordParams {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// 用户统计信息
+export interface UserStatistics {
+  totalUsers: number;
+  activeUsers: number;
+  newUsersToday: number;
+  registrationTrend: {
+    date: string;
+    count: number;
+  }[];
+}
+
 export function fetchPosts(params: { page?: number; pageSize?: number; tag?: string }) {
   return http.get<Pagination<Post>>('/posts', { params })
 }
@@ -354,4 +492,96 @@ export function recordGitCommandExecution(id: number) {
   return http.post<ApiResponse<{ executionCount: number }>>('/git/recordExecution', { id });
 }
 
-export default http 
+// 登录认证API函数
+
+// 用户登录
+export function login(params: LoginParams) {
+  return http.post<ApiResponse<LoginResponse>>('/auth/login', params);
+}
+
+// 用户注册
+export function register(params: RegisterParams) {
+  return http.post<ApiResponse<LoginResponse>>('/auth/register', params);
+}
+
+// 发送验证码
+export function sendVerificationCode(params: SendVerificationCodeParams) {
+  return http.post<ApiResponse<SendCodeResponse>>('/auth/sendVerificationCode', params);
+}
+
+// 验证验证码
+export function verifyCode(params: VerifyCodeParams) {
+  return http.post<ApiResponse<VerifyCodeResponse>>('/auth/verifyCode', params);
+}
+
+// 重置密码
+export function resetPassword(params: ResetPasswordParams) {
+  return http.post<ApiResponse<ResetPasswordResponse>>('/auth/resetPassword', params);
+}
+
+// 社交登录
+export function socialLogin(params: SocialLoginParams) {
+  return http.post<ApiResponse<LoginResponse>>('/auth/social-login', params);
+}
+
+// 刷新Token
+export function refreshToken(params: RefreshTokenParams) {
+  return http.post<ApiResponse<{ token: TokenInfo }>>('/auth/refresh-token', params);
+}
+
+// 用户退出登录
+export function logout(params: LogoutParams) {
+  return http.post<ApiResponse<{ message: string }>>('/auth/logout', params);
+}
+
+// 获取当前用户信息
+export function getCurrentUser() {
+  return http.get<ApiResponse<User>>('/auth/profile');
+}
+
+// 更新用户资料
+export function updateProfile(params: UpdateProfileParams) {
+  return http.put<ApiResponse<User>>('/auth/profile', params);
+}
+
+// 修改密码
+export function changePassword(params: ChangePasswordParams) {
+  return http.post<ApiResponse<{ message: string }>>('/auth/change-password', params);
+}
+
+// 检查用户名是否可用
+export function checkUsernameAvailable(username: string) {
+  return http.get<ApiResponse<{ available: boolean }>>('/auth/check-username', {
+    params: { username }
+  });
+}
+
+// 检查邮箱是否可用
+export function checkEmailAvailable(email: string) {
+  return http.get<ApiResponse<{ available: boolean }>>('/auth/check-email', {
+    params: { email }
+  });
+}
+
+// 获取用户统计信息（管理员功能）
+export function getUserStatistics() {
+  return http.get<ApiResponse<UserStatistics>>('/auth/statistics');
+}
+
+// 上传头像
+export function uploadAvatar(file: File) {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  return http.post<ApiResponse<{ url: string }>>('/auth/upload-avatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+}
+
+// 获取用户信息
+export function getUserInfo() {
+  return http.get<ApiResponse<User>>('/auth/userInfo');
+}
+
+export default http

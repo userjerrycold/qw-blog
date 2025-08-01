@@ -255,6 +255,18 @@
 import { ref, reactive, onMounted, nextTick, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
+import { 
+  login, 
+  register, 
+  sendVerificationCode as sendVerificationCodeAPI, 
+  verifyCode as verifyCodeAPI, 
+  resetPassword as resetPasswordAPI,
+  type LoginParams,
+  type RegisterParams,
+  type SendVerificationCodeParams,
+  type VerifyCodeParams,
+  type ResetPasswordParams 
+} from '@/services/api'
 
 const router = useRouter()
 const message = useMessage()
@@ -305,6 +317,7 @@ const recoveryEmail = ref('')
 const newPassword = ref('')
 const confirmNewPassword = ref('')
 const verificationCodes = ref(['', '', '', '', '', ''])
+const resetToken = ref('') // 存储重置密码的临时token
 
 // 方法
 const clearError = (field: keyof typeof errors) => {
@@ -333,20 +346,43 @@ const handleLogin = async () => {
   isLoading.value = true
   
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const params: LoginParams = {
+      username: loginForm.username,
+      password: loginForm.password,
+      remember: loginForm.remember,
+      deviceType: 'web',
+      deviceId: navigator.userAgent // 简单的设备标识
+    }
     
-    // 模拟登录成功
-    loginSuccess.value = true
-    message.success('登录成功！')
+    const response = await login(params)
     
-    // 延迟跳转
-    setTimeout(() => {
-      router.push('/tools')
-    }, 1000)
+    if (response.data.code === 200) {
+      const { user, token } = response.data.data
+      
+      // 存储用户信息和Token
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('accessToken', token.accessToken)
+      localStorage.setItem('refreshToken', token.refreshToken)
+      localStorage.setItem('tokenExpires', String(Date.now() + token.expiresIn * 1000))
+      
+      loginSuccess.value = true
+      message.success('登录成功！')
+      
+      // 延迟跳转
+      setTimeout(() => {
+        router.push('/tools')
+      }, 1000)
+    } else {
+      message.error(response.data.msg || '登录失败')
+    }
     
-  } catch (error) {
-    message.error('登录失败，请检查用户名和密码')
+  } catch (error: any) {
+    console.error('登录错误:', error)
+    if (error.response?.data?.msg) {
+      message.error(error.response.data.msg)
+    } else {
+      message.error('登录失败，请检查网络连接')
+    }
   } finally {
     isLoading.value = false
     setTimeout(() => {
@@ -366,14 +402,47 @@ const handleRegister = async () => {
     return
   }
   
+  // 验证密码强度
+  if (!validatePasswordStrength(registerForm.password)) {
+    message.error('密码必须包含大小写字母、数字和特殊字符，且至少8位')
+    return
+  }
+  
   isRegistering.value = true
   
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    const params: RegisterParams = {
+      username: registerForm.username,
+      email: registerForm.email,
+      password: registerForm.password,
+      confirmPassword: registerForm.confirmPassword,
+      agreeTerms: registerForm.agreeTerms,
+      deviceType: 'web',
+      deviceId: navigator.userAgent
+    }
     
-    message.success('注册成功！请登录')
-    showRegisterModal.value = false
+    const response = await register(params)
+    
+    if (response.data.code === 200) {
+      const { user, token } = response.data.data
+      
+      // 存储用户信息和Token（注册成功自动登录）
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('accessToken', token.accessToken)
+      localStorage.setItem('refreshToken', token.refreshToken)
+      localStorage.setItem('tokenExpires', String(Date.now() + token.expiresIn * 1000))
+      
+      message.success('注册成功！')
+      showRegisterModal.value = false
+      
+      // 跳转到主页
+      setTimeout(() => {
+        router.push('/tools')
+      }, 1500)
+      
+    } else {
+      message.error(response.data.msg || '注册失败')
+    }
     
     // 清空表单
     Object.assign(registerForm, {
@@ -384,8 +453,13 @@ const handleRegister = async () => {
       agreeTerms: false
     })
     
-  } catch (error) {
-    message.error('注册失败，请重试')
+  } catch (error: any) {
+    console.error('注册错误:', error)
+    if (error.response?.data?.msg) {
+      message.error(error.response.data.msg)
+    } else {
+      message.error('注册失败，请重试')
+    }
   } finally {
     isRegistering.value = false
   }
@@ -404,6 +478,17 @@ const resendCountdown = ref(0)
 const isValidEmail = (email: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
+}
+
+// 密码强度验证
+const validatePasswordStrength = (password: string) => {
+  const minLength = password.length >= 8
+  const hasUpperCase = /[A-Z]/.test(password)
+  const hasLowerCase = /[a-z]/.test(password)
+  const hasNumbers = /\d/.test(password)
+  const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+  
+  return minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecial
 }
 
 // 验证码完整性检查
@@ -445,25 +530,39 @@ const sendVerificationCode = async () => {
   codeSent.value = true
   
   try {
-    // 模拟发送验证码API调用
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    message.success('验证码已发送到您的邮箱')
-    
-    // 关闭邮箱输入弹窗，打开验证码输入弹窗
-    showPasswordModal.value = false
-    showVerificationModal.value = true
-    codeSent.value = false
-    
-    // 启动重发倒计时
-    startResendCountdown()
-    
-    // 自动聚焦到第一个验证码输入框
-    await nextTick()
-    if (verificationInputs.value[0]) {
-      verificationInputs.value[0].focus()
+    const params: SendVerificationCodeParams = {
+      email: recoveryEmail.value,
+      verificationType: 2 // 密码重置
     }
-  } catch (error) {
-    message.error('发送验证码失败，请重试')
+    
+    const response = await sendVerificationCodeAPI(params)
+    
+    if (response.data.code === 200) {
+      message.success('验证码已发送到您的邮箱')
+      
+      // 关闭邮箱输入弹窗，打开验证码输入弹窗
+      showPasswordModal.value = false
+      showVerificationModal.value = true
+      
+      // 启动重发倒计时
+      startResendCountdown()
+      
+      // 自动聚焦到第一个验证码输入框
+      await nextTick()
+      if (verificationInputs.value[0]) {
+        verificationInputs.value[0].focus()
+      }
+    } else {
+      message.error(response.data.msg || '发送验证码失败')
+    }
+  } catch (error: any) {
+    console.error('发送验证码错误:', error)
+    if (error.response?.data?.msg) {
+      message.error(error.response.data.msg)
+    } else {
+      message.error('发送验证码失败，请重试')
+    }
+  } finally {
     codeSent.value = false
   }
 }
@@ -483,11 +582,22 @@ const startResendCountdown = () => {
 const resendCode = async () => {
   if (resendCountdown.value > 0) return
   
-  try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    message.success('验证码已重新发送')
-    startResendCountdown()
-  } catch (error) {
+      try {
+      const params: SendVerificationCodeParams = {
+        email: recoveryEmail.value,
+        verificationType: 2 // 密码重置
+      }
+      
+      const response = await sendVerificationCodeAPI(params)
+    
+    if (response.data.code === 200) {
+      message.success('验证码已重新发送')
+      startResendCountdown()
+    } else {
+      message.error(response.data.msg || '重发失败')
+    }
+  } catch (error: any) {
+    console.error('重发验证码错误:', error)
     message.error('重发失败，请重试')
   }
 }
@@ -502,27 +612,38 @@ const verifyCode = async () => {
   isVerifying.value = true
   
   try {
-    // 模拟验证码验证API调用
-    const code = verificationCodes.value.join('')
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const params: VerifyCodeParams = {
+      email: recoveryEmail.value,
+      verificationCode: verificationCodes.value.join(''),
+      verificationType: 2 // 密码重置
+    }
     
-    // 模拟验证结果 (在实际应用中，这里应该调用后端API)
-    if (code === '123456') { // 模拟正确的验证码
+    const response = await verifyCodeAPI(params)
+    
+    if (response.data.code === 200 && response.data.data.verified) {
       message.success('验证码验证成功')
+      
+      // 存储重置token
+      resetToken.value = response.data.data.resetToken || ''
       
       // 关闭验证码弹窗，打开密码重置弹窗
       showVerificationModal.value = false
       showResetPasswordModal.value = true
     } else {
-      message.error('验证码错误，请重新输入')
+      message.error(response.data.msg || '验证码错误，请重新输入')
       // 清空验证码输入
       verificationCodes.value = ['', '', '', '', '', '']
       if (verificationInputs.value[0]) {
         verificationInputs.value[0].focus()
       }
     }
-  } catch (error) {
-    message.error('验证失败，请重试')
+  } catch (error: any) {
+    console.error('验证验证码错误:', error)
+    if (error.response?.data?.msg) {
+      message.error(error.response.data.msg)
+    } else {
+      message.error('验证失败，请重试')
+    }
   } finally {
     isVerifying.value = false
   }
@@ -538,15 +659,31 @@ const resetPassword = async () => {
   isResetting.value = true
   
   try {
-    // 模拟重置密码API调用
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    message.success('密码重置成功！请使用新密码登录')
+    const params: ResetPasswordParams = {
+      email: recoveryEmail.value,
+      resetToken: resetToken.value,
+      newPassword: newPassword.value,
+      confirmPassword: confirmNewPassword.value
+    }
     
-    // 关闭所有弹窗，清空表单
-    closeAllModals()
-    resetForms()
-  } catch (error) {
-    message.error('密码重置失败，请重试')
+    const response = await resetPasswordAPI(params)
+    
+    if (response.data.code === 200) {
+      message.success('密码重置成功！请使用新密码登录')
+      
+      // 关闭所有弹窗，清空表单
+      closeAllModals()
+      resetForms()
+    } else {
+      message.error(response.data.msg || '密码重置失败')
+    }
+  } catch (error: any) {
+    console.error('重置密码错误:', error)
+    if (error.response?.data?.msg) {
+      message.error(error.response.data.msg)
+    } else {
+      message.error('密码重置失败，请重试')
+    }
   } finally {
     isResetting.value = false
   }
@@ -595,6 +732,7 @@ const resetForms = () => {
   confirmNewPassword.value = ''
   codeSent.value = false
   resendCountdown.value = 0
+  resetToken.value = '' // 清空重置token
 }
 
 const handleVerificationInput = async (index: number) => {
