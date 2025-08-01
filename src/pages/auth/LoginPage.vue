@@ -612,14 +612,18 @@ onMounted(() => {
   color: rgba(0, 0, 0, 0.6);
 }
 
+/* 输入组图标样式优化 */
 .modal-container .input-group i {
   color: rgba(0, 0, 0, 0.7);
+  position: relative;
+  z-index: 10;
+  
+  /* 清除模糊但保持原有样式 */
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  /* 强制清晰显示 */
-  font-style: normal;
-  text-rendering: optimizeLegibility;
+  
+  /* 基础清晰化 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -821,39 +825,36 @@ onMounted(() => {
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* 专门为图标元素添加反模糊保护 */
-.modal-container i {
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  isolation: isolate;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+/* 🎯 温和而有效的图标清晰化方案 */
+
+/* 弹窗容器的基础设置 */
+.register-modal,
+.password-modal {
+  position: relative;
 }
 
-/* 确保弹窗内的所有图标都不被模糊 */
-.modal-container .input-group i,
-.modal-container .close-btn i,
-.modal-container .modal-btn i,
-.modal-container .fas,
-.modal-container .fab,
-.modal-container i[class*="fa-"],
-.modal-container .fa-user,
-.modal-container .fa-envelope,
-.modal-container .fa-lock,
-.modal-container .fa-times,
-.modal-container .fa-spinner {
+/* 核心图标清晰化 - 简洁有效 */
+.modal-container i,
+.register-modal i,
+.password-modal i {
+  /* 清除模糊效果 */
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  transform: none !important;
-  /* 确保图标清晰锐利 */
-  image-rendering: crisp-edges;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: -moz-crisp-edges;
-  /* 防止任何模糊效果 */
+  
+  /* 确保显示 */
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+  
+  /* 基础清晰化 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* 轻微硬件加速 */
+  transform: translateZ(0);
   will-change: auto;
-  backface-visibility: visible;
 }
 
 /* 注册弹窗 */
@@ -912,6 +913,7 @@ onMounted(() => {
   -webkit-text-fill-color: transparent;
 }
 
+/* 关闭按钮样式优化 */
 .close-btn {
   width: 36px;
   height: 36px;
@@ -925,16 +927,25 @@ onMounted(() => {
   font-size: 18px;
   cursor: pointer;
   transition: all 0.3s ease;
-  /* 确保按钮内图标清晰 */
-  isolation: isolate;
+  position: relative;
+  z-index: 100;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
 }
 
 .close-btn i {
+  /* 确保图标显示且清晰 */
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  
+  /* 确保可见性 */
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: inherit;
 }
 
 .close-btn:hover {
@@ -1090,4 +1101,49 @@ onMounted(() => {
     font-size: 20px;
   }
 }
+
+/* FontAwesome图标具体优化 */
+.modal-container .fas,
+.register-modal .fas,
+.password-modal .fas {
+  /* 确保图标显示 */
+  display: inline-block !important;
+  font-family: "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+  
+  /* 清除模糊但保持可见 */
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  
+  /* 确保清晰 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* 确保可见 */
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* 为不同图标设置适当的颜色 */
+.modal-container .fa-user { 
+  color: rgba(0, 0, 0, 0.7) !important; 
+}
+.modal-container .fa-envelope { 
+  color: rgba(0, 0, 0, 0.7) !important; 
+}
+.modal-container .fa-lock { 
+  color: rgba(0, 0, 0, 0.7) !important; 
+}
+.modal-container .fa-times { 
+  color: rgba(0, 0, 0, 0.8) !important; 
+}
+.modal-container .fa-spinner { 
+  color: rgba(0, 0, 0, 0.7) !important; 
+}
+.modal-container .fa-check { 
+  color: rgba(0, 0, 0, 0.7) !important; 
+}
+
 </style> 
