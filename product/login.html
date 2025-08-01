@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 立体毛玻璃设计</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e8f2ff 0%, #f5f0ff 30%, #fff5f5 60%, #f0f8ff 100%);
+            position: relative;
+        }
+
+        /* 微噪点纹理层 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.2) 1px, transparent 1px),
+                radial-gradient(circle at 75% 75%, rgba(120,119,198,0.15) 1px, transparent 1px);
+            background-size: 50px 50px, 80px 80px;
+            animation: noise 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes noise {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(-20px, -20px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* 动态粒子容器 */
+        .particles-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: float-particle 8s linear infinite;
+        }
+
+        .particle:nth-child(odd) {
+            background: rgba(120, 119, 198, 0.4);
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 鼠标跟随涟漪效果 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            pointer-events: none;
+            animation: ripple-expand 2s ease-out forwards;
+        }
+
+        @keyframes ripple-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+            }
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 
+                0 10px 20px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            position: relative;
+            animation: card-enter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes card-enter {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* 内发光效果 */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.4) 0%, 
+                rgba(255,255,255,0.1) 50%, 
+                rgba(255,255,255,0.4) 100%);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: xor;
+            pointer-events: none;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+            animation: icon-float 3s ease-in-out infinite;
+        }
+
+        @keyframes icon-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .login-icon i {
+            font-size: 24px;
+            color: white;
+        }
+
+        .login-title {
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.025em;
+        }
+
+        .login-subtitle {
+            color: #718096;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-bottom: 1px solid rgba(203, 213, 224, 0.6);
+            border-radius: 8px 8px 0 0;
+            padding: 16px 48px 16px 16px;
+            font-size: 16px;
+            color: #2d3748;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .form-input:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .form-input::placeholder {
+            color: #a0aec0;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus::placeholder {
+            color: transparent;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .input-icon:hover {
+            color: #667eea;
+        }
+
+        /* 浮动标签效果 */
+        .floating-label {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            font-size: 16px;
+            color: #a0aec0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        .form-input:focus + .floating-label,
+        .form-input:not(:placeholder-shown) + .floating-label {
+            top: -8px;
+            left: 12px;
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-bottom: 32px;
+        }
+
+        .forgot-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
+        .login-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-button:hover {
+            transform: translateY(-1px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-button:active {
+            transform: translateY(0) scale(1);
+        }
+
+        /* 按钮涟漪效果 */
+        .button-ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: button-ripple-expand 0.6s linear;
+        }
+
+        @keyframes button-ripple-expand {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 32px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(203, 213, 224, 0.5), transparent);
+        }
+
+        .divider span {
+            color: #a0aec0;
+            padding: 0 16px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+        }
+
+        .social-login {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .social-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .social-btn i {
+            color: #4a5568;
+            font-size: 18px;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 32px;
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .signup-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .signup-link a:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
+        /* 错误提示样式 */
+        .error-message {
+            color: #e53e3e;
+            font-size: 12px;
+            margin-top: 4px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .error-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
+                margin: 20px;
+            }
+            
+            .login-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 动态粒子背景 -->
+        <div class="particles-container" ref="particlesContainer"></div>
+
+        <div class="login-container" @mousemove="handleMouseMove">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h1 class="login-title">欢迎回来</h1>
+                    <p class="login-subtitle">请登录您的账户</p>
+                </div>
+
+                <form @submit.prevent="handleLogin">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input 
+                                type="email" 
+                                class="form-input" 
+                                placeholder=" "
+                                v-model="loginForm.email"
+                                @blur="validateEmail"
+                                required
+                            />
+                            <label class="floating-label">邮箱地址</label>
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                        <div class="error-message" :class="{ show: errors.email }">
+                            {{ errors.email }}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input 
+                                :type="showPassword ? 'text' : 'password'" 
+                                class="form-input" 
+                                placeholder=" "
+                                v-model="loginForm.password"
+                                @blur="validatePassword"
+                                required
+                            />
+                            <label class="floating-label">密码</label>
+                            <i 
+                                :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" 
+                                class="input-icon"
+                                @click="showPassword = !showPassword"
+                            ></i>
+                        </div>
+                        <div class="error-message" :class="{ show: errors.password }">
+                            {{ errors.password }}
+                        </div>
+                    </div>
+
+                    <div class="forgot-password">
+                        <a href="#" class="forgot-link">忘记密码？</a>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        class="login-button" 
+                        :disabled="loading"
+                        @click="createButtonRipple"
+                        ref="loginButton"
+                    >
+                        <i v-if="loading" class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                        {{ loading ? '登录中...' : '登录' }}
+                    </button>
+                </form>
+
+                <div class="divider">
+                    <span>或者使用</span>
+                </div>
+
+                <div class="social-login">
+                    <div class="social-btn" @click="socialLogin('google')">
+                        <i class="fab fa-google"></i>
+                    </div>
+                    <div class="social-btn" @click="socialLogin('github')">
+                        <i class="fab fa-github"></i>
+                    </div>
+                    <div class="social-btn" @click="socialLogin('wechat')">
+                        <i class="fab fa-weixin"></i>
+                    </div>
+                </div>
+
+                <div class="signup-link">
+                    还没有账户？ <a href="#" @click="goToSignup">立即注册</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, onUnmounted } = Vue;
+
+        createApp({
+            setup() {
+                const loginForm = ref({
+                    email: '',
+                    password: ''
+                });
+
+                const showPassword = ref(false);
+                const loading = ref(false);
+                const particlesContainer = ref(null);
+                const loginButton = ref(null);
+
+                const errors = ref({
+                    email: '',
+                    password: ''
+                });
+
+                // 创建动态粒子
+                const createParticle = () => {
+                    if (!particlesContainer.value) return;
+                    
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    
+                    const size = Math.random() * 4 + 2;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    particle.style.left = `${Math.random() * 100}%`;
+                    particle.style.animationDuration = `${Math.random() * 4 + 6}s`;
+                    particle.style.animationDelay = `${Math.random() * 2}s`;
+                    
+                    particlesContainer.value.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 10000);
+                };
+
+                // 鼠标跟随涟漪效果
+                const handleMouseMove = (e) => {
+                    if (Math.random() > 0.1) return; // 降低频率
+                    
+                    const ripple = document.createElement('div');
+                    ripple.className = 'ripple';
+                    ripple.style.left = `${e.clientX - 100}px`;
+                    ripple.style.top = `${e.clientY - 100}px`;
+                    
+                    document.body.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        if (ripple.parentNode) {
+                            ripple.parentNode.removeChild(ripple);
+                        }
+                    }, 2000);
+                };
+
+                // 按钮涟漪效果
+                const createButtonRipple = (e) => {
+                    const button = loginButton.value;
+                    const ripple = document.createElement('span');
+                    const rect = button.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.className = 'button-ripple';
+                    ripple.style.width = ripple.style.height = `${size}px`;
+                    ripple.style.left = `${x}px`;
+                    ripple.style.top = `${y}px`;
+                    
+                    button.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        if (ripple.parentNode) {
+                            ripple.parentNode.removeChild(ripple);
+                        }
+                    }, 600);
+                };
+
+                // 表单验证
+                const validateEmail = () => {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!loginForm.value.email) {
+                        errors.value.email = '请输入邮箱地址';
+                    } else if (!emailRegex.test(loginForm.value.email)) {
+                        errors.value.email = '请输入有效的邮箱地址';
+                    } else {
+                        errors.value.email = '';
+                    }
+                };
+
+                const validatePassword = () => {
+                    if (!loginForm.value.password) {
+                        errors.value.password = '请输入密码';
+                    } else if (loginForm.value.password.length < 6) {
+                        errors.value.password = '密码至少需要6位字符';
+                    } else {
+                        errors.value.password = '';
+                    }
+                };
+
+                const handleLogin = async () => {
+                    validateEmail();
+                    validatePassword();
+                    
+                    if (errors.value.email || errors.value.password) {
+                        return;
+                    }
+
+                    loading.value = true;
+                    
+                    try {
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        alert(`登录成功！欢迎 ${loginForm.value.email}`);
+                    } catch (error) {
+                        alert('登录失败，请检查您的账户信息');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const socialLogin = (platform) => {
+                    alert(`使用 ${platform} 登录`);
+                };
+
+                const goToSignup = () => {
+                    alert('跳转到注册页面');
+                };
+
+                let particleInterval;
+
+                onMounted(() => {
+                    // 定期创建粒子
+                    particleInterval = setInterval(createParticle, 800);
+                });
+
+                onUnmounted(() => {
+                    if (particleInterval) {
+                        clearInterval(particleInterval);
+                    }
+                });
+
+                return {
+                    loginForm,
+                    showPassword,
+                    loading,
+                    errors,
+                    particlesContainer,
+                    loginButton,
+                    handleLogin,
+                    socialLogin,
+                    goToSignup,
+                    handleMouseMove,
+                    createButtonRipple,
+                    validateEmail,
+                    validatePassword
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
