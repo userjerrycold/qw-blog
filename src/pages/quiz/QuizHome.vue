@@ -291,7 +291,7 @@
           <!-- 背景模糊遮罩 -->
           <div v-if="focusMode" class="quiz-background-blur"></div>
           
-          <div class="quiz-progress" :class="{ 'focus-hidden': focusMode }">
+          <div class="quiz-progress" :class="{ 'focus-compact': focusMode }">
             <div class="progress-bar">
               <div class="progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
             </div>
@@ -1796,17 +1796,17 @@ onUnmounted(() => {
   padding: 40px 0;
 }
 
-/* 专注模式背景模糊 */
+/* 专注模式背景模糊 - 性能优化版 */
 .quiz-background-blur {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 1;
   pointer-events: none;
+  will-change: opacity;
 }
 
 /* 专注模式控制按钮 */
@@ -1818,8 +1818,7 @@ onUnmounted(() => {
 }
 
 .focus-mode-toggle {
-  background: rgba(59, 130, 246, 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(59, 130, 246, 0.95);
   color: white;
   border: none;
   border-radius: 25px;
@@ -1827,62 +1826,88 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  will-change: background-color;
 }
 
 .focus-mode-toggle:hover {
-  background: rgba(37, 99, 235, 0.9);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  background: rgba(37, 99, 235, 0.95);
 }
 
 .focus-mode-toggle.active {
-  background: rgba(239, 68, 68, 0.9);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.95);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .focus-mode-toggle.active:hover {
-  background: rgba(220, 38, 38, 0.9);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  background: rgba(220, 38, 38, 0.95);
 }
 
-/* 专注模式时隐藏进度条 */
-.quiz-progress.focus-hidden {
-  opacity: 0.3;
-  transform: scale(0.9);
-  pointer-events: none;
+/* 专注模式时紧凑进度条 */
+.quiz-progress.focus-compact {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1002;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 8px 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+  will-change: transform;
 }
 
-/* 专注模式增强的答题卡片 */
+.quiz-progress.focus-compact .progress-bar {
+  width: 200px;
+  height: 4px;
+}
+
+.quiz-progress.focus-compact .progress-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  margin-left: 12px;
+}
+
+/* 专注模式固定答题卡片 - 性能优化版 */
 .question-card.focus-enhanced {
-  position: relative;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 10;
-  transform: scale(1.05);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
   background: rgba(255, 255, 255, 0.98);
-  border: 2px solid rgba(59, 130, 246, 0.2);
-  animation: focusPulse 4s ease-in-out infinite;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  will-change: transform;
+  animation: focusPulse 3s ease-in-out infinite;
 }
 
+/* 轻量级脉动动画 */
 @keyframes focusPulse {
   0%, 100% {
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 rgba(59, 130, 246, 0.4);
+    border-color: rgba(59, 130, 246, 0.3);
   }
   50% {
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25), 0 0 20px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
   }
 }
 
-/* 侧边栏模糊效果 */
+/* 侧边栏模糊效果 - 性能优化版 */
 .sidebar-blurred {
-  filter: blur(3px);
-  opacity: 0.6;
+  opacity: 0.4;
   pointer-events: none;
-  transition: all 0.3s ease;
+  transition: opacity 0.2s ease;
+  will-change: opacity;
 }
 
 .quiz-progress {
@@ -2408,9 +2433,30 @@ onUnmounted(() => {
     display: none;
   }
   
+  .quiz-progress.focus-compact {
+    top: 10px;
+    width: 180px;
+    padding: 6px 12px;
+  }
+  
+  .quiz-progress.focus-compact .progress-bar {
+    width: 120px;
+    height: 3px;
+  }
+  
+  .quiz-progress.focus-compact .progress-text {
+    font-size: 11px;
+    margin-left: 8px;
+  }
+  
   .question-card.focus-enhanced {
-    transform: scale(1.02);
-    margin: 0 -10px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 95%;
+    max-width: none;
+    max-height: 85vh;
+    margin: 0;
   }
   
   .quiz-interface.focus-mode-active {
@@ -2418,3 +2464,4 @@ onUnmounted(() => {
   }
 }
 </style>
+
