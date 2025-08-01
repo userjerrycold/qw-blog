@@ -5,9 +5,12 @@
     
     <!-- 毛玻璃登录卡片 -->
     <div class="login-card">
-      <div class="logo">
-        <i class="fas fa-lock"></i>
-        <h1>欢迎登录</h1>
+      <div class="login-header">
+        <div class="login-icon">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <h1 class="login-title">欢迎回来</h1>
+        <p class="login-subtitle">请登录您的账户</p>
       </div>
       
       <form @submit.prevent="handleLogin">
@@ -758,28 +761,51 @@ onMounted(() => {
   filter: blur(15px);
 }
 
-.logo {
+/* 全新的登录头部设计 */
+.login-header {
   text-align: center;
-  margin-bottom: 40px;
-  animation: floatIcon 3s infinite ease-in-out;
+  margin: 0 0 40px 0;
+  animation: headerFloat 4s infinite ease-in-out;
 }
 
-.logo i {
-  font-size: 3.5rem;
-  color: rgba(255, 255, 255, 0.95);
-  background: linear-gradient(45deg, #5E81F4, #8464F6);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+.login-icon {
+  margin-bottom: 25px;
 }
 
-.logo h1 {
-  font-weight: 300;
-  font-size: 1.8rem;
-  margin-top: 15px;
-  color: rgba(0, 0, 0, 0.75);
+.login-icon i {
+  font-size: 72px;
+  color: rgba(94, 129, 244, 0.8);
+  display: block;
+  text-shadow: 0 4px 8px rgba(94, 129, 244, 0.3);
+  animation: iconPulse 3s infinite ease-in-out;
+  transition: all 0.3s ease;
+}
+
+.login-icon i:hover {
+  color: rgba(94, 129, 244, 1);
+  text-shadow: 0 6px 12px rgba(94, 129, 244, 0.4);
+  transform: scale(1.05);
+}
+
+.login-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.85);
+  margin: 0 0 10px 0;
   letter-spacing: 1px;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(94, 129, 244, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
 }
 
 .input-group {
@@ -1535,6 +1561,23 @@ onMounted(() => {
   background: rgba(220, 38, 38, 0.1);
   border-radius: 6px;
   border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+/* 登录头部动画效果 */
+@keyframes headerFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes iconPulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% { 
+    transform: scale(1.02);
+    filter: brightness(1.1);
+  }
 }
 
 </style> 
