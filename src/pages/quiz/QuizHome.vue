@@ -286,9 +286,12 @@
           </div>
         </div>
         
-        <!-- 答题界面 -->
-        <div v-else class="quiz-interface">
-          <div class="quiz-progress">
+                <!-- 答题界面 -->
+        <div v-else class="quiz-interface" :class="{ 'focus-mode-active': focusMode }">
+          <!-- 背景模糊遮罩 -->
+          <div v-if="focusMode" class="quiz-background-blur"></div>
+          
+          <div class="quiz-progress" :class="{ 'focus-hidden': focusMode }">
             <div class="progress-bar">
               <div class="progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
             </div>
@@ -297,65 +300,78 @@
             </div>
           </div>
           
-          <div class="question-card">
-                      <div class="question-header">
-            <div class="question-meta">
-              <span class="question-type">{{ currentQuestion.type }}</span>
-              <div class="question-difficulty">
-                <span v-for="i in currentQuestion.difficulty" :key="i" class="star active">
-                  <i class="fas fa-star"></i>
-                </span>
-                <span v-for="i in (5 - currentQuestion.difficulty)" :key="`empty-${i}`" class="star">
-                  <i class="far fa-star"></i>
-                </span>
-              </div>
-              <div class="question-tags" v-if="currentQuestion.tags">
-                <span 
-                  v-for="tag in currentQuestion.tags" 
-                  :key="tag" 
-                  class="tag-badge"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-            </div>
-            
-            <!-- 题目倒计时器 -->
-            <div class="question-countdown">
-              <div class="countdown-circle" :class="timerColorClass">
-                <svg class="countdown-ring" width="60" height="60">
-                  <circle
-                    class="countdown-ring-bg"
-                    stroke="rgba(0, 0, 0, 0.1)"
-                    stroke-width="4"
-                    fill="transparent"
-                    r="26"
-                    cx="30"
-                    cy="30"
-                  />
-                  <circle
-                    class="countdown-ring-progress"
-                    stroke-width="4"
-                    fill="transparent"
-                    r="26"
-                    cx="30"
-                    cy="30"
-                    :stroke-dasharray="`${163} ${163}`"
-                    :stroke-dashoffset="163 - (163 * timerPercentage / 100)"
-                    stroke-linecap="round"
-                  />
-                </svg>
-                <div class="countdown-text">
-                  <span class="countdown-number">{{ questionTimer }}</span>
+          <!-- 专注模式控制按钮 -->
+          <div class="focus-mode-controls">
+            <button 
+              class="focus-mode-toggle" 
+              :class="{ 'active': focusMode }"
+              @click="toggleFocusMode"
+              :title="focusMode ? '退出专注模式 (Esc)' : '进入专注模式 (Ctrl+F)'"
+            >
+              <i :class="focusMode ? 'fas fa-compress' : 'fas fa-expand'"></i>
+              <span>{{ focusMode ? '退出专注' : '专注答题' }}</span>
+            </button>
+          </div>
+          
+          <div class="question-card" :class="{ 'focus-enhanced': focusMode }">
+            <div class="question-header">
+              <div class="question-meta">
+                <span class="question-type">{{ currentQuestion.type }}</span>
+                <div class="question-difficulty">
+                  <span v-for="i in currentQuestion.difficulty" :key="i" class="star active">
+                    <i class="fas fa-star"></i>
+                  </span>
+                  <span v-for="i in (5 - currentQuestion.difficulty)" :key="`empty-${i}`" class="star">
+                    <i class="far fa-star"></i>
+                  </span>
+                </div>
+                <div class="question-tags" v-if="currentQuestion.tags">
+                  <span 
+                    v-for="tag in currentQuestion.tags" 
+                    :key="tag" 
+                    class="tag-badge"
+                  >
+                    {{ tag }}
+                  </span>
                 </div>
               </div>
+              
+              <!-- 题目倒计时器 -->
+              <div class="question-countdown">
+                <div class="countdown-circle" :class="timerColorClass">
+                  <svg class="countdown-ring" width="60" height="60">
+                    <circle
+                      class="countdown-ring-bg"
+                      stroke="rgba(0, 0, 0, 0.1)"
+                      stroke-width="4"
+                      fill="transparent"
+                      r="26"
+                      cx="30"
+                      cy="30"
+                    />
+                    <circle
+                      class="countdown-ring-progress"
+                      stroke-width="4"
+                      fill="transparent"
+                      r="26"
+                      cx="30"
+                      cy="30"
+                      :stroke-dasharray="`${163} ${163}`"
+                      :stroke-dashoffset="163 * (1 - timerPercentage / 100)"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <div class="countdown-text">
+                    <span class="countdown-number">{{ questionTimer }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="question-timer" v-if="selectedMode === 'timed'">
+                <i class="fas fa-clock"></i>
+                {{ formatTime(remainingTime) }}
+              </div>
             </div>
-            
-            <div class="question-timer" v-if="selectedMode === 'timed'">
-              <i class="fas fa-clock"></i>
-              {{ formatTime(remainingTime) }}
-            </div>
-          </div>
             
             <div class="question-content">
               <h3 class="question-text">{{ currentQuestion.text }}</h3>
@@ -423,14 +439,16 @@
       </div>
       
       <template #rightSidebar>
-        <QuizRightSidebar 
-          :quiz-config="quizConfig"
-          :current-question="currentQuestion"
-          :quiz-started="quizStarted"
-          :statistics="quizStatistics"
-          @start-quiz="handleStartQuiz"
-          @reset-quiz="resetQuiz"
-        />
+        <div :class="{ 'sidebar-blurred': focusMode }">
+          <QuizRightSidebar 
+            :quiz-config="quizConfig"
+            :current-question="currentQuestion"
+            :quiz-started="quizStarted"
+            :statistics="quizStatistics"
+            @start-quiz="handleStartQuiz"
+            @reset-quiz="resetQuiz"
+          />
+        </div>
       </template>
     </PageLayout>
   </div>
@@ -444,6 +462,7 @@ import QuizRightSidebar from '@/components/layout/QuizRightSidebar.vue'
 // 响应式数据
 const quizStarted = ref(false)
 const currentQuestionIndex = ref(0)
+const focusMode = ref(false) // 新增：专注模式状态
 
 // 为不同题型使用不同的答案存储
 const selectedMultipleAnswer = ref<number[]>([])  // 多选题答案
@@ -1042,14 +1061,43 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
+// 新增：切换专注模式
+function toggleFocusMode() {
+  focusMode.value = !focusMode.value
+}
+
+// 新增：键盘快捷键支持
+function handleKeyPress(event: KeyboardEvent) {
+  if (!quizStarted.value) return
+  
+  switch(event.key) {
+    case 'f':
+    case 'F':
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault()
+        toggleFocusMode()
+      }
+      break
+    case 'Escape':
+      if (focusMode.value) {
+        focusMode.value = false
+      }
+      break
+  }
+}
+
 // 生命周期
 onMounted(() => {
   console.log('Quiz page mounted')
+  // 添加键盘监听
+  document.addEventListener('keydown', handleKeyPress)
 })
 
 // 组件卸载时清理定时器
 onUnmounted(() => {
   stopQuestionTimer()
+  // 移除键盘监听
+  document.removeEventListener('keydown', handleKeyPress)
 })
 </script>
 
@@ -1740,6 +1788,101 @@ onUnmounted(() => {
 /* 答题界面 */
 .quiz-interface {
   padding: 20px 0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.quiz-interface.focus-mode-active {
+  padding: 40px 0;
+}
+
+/* 专注模式背景模糊 */
+.quiz-background-blur {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 专注模式控制按钮 */
+.focus-mode-controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1001;
+}
+
+.focus-mode-toggle {
+  background: rgba(59, 130, 246, 0.9);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.focus-mode-toggle:hover {
+  background: rgba(37, 99, 235, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.focus-mode-toggle.active {
+  background: rgba(239, 68, 68, 0.9);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.focus-mode-toggle.active:hover {
+  background: rgba(220, 38, 38, 0.9);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* 专注模式时隐藏进度条 */
+.quiz-progress.focus-hidden {
+  opacity: 0.3;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+/* 专注模式增强的答题卡片 */
+.question-card.focus-enhanced {
+  position: relative;
+  z-index: 10;
+  transform: scale(1.05);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.98);
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  animation: focusPulse 4s ease-in-out infinite;
+}
+
+@keyframes focusPulse {
+  0%, 100% {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25), 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* 侧边栏模糊效果 */
+.sidebar-blurred {
+  filter: blur(3px);
+  opacity: 0.6;
+  pointer-events: none;
+  transition: all 0.3s ease;
 }
 
 .quiz-progress {
@@ -2084,6 +2227,114 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
+/* 专注模式样式 */
+.focus-mode-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.focus-mode-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.focus-mode-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+}
+
+.focus-mode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.focus-mode-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.focus-mode-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.focus-mode-close-btn:hover {
+  color: #333;
+}
+
+.focus-mode-body {
+  margin-bottom: 20px;
+}
+
+.focus-mode-text {
+  font-size: 18px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.focus-mode-footer {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.focus-mode-footer button {
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.focus-mode-footer button:hover {
+  background: rgba(37, 99, 235, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+}
+
+.focus-mode-footer button:disabled {
+  background: rgba(156, 163, 175, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .page-header {
@@ -2139,6 +2390,31 @@ onUnmounted(() => {
   
   .question-actions {
     flex-direction: column;
+  }
+  
+  /* 专注模式移动端优化 */
+  .focus-mode-controls {
+    top: 10px;
+    right: 10px;
+  }
+  
+  .focus-mode-toggle {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 20px;
+  }
+  
+  .focus-mode-toggle span {
+    display: none;
+  }
+  
+  .question-card.focus-enhanced {
+    transform: scale(1.02);
+    margin: 0 -10px;
+  }
+  
+  .quiz-interface.focus-mode-active {
+    padding: 20px 0;
   }
 }
 </style>
