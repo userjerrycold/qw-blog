@@ -138,13 +138,111 @@
           <input type="email" placeholder="电子邮箱" v-model="recoveryEmail">
         </div>
         
-        <button class="modal-btn" @click="sendVerificationCode" :disabled="!recoveryEmail || codeSent">
-          <i v-if="codeSent" class="fas fa-check"></i>
+        <button class="modal-btn" @click="sendVerificationCode" :disabled="!recoveryEmail || !isValidEmail(recoveryEmail) || codeSent">
+          <i v-if="codeSent" class="fas fa-spinner fa-spin"></i>
           <span v-if="!codeSent">发送验证码</span>
-          <span v-else>已发送</span>
+          <span v-else>发送中...</span>
         </button>
         
+        <div class="modal-footer">
+          已有账号? <a href="#" @click.prevent="closePasswordModal">返回登录</a>
+        </div>
+      </div>
+    </div>
 
+    <!-- 第二层：验证码输入弹窗 -->
+    <div class="modal-container" :class="{ active: showVerificationModal }">
+      <div class="modal-backdrop" @click="closeVerificationModal"></div>
+      <div class="verification-modal">
+        <div class="modal-header">
+          <h2>输入验证码</h2>
+          <div class="close-btn" @click="closeVerificationModal">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+        
+        <p>请输入发送到您邮箱 <strong>{{ recoveryEmail }}</strong> 的6位验证码</p>
+        
+        <div class="verification-group" style="margin: 30px 0;">
+          <input 
+            v-for="(code, index) in verificationCodes" 
+            :key="index"
+            type="text" 
+            class="verification-input" 
+            maxlength="1"
+            v-model="verificationCodes[index]"
+            @input="handleVerificationInput(index)"
+            @keydown="handleVerificationKeydown(index, $event)"
+            :ref="el => setVerificationInput(index, el)"
+          >
+        </div>
+        
+        <button class="modal-btn" @click="verifyCode" :disabled="!isVerificationCodeComplete || isVerifying">
+          <i v-if="isVerifying" class="fas fa-spinner fa-spin"></i>
+          <span v-if="!isVerifying">验证并继续</span>
+          <span v-else>验证中...</span>
+        </button>
+        
+        <div class="modal-footer">
+          <div class="resend-section">
+            没有收到验证码? 
+            <a href="#" @click.prevent="resendCode" :class="{ disabled: resendCountdown > 0 }">
+              <span v-if="resendCountdown > 0">{{ resendCountdown }}秒后重新发送</span>
+              <span v-else>重新发送</span>
+            </a>
+          </div>
+          <div class="back-section">
+            <a href="#" @click.prevent="backToEmailInput">返回上一步</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第三层：密码重置弹窗 -->
+    <div class="modal-container" :class="{ active: showResetPasswordModal }">
+      <div class="modal-backdrop" @click="closeResetPasswordModal"></div>
+      <div class="reset-password-modal">
+        <div class="modal-header">
+          <h2>重置密码</h2>
+          <div class="close-btn" @click="closeResetPasswordModal">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+        
+        <div class="password-instructions">
+          <h3>密码要求:</h3>
+          <ul>
+            <li :class="{ valid: passwordValidation.length }">至少8个字符</li>
+            <li :class="{ valid: passwordValidation.uppercase }">包含大写字母</li>
+            <li :class="{ valid: passwordValidation.lowercase }">包含小写字母</li>
+            <li :class="{ valid: passwordValidation.number }">至少包含一个数字</li>
+            <li :class="{ valid: passwordValidation.special }">至少包含一个特殊字符（如!@#$%）</li>
+          </ul>
+        </div>
+        
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" placeholder="新密码" v-model="newPassword" @input="validatePassword">
+        </div>
+        
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" placeholder="确认新密码" v-model="confirmNewPassword" @keyup.enter="resetPassword">
+        </div>
+        
+        <div v-if="newPassword && confirmNewPassword && newPassword !== confirmNewPassword" class="error-message">
+          两次输入的密码不一致
+        </div>
+        
+        <button class="modal-btn" @click="resetPassword" :disabled="!isPasswordValid || isResetting">
+          <i v-if="isResetting" class="fas fa-spinner fa-spin"></i>
+          <span v-if="!isResetting">重置密码</span>
+          <span v-else>重置中...</span>
+        </button>
+        
+        <div class="modal-footer">
+          <a href="#" @click.prevent="backToVerification">返回验证码输入</a>
+        </div>
       </div>
     </div>
   </div>
