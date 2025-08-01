@@ -25,14 +25,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { darkTheme } from 'naive-ui'
 import AppSidebar from './components/layout/AppSidebar.vue'
 
 const route = useRoute()
+const router = useRouter()
 const theme = ref(null)
-const appInitialized = ref(false)
 
 const themeOverrides = {
   common: {
@@ -40,19 +40,45 @@ const themeOverrides = {
   },
 }
 
-// 判断是否为登录页面 - 初始化时默认为true避免闪烁
+// 直接根据路由判断是否为登录页面
 const isLoginPage = computed(() => {
-  // 应用未初始化时，默认显示登录页面布局避免闪烁
-  if (!appInitialized.value) return true
   return route.path === '/login'
 })
 
-// 应用初始化完成
+// 控制body的CSS类
+const updateBodyClass = (isLogin: boolean) => {
+  if (isLogin) {
+    document.body.className = 'login-mode'
+  } else {
+    document.body.className = 'app-mode'
+  }
+}
+
+// 监听路由变化，同步更新body类
+watch(isLoginPage, (isLogin) => {
+  updateBodyClass(isLogin)
+}, { immediate: true })
+
+// 路由守卫 - 在更早的时机设置body类
+router.beforeResolve((to) => {
+  updateBodyClass(to.path === '/login')
+})
+
 onMounted(() => {
-  // 使用微任务确保路由已经解析完成
-  Promise.resolve().then(() => {
-    appInitialized.value = true
-  })
+  // 确保初始状态正确
+  updateBodyClass(isLoginPage.value)
+  
+  // 等待组件完全渲染后隐藏loading
+  setTimeout(() => {
+    const loadingElement = document.getElementById('app-loading')
+    if (loadingElement) {
+      loadingElement.classList.add('hidden')
+      // 完全移除loading元素
+      setTimeout(() => {
+        loadingElement.remove()
+      }, 500)
+    }
+  }, 800) // 适当延迟确保组件完全加载
 })
 </script>
 

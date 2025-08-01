@@ -614,6 +614,14 @@ onMounted(() => {
 
 .modal-container .input-group i {
   color: rgba(0, 0, 0, 0.7);
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* 强制清晰显示 */
+  font-style: normal;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .options {
@@ -813,6 +821,41 @@ onMounted(() => {
   -webkit-backdrop-filter: blur(20px);
 }
 
+/* 专门为图标元素添加反模糊保护 */
+.modal-container i {
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  isolation: isolate;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* 确保弹窗内的所有图标都不被模糊 */
+.modal-container .input-group i,
+.modal-container .close-btn i,
+.modal-container .modal-btn i,
+.modal-container .fas,
+.modal-container .fab,
+.modal-container i[class*="fa-"],
+.modal-container .fa-user,
+.modal-container .fa-envelope,
+.modal-container .fa-lock,
+.modal-container .fa-times,
+.modal-container .fa-spinner {
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+  /* 确保图标清晰锐利 */
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  /* 防止任何模糊效果 */
+  will-change: auto;
+  backface-visibility: visible;
+}
+
 /* 注册弹窗 */
 .register-modal,
 .password-modal {
@@ -882,6 +925,16 @@ onMounted(() => {
   font-size: 18px;
   cursor: pointer;
   transition: all 0.3s ease;
+  /* 确保按钮内图标清晰 */
+  isolation: isolate;
+}
+
+.close-btn i {
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .close-btn:hover {
