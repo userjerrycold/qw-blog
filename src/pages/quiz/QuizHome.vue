@@ -357,8 +357,9 @@
                       cx="30"
                       cy="30"
                       :stroke-dasharray="`${163} ${163}`"
-                      :stroke-dashoffset="163 * (1 - timerPercentage / 100)"
+                      :stroke-dashoffset="163 - (163 * timerPercentage / 100)"
                       stroke-linecap="round"
+                      pathLength="100"
                     />
                   </svg>
                   <div class="countdown-text">
@@ -979,6 +980,7 @@ function startQuiz() {
   if (canStart.value) {
     quizStarted.value = true
     currentQuestionIndex.value = 0
+    focusMode.value = true // 默认进入专注模式
     resetAnswers()
     startQuestionTimer() // 开始第一题倒计时
   }
@@ -1001,6 +1003,7 @@ function handleStartQuiz(config: any) {
 function resetQuiz() {
   quizStarted.value = false
   currentQuestionIndex.value = 0
+  focusMode.value = false // 重置时退出专注模式
   stopQuestionTimer() // 停止倒计时
   resetAnswers()
   selectedCategories.value = []
@@ -1043,6 +1046,7 @@ function skipQuestion() {
 
 function completeQuiz() {
   stopQuestionTimer() // 停止倒计时
+  focusMode.value = false // 完成时退出专注模式
   // 答题完成逻辑
   console.log('Quiz completed!')
 }
@@ -1796,14 +1800,16 @@ onUnmounted(() => {
   padding: 40px 0;
 }
 
-/* 专注模式背景模糊 - 性能优化版 */
+/* 专注模式背景模糊 - 深度高斯模糊版 */
 .quiz-background-blur {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 1;
   pointer-events: none;
   will-change: opacity;
