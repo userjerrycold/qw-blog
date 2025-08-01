@@ -65,6 +65,65 @@
                 </div>
               </div>
               
+              <!-- 知识领域选择 -->
+              <div class="config-section">
+                <h3 class="section-title">
+                  <i class="fas fa-book"></i>
+                  知识领域
+                  <span v-if="selectedCategories.length === 0" class="hint-text">请先选择题库分类</span>
+                </h3>
+                <div v-if="filteredSubjects.length > 0" class="subject-grid">
+                  <div 
+                    v-for="subject in filteredSubjects" 
+                    :key="subject.id"
+                    class="subject-card"
+                    :class="{ 'selected': selectedSubjects.includes(subject.id) }"
+                    @click="toggleSubject(subject.id)"
+                  >
+                    <div class="subject-icon">
+                      <i :class="subject.icon"></i>
+                    </div>
+                    <div class="subject-info">
+                      <h4 class="subject-name">{{ subject.name }}</h4>
+                      <p class="subject-desc">{{ subject.description }}</p>
+                      <div class="subject-stats">
+                        <span class="stat-item">
+                          <i class="fas fa-question-circle"></i>
+                          {{ subject.questionCount }} 题
+                        </span>
+                      </div>
+                      
+                      <!-- 子领域展示 -->
+                      <div v-if="subject.subDomains && subject.subDomains.length > 0" class="sub-domains">
+                        <div class="sub-domains-header">
+                          <i class="fas fa-sitemap"></i>
+                          <span>子领域：</span>
+                        </div>
+                        <div class="sub-domain-tags">
+                          <span 
+                            v-for="subDomain in subject.subDomains" 
+                            :key="subDomain.id"
+                            class="sub-domain-tag"
+                            :class="{ 'selected': selectedSubDomains.includes(subDomain.id) }"
+                            @click.stop="toggleSubDomain(subDomain.id)"
+                            :title="subDomain.description"
+                          >
+                            {{ subDomain.name }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="selectedSubjects.includes(subject.id)" class="selected-indicator">
+                      <i class="fas fa-check"></i>
+                    </div>
+                  </div>
+                </div>
+                <div v-else-if="selectedCategories.length > 0" class="empty-state">
+                  <i class="fas fa-info-circle"></i>
+                  <span>所选分类下暂无可用的知识领域</span>
+                </div>
+              </div>
+              
               <!-- 题目分类选择 -->
               <div class="config-section">
                 <h3 class="section-title">
@@ -87,40 +146,6 @@
                       <p class="type-desc">{{ type.description }}</p>
                     </div>
                     <div v-if="selectedQuestionTypes.includes(type.id)" class="selected-indicator">
-                      <i class="fas fa-check"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- 知识点选择 -->
-              <div class="config-section">
-                <h3 class="section-title">
-                  <i class="fas fa-book"></i>
-                  知识领域
-                </h3>
-                <div class="subject-grid">
-                  <div 
-                    v-for="subject in subjects" 
-                    :key="subject.id"
-                    class="subject-card"
-                    :class="{ 'selected': selectedSubjects.includes(subject.id) }"
-                    @click="toggleSubject(subject.id)"
-                  >
-                    <div class="subject-icon">
-                      <i :class="subject.icon"></i>
-                    </div>
-                    <div class="subject-info">
-                      <h4 class="subject-name">{{ subject.name }}</h4>
-                      <p class="subject-desc">{{ subject.description }}</p>
-                      <div class="subject-stats">
-                        <span class="stat-item">
-                          <i class="fas fa-question-circle"></i>
-                          {{ subject.questionCount }} 题
-                        </span>
-                      </div>
-                    </div>
-                    <div v-if="selectedSubjects.includes(subject.id)" class="selected-indicator">
                       <i class="fas fa-check"></i>
                     </div>
                   </div>
@@ -229,12 +254,16 @@
                   <span>{{ selectedCategories.length }} 个分类</span>
                 </div>
                 <div class="summary-item">
-                  <i class="fas fa-tags"></i>
-                  <span>{{ selectedQuestionTypes.length }} 种题型</span>
-                </div>
-                <div class="summary-item">
                   <i class="fas fa-book"></i>
                   <span>{{ selectedSubjects.length }} 个领域</span>
+                </div>
+                <div class="summary-item" v-if="selectedSubDomains.length > 0">
+                  <i class="fas fa-sitemap"></i>
+                  <span>{{ selectedSubDomains.length }} 个子领域</span>
+                </div>
+                <div class="summary-item">
+                  <i class="fas fa-tags"></i>
+                  <span>{{ selectedQuestionTypes.length }} 种题型</span>
                 </div>
                 <div class="summary-item">
                   <i class="fas fa-star"></i>
@@ -391,15 +420,16 @@ const selectedBooleanAnswer = ref<boolean | null>(null)  // 判断题答案
 const selectedTextAnswer = ref('')  // 填空题/简答题答案
 
 const remainingTime = ref(300) // 5分钟
-const selectedCategories = ref<number[]>([])  // 新增：选中的题库分类
-const selectedSubjects = ref<number[]>([])
+const selectedCategories = ref<number[]>([])  // 选中的题库分类
+const selectedSubjects = ref<number[]>([])  // 选中的知识领域
+const selectedSubDomains = ref<number[]>([])  // 新增：选中的子领域
 const selectedQuestionTypes = ref<number[]>([])  // 选中的题目类型
 const minDifficulty = ref(1)
 const maxDifficulty = ref(5)
 const questionCount = ref(20)
 const selectedMode = ref('normal')
 
-// 题库分类（将原来的quizTypes整合到配置中）
+// 题库分类
 const categories = [
   {
     id: 1,
@@ -433,7 +463,7 @@ const categories = [
   }
 ]
 
-// 题目分类（按照优化建议添加）
+// 题目分类
 const questionTypes = [
   {
     id: 1,
@@ -473,103 +503,196 @@ const questionTypes = [
   }
 ]
 
-// 知识领域（按照优化建议扩展）
+// 知识领域（重新设计，增加分类关联和子领域）
 const subjects = [
+  // Java基础分类
   {
     id: 1,
-    name: 'Java基础',
-    description: '面向对象、数据类型、流程控制、异常处理',
+    name: 'Java基础语法',
+    categoryId: 1,
+    description: '数据类型、流程控制、面向对象基础',
     icon: 'fab fa-java',
-    questionCount: 120,
-    color: '#f89820'
+    questionCount: 80,
+    color: '#f89820',
+    subDomains: [
+      { id: 1, name: '数据类型', description: '基本类型、包装类、类型转换' },
+      { id: 2, name: '流程控制', description: 'if/for/while/switch语句' },
+      { id: 3, name: '面向对象', description: '类、对象、封装、继承、多态' },
+      { id: 4, name: '异常机制', description: 'try-catch-finally、自定义异常' }
+    ]
   },
   {
     id: 2,
     name: 'Java集合框架',
+    categoryId: 1,
     description: 'List、Set、Map、Iterator、Collections',
     icon: 'fas fa-layer-group',
-    questionCount: 85,
-    color: '#10b981'
+    questionCount: 65,
+    color: '#10b981',
+    subDomains: [
+      { id: 5, name: 'List集合', description: 'ArrayList、LinkedList、Vector' },
+      { id: 6, name: 'Set集合', description: 'HashSet、TreeSet、LinkedHashSet' },
+      { id: 7, name: 'Map集合', description: 'HashMap、TreeMap、LinkedHashMap' },
+      { id: 8, name: '并发集合', description: 'ConcurrentHashMap、CopyOnWriteArrayList' }
+    ]
   },
   {
     id: 3,
     name: 'Java多线程',
+    categoryId: 1,
     description: 'Thread、synchronized、volatile、线程池、并发工具',
     icon: 'fas fa-cogs',
-    questionCount: 95,
-    color: '#ef4444'
+    questionCount: 75,
+    color: '#ef4444',
+    subDomains: [
+      { id: 9, name: '线程基础', description: 'Thread类、Runnable接口、线程状态' },
+      { id: 10, name: '同步机制', description: 'synchronized、volatile、Lock' },
+      { id: 11, name: '线程池', description: 'Executor框架、ThreadPoolExecutor' },
+      { id: 12, name: '并发工具', description: 'CountDownLatch、Semaphore、CyclicBarrier' }
+    ]
   },
   {
     id: 4,
     name: 'JVM与性能调优',
+    categoryId: 1,
     description: 'JVM结构、类加载、垃圾回收、性能调优',
     icon: 'fas fa-memory',
-    questionCount: 78,
-    color: '#8b5cf6'
+    questionCount: 60,
+    color: '#8b5cf6',
+    subDomains: [
+      { id: 13, name: 'JVM结构', description: '堆、栈、方法区、程序计数器' },
+      { id: 14, name: '类加载', description: '类加载器、双亲委派模型' },
+      { id: 15, name: '垃圾回收', description: 'GC算法、收集器、调优参数' },
+      { id: 16, name: '性能调优', description: '内存分析、性能监控工具' }
+    ]
   },
+  
+  // 数据库分类
   {
     id: 5,
-    name: 'Spring框架',
-    description: 'IoC、AOP、SpringBoot、SpringMVC',
-    icon: 'fas fa-leaf',
-    questionCount: 105,
-    color: '#6db33f'
-  },
-  {
-    id: 6,
     name: 'MySQL数据库',
+    categoryId: 2,
     description: '索引、事务、锁机制、查询优化、主从复制',
     icon: 'fas fa-database',
     questionCount: 90,
-    color: '#00758f'
+    color: '#00758f',
+    subDomains: [
+      { id: 17, name: '基础语法', description: 'DDL、DML、DCL语句' },
+      { id: 18, name: '索引优化', description: 'B+树、聚簇索引、查询优化' },
+      { id: 19, name: '事务处理', description: 'ACID、隔离级别、锁机制' },
+      { id: 20, name: '主从复制', description: '复制原理、读写分离、分库分表' }
+    ]
   },
   {
-    id: 7,
+    id: 6,
     name: 'Redis缓存',
+    categoryId: 2,
     description: '数据类型、持久化、集群、缓存策略',
     icon: 'fas fa-memory',
-    questionCount: 65,
-    color: '#dc382d'
+    questionCount: 55,
+    color: '#dc382d',
+    subDomains: [
+      { id: 21, name: '数据结构', description: 'String、List、Set、Hash、ZSet' },
+      { id: 22, name: '持久化', description: 'RDB、AOF、混合持久化' },
+      { id: 23, name: '集群部署', description: '主从复制、哨兵、集群' },
+      { id: 24, name: '缓存策略', description: '缓存穿透、击穿、雪崩' }
+    ]
+  },
+  
+  // 中间件分类
+  {
+    id: 7,
+    name: 'Spring框架',
+    categoryId: 3,
+    description: 'IoC、AOP、SpringBoot、SpringMVC',
+    icon: 'fas fa-leaf',
+    questionCount: 85,
+    color: '#6db33f',
+    subDomains: [
+      { id: 25, name: 'IoC容器', description: '依赖注入、Bean生命周期' },
+      { id: 26, name: 'AOP切面', description: '切点、通知、代理模式' },
+      { id: 27, name: 'SpringBoot', description: '自动配置、Starter、监控' },
+      { id: 28, name: 'SpringMVC', description: '请求处理、视图解析、拦截器' }
+    ]
   },
   {
     id: 8,
     name: 'Spring Cloud微服务',
+    categoryId: 3,
     description: '注册中心、网关、熔断、配置中心、链路追踪',
     icon: 'fas fa-cloud',
-    questionCount: 75,
-    color: '#0ea5e9'
+    questionCount: 70,
+    color: '#0ea5e9',
+    subDomains: [
+      { id: 29, name: '服务发现', description: 'Eureka、Nacos、Consul' },
+      { id: 30, name: '服务网关', description: 'Gateway、路由、过滤器' },
+      { id: 31, name: '熔断限流', description: 'Hystrix、Sentinel、Resilience4j' },
+      { id: 32, name: '配置管理', description: '配置中心、动态配置、加密' }
+    ]
   },
   {
     id: 9,
     name: '消息队列',
+    categoryId: 3,
     description: 'Kafka、RabbitMQ、消息可靠性、顺序消息',
     icon: 'fas fa-exchange-alt',
-    questionCount: 60,
-    color: '#f59e0b'
+    questionCount: 50,
+    color: '#f59e0b',
+    subDomains: [
+      { id: 33, name: '消息模型', description: '发布订阅、点对点、主题分区' },
+      { id: 34, name: '可靠性', description: '消息确认、持久化、重试机制' },
+      { id: 35, name: '性能优化', description: '批量处理、压缩、分区策略' },
+      { id: 36, name: '监控运维', description: '集群管理、监控告警、故障恢复' }
+    ]
   },
+  
+  // 系统设计分类
   {
     id: 10,
     name: '分布式系统',
+    categoryId: 4,
     description: '分布式事务、一致性、CAP理论、分布式锁',
     icon: 'fas fa-sitemap',
-    questionCount: 55,
-    color: '#84cc16'
+    questionCount: 45,
+    color: '#84cc16',
+    subDomains: [
+      { id: 37, name: '分布式理论', description: 'CAP、BASE、一致性算法' },
+      { id: 38, name: '分布式事务', description: '2PC、TCC、SAGA、消息事务' },
+      { id: 39, name: '分布式锁', description: 'Redis锁、Zookeeper锁、数据库锁' },
+      { id: 40, name: '负载均衡', description: '算法策略、健康检查、故障转移' }
+    ]
   },
   {
     id: 11,
-    name: '算法与数据结构',
-    description: '排序、查找、树、图、动态规划',
-    icon: 'fas fa-project-diagram',
-    questionCount: 80,
-    color: '#06b6d4'
+    name: '高并发架构',
+    categoryId: 4,
+    description: '秒杀系统、限流策略、缓存架构、异步处理',
+    icon: 'fas fa-tachometer-alt',
+    questionCount: 40,
+    color: '#ec4899',
+    subDomains: [
+      { id: 41, name: '限流策略', description: '令牌桶、漏桶、滑动窗口' },
+      { id: 42, name: '缓存架构', description: '多级缓存、缓存更新、一致性' },
+      { id: 43, name: '异步处理', description: '消息队列、事件驱动、CQRS' },
+      { id: 44, name: '系统监控', description: '链路追踪、性能监控、告警机制' }
+    ]
   },
+  
+  // 算法分类
   {
     id: 12,
-    name: '系统设计',
-    description: '高并发、高可用、秒杀系统、短链接系统',
-    icon: 'fas fa-drafting-compass',
-    questionCount: 45,
-    color: '#ec4899'
+    name: '算法与数据结构',
+    categoryId: 5,
+    description: '排序、查找、树、图、动态规划',
+    icon: 'fas fa-project-diagram',
+    questionCount: 65,
+    color: '#06b6d4',
+    subDomains: [
+      { id: 45, name: '基础数据结构', description: '数组、链表、栈、队列' },
+      { id: 46, name: '树结构', description: '二叉树、AVL树、红黑树、B+树' },
+      { id: 47, name: '图算法', description: 'DFS、BFS、最短路径、最小生成树' },
+      { id: 48, name: '动态规划', description: '背包问题、最长子序列、状态转移' }
+    ]
   }
 ]
 
@@ -595,14 +718,14 @@ const answerModes = [
   }
 ]
 
-// 当前题目模拟数据（扩展属性）
+// 当前题目模拟数据
 const currentQuestion = ref({
   id: 1,
   text: 'Java中String类的特点是什么？',
   type: '单选题',
   difficulty: 3,
-  tags: ['Java基础', 'String类'],  // 新增：知识点标签
-  module: 'Java基础',  // 新增：所属模块
+  tags: ['Java基础', 'String类'],
+  module: 'Java基础',
   options: [
     'String是可变的',
     'String是不可变的',
@@ -613,6 +736,13 @@ const currentQuestion = ref({
 })
 
 // 计算属性
+const filteredSubjects = computed(() => {
+  if (selectedCategories.value.length === 0) {
+    return []
+  }
+  return subjects.filter(subject => selectedCategories.value.includes(subject.categoryId))
+})
+
 const canStart = computed(() => {
   return selectedCategories.value.length > 0 &&
          selectedSubjects.value.length > 0 && 
@@ -647,8 +777,9 @@ const totalQuestions = computed(() => {
 })
 
 const quizConfig = computed(() => ({
-  categories: selectedCategories.value,  // 新增
+  categories: selectedCategories.value,
   subjects: selectedSubjects.value,
+  subDomains: selectedSubDomains.value,  // 新增
   questionTypes: selectedQuestionTypes.value,
   difficulty: { min: minDifficulty.value, max: maxDifficulty.value },
   count: questionCount.value,
@@ -658,7 +789,7 @@ const quizConfig = computed(() => ({
 const quizStatistics = computed(() => ({
   total: questionCount.value,
   answered: currentQuestionIndex.value,
-  correct: 0, // 这里需要根据实际答题情况计算
+  correct: 0,
   timeSpent: 0
 }))
 
@@ -667,6 +798,15 @@ function toggleCategory(id: number) {
   const index = selectedCategories.value.indexOf(id)
   if (index > -1) {
     selectedCategories.value.splice(index, 1)
+    // 当取消选择分类时，同时清空相关的知识领域和子领域
+    const relatedSubjects = subjects.filter(s => s.categoryId === id).map(s => s.id)
+    selectedSubjects.value = selectedSubjects.value.filter(subjectId => !relatedSubjects.includes(subjectId))
+    
+    // 清空相关子领域
+    const relatedSubDomains = subjects
+      .filter(s => s.categoryId === id)
+      .flatMap(s => s.subDomains?.map(sd => sd.id) || [])
+    selectedSubDomains.value = selectedSubDomains.value.filter(subDomainId => !relatedSubDomains.includes(subDomainId))
   } else {
     selectedCategories.value.push(id)
   }
@@ -685,8 +825,23 @@ function toggleSubject(id: number) {
   const index = selectedSubjects.value.indexOf(id)
   if (index > -1) {
     selectedSubjects.value.splice(index, 1)
+    // 当取消选择知识领域时，同时清空相关的子领域
+    const subject = subjects.find(s => s.id === id)
+    if (subject && subject.subDomains) {
+      const subDomainIds = subject.subDomains.map(sd => sd.id)
+      selectedSubDomains.value = selectedSubDomains.value.filter(subDomainId => !subDomainIds.includes(subDomainId))
+    }
   } else {
     selectedSubjects.value.push(id)
+  }
+}
+
+function toggleSubDomain(id: number) {
+  const index = selectedSubDomains.value.indexOf(id)
+  if (index > -1) {
+    selectedSubDomains.value.splice(index, 1)
+  } else {
+    selectedSubDomains.value.push(id)
   }
 }
 
@@ -727,7 +882,7 @@ function startQuiz() {
 function startQuickQuiz() {
   // 快速开始，使用默认配置
   selectedCategories.value = [1, 2] // 默认选择Java基础和数据库
-  selectedSubjects.value = [1, 2] // 默认选择前两个科目
+  selectedSubjects.value = [1, 5] // 默认选择Java基础语法和MySQL数据库
   selectedQuestionTypes.value = [1, 2] // 默认选择单选题和多选题
   startQuiz()
 }
@@ -744,6 +899,7 @@ function resetQuiz() {
   resetAnswers()
   selectedCategories.value = []
   selectedSubjects.value = []
+  selectedSubDomains.value = []
   selectedQuestionTypes.value = []
 }
 
@@ -949,6 +1105,26 @@ onMounted(() => {
   gap: 8px;
 }
 
+.hint-text {
+  font-size: 12px;
+  color: #999;
+  font-weight: 400;
+  margin-left: 8px;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
 /* 题库分类选择样式 */
 .category-grid {
   display: grid;
@@ -1095,7 +1271,7 @@ onMounted(() => {
 /* 知识领域选择 */
 .subject-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
 }
 
@@ -1109,7 +1285,7 @@ onMounted(() => {
   transition: all 0.3s ease;
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
 }
 
@@ -1157,6 +1333,7 @@ onMounted(() => {
 .subject-stats {
   display: flex;
   gap: 12px;
+  margin-bottom: 12px;
 }
 
 .stat-item {
@@ -1165,6 +1342,52 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* 子领域样式 */
+.sub-domains {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sub-domains-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.sub-domain-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sub-domain-tag {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.sub-domain-tag:hover {
+  background: rgba(99, 102, 241, 0.15);
+  transform: translateY(-1px);
+}
+
+.sub-domain-tag.selected {
+  background: rgba(99, 102, 241, 0.9);
+  color: white;
+  border-color: rgba(99, 102, 241, 0.9);
 }
 
 .selected-indicator {
