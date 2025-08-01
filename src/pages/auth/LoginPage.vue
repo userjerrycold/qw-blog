@@ -193,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 
@@ -211,6 +211,10 @@ const showRegisterModal = ref(false)
 const showPasswordModal = ref(false)
 const showVerification = ref(false)
 const codeSent = ref(false)
+
+// 粒子动画控制
+const particlesContainer = ref<HTMLElement>()
+const isModalOpen = computed(() => showRegisterModal.value || showPasswordModal.value)
 
 const loginForm = reactive({
   username: '',
@@ -410,6 +414,19 @@ const createParticles = () => {
     
     particlesRef.value.appendChild(particle)
   }
+  
+  particlesContainer.value = particlesRef.value
+}
+
+// 控制粒子动画
+const toggleParticles = (pause: boolean) => {
+  if (!particlesContainer.value) return
+  
+  const particles = particlesContainer.value.querySelectorAll('.particle')
+  particles.forEach((particle: Element) => {
+    const htmlParticle = particle as HTMLElement
+    htmlParticle.style.animationPlayState = pause ? 'paused' : 'running'
+  })
 }
 
 // 创建鼠标涟漪效果
@@ -437,6 +454,11 @@ const createRippleEffect = () => {
     }
   })
 }
+
+// 监听弹窗状态变化
+watch(isModalOpen, (isOpen: boolean) => {
+  toggleParticles(isOpen)
+})
 
 onMounted(() => {
   createParticles()
@@ -571,6 +593,27 @@ onMounted(() => {
 
 .input-group input::placeholder {
   color: rgba(0, 0, 0, 0.4);
+}
+
+/* 弹窗内的输入框样式增强 */
+.modal-container .input-group input {
+  background: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-container .input-group input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #5E81F4;
+  box-shadow: 0 0 0 3px rgba(94, 129, 244, 0.2);
+}
+
+.modal-container .input-group input::placeholder {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.modal-container .input-group i {
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .options {
@@ -765,8 +808,9 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 /* 注册弹窗 */
@@ -776,13 +820,13 @@ onMounted(() => {
   z-index: 101;
   width: 450px;
   padding: 40px;
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(15px);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow: 
-    0 25px 50px rgba(0, 0, 0, 0.2), 
-    inset 0 0 25px rgba(255, 255, 255, 0.65);
+    0 25px 50px rgba(0, 0, 0, 0.3), 
+    inset 0 0 25px rgba(255, 255, 255, 0.8);
   transform: translateY(30px);
   opacity: 0;
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
@@ -816,9 +860,9 @@ onMounted(() => {
 }
 
 .modal-header h2 {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 1.8rem;
-  color: rgba(0, 0, 0, 0.8);
+  color: rgba(0, 0, 0, 0.9);
   background: linear-gradient(45deg, #5E81F4, #8464F6);
   -webkit-background-clip: text;
   background-clip: text;
@@ -831,18 +875,19 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
   font-size: 18px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 1);
   transform: rotate(90deg);
+  color: rgba(0, 0, 0, 1);
 }
 
 .terms {
@@ -850,7 +895,7 @@ onMounted(() => {
   align-items: center;
   margin: 20px 0;
   font-size: 14px;
-  color: rgba(0, 0, 0, 0.7);
+  color: rgba(0, 0, 0, 0.8);
 }
 
 .terms input {
@@ -889,10 +934,11 @@ onMounted(() => {
 .password-instructions {
   margin: 20px 0;
   padding: 15px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 12px;
   font-size: 14px;
-  color: rgba(0, 0, 0, 0.7);
+  color: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .password-instructions h3 {
@@ -911,7 +957,7 @@ onMounted(() => {
 .resend-code {
   text-align: center;
   margin-top: 20px;
-  color: rgba(0, 0, 0, 0.7);
+  color: rgba(0, 0, 0, 0.8);
   font-size: 14px;
 }
 
