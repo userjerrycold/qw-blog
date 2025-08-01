@@ -357,9 +357,8 @@
                       cx="30"
                       cy="30"
                       :stroke-dasharray="`${163} ${163}`"
-                      :stroke-dashoffset="163 - (163 * timerPercentage / 100)"
+                      :stroke-dashoffset="163 * (1 - timerPercentage / 100)"
                       stroke-linecap="round"
-                      pathLength="100"
                     />
                   </svg>
                   <div class="countdown-text">
@@ -839,6 +838,7 @@ const questionTimeLimit = computed(() => {
 // 新增：倒计时百分比（用于圆圈进度）
 const timerPercentage = computed(() => {
   if (questionTimeLimit.value === 0) return 0
+  // 计算剩余时间的百分比，用于顺时针流失效果
   return (questionTimer.value / questionTimeLimit.value) * 100
 })
 
@@ -2147,7 +2147,7 @@ onUnmounted(() => {
 }
 
 .countdown-ring {
-  transform: rotate(-90deg);
+  transform: rotate(-90deg) scaleY(-1);
 }
 
 .countdown-ring-bg {
