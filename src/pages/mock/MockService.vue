@@ -306,7 +306,7 @@ import PageLayout from '@/components/layout/PageLayout.vue'
 // @ts-ignore - 解决MockRightSidebar没有默认导出的问题
 import MockRightSidebar from '@/components/layout/MockRightSidebar.vue'
 import QRCode from 'qrcode'
-import axios from 'axios'
+import http from '@/services/api'
 
 interface MockConfig {
   id: string
@@ -719,7 +719,7 @@ async function deleteMock(id: string) {
     const keyword = extractKeywordFromEndpoint(mock.endpoint)
     
     try {
-      const response = await axios.post('/api/prepare/remove', {
+      const response = await http.post('/prepare/remove', {
         keyword: keyword,
         data: "",
         timeout: 0
@@ -759,7 +759,7 @@ async function fetchMockData() {
   isLoading.value = true
   try {
     // 使用相对路径，由Vite代理处理
-    const response = await axios.get('/api/prepare/queryAll')
+    const response = await http.get('/prepare/queryAll')
     const { code, msg, data } = response.data
     
     if (code === 200 && Array.isArray(data)) {
@@ -942,7 +942,7 @@ async function handleEditSubmit() {
     // 准备API请求参数
     const keyword = extractKeywordFromEndpoint(editForm.endpoint)
     
-         const response = await axios.post('/api/prepare/update', {
+         const response = await http.post('/prepare/update', {
       keyword: keyword,
       data: editForm.response,
       timeout: editForm.timeout, // 直接使用毫秒值
@@ -1027,7 +1027,7 @@ async function handleSubmitFromSidebar(formData: Partial<MockConfig> & { success
       const categoryLabel = categoryOptions.find(opt => opt.value === category)?.label || '默认'
       
       // 调用API
-      const response = await axios.post('/api/prepare/save', {
+      const response = await http.post('/prepare/save', {
         keyword: keyword,
         data: formData.response || '',
         timeout: formData.timeout || 0, // 直接使用毫秒值

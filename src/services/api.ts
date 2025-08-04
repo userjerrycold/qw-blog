@@ -5,6 +5,42 @@ const http = axios.create({
   timeout: 10000,
 })
 
+// 请求拦截器 - 自动添加JWT Token
+http.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// 响应拦截器 - 处理token过期等情况
+http.interceptors.response.use(
+  (response) => {
+    return response
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token过期，清除本地存储并跳转到登录页
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      localStorage.removeItem('tokenExpires')
+      
+      // 如果不在登录页，则跳转到登录页
+      if (window.location.pathname !== '/auth/login') {
+        window.location.href = '/auth/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 export interface Post {
   id: number
   title: string
