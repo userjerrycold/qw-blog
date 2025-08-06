@@ -28,17 +28,22 @@
         <div class="input-group" :class="{ error: errors.password }">
           <i class="fas fa-lock"></i>
           <input 
-            type="password" 
+            :type="showPassword ? 'text' : 'password'" 
             placeholder="密码" 
             v-model="loginForm.password"
             @input="clearError('password')"
           >
+          <div class="password-toggle" @click="togglePasswordVisibility('login')">
+            <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </div>
           <div class="error-message">{{ errors.password }}</div>
         </div>
         
         <div class="options">
-          <label class="remember">
-            <input type="checkbox" v-model="loginForm.remember"> 记住我
+          <label class="remember" for="remember-checkbox">
+            <input type="checkbox" id="remember-checkbox" v-model="loginForm.remember">
+            <span class="checkmark"></span>
+            <span class="remember-text">记住我</span>
           </label>
           <a href="#" class="forgot-password" @click.prevent="showPasswordModal = true">忘记密码?</a>
         </div>
@@ -97,12 +102,28 @@
           
           <div class="input-group">
             <i class="fas fa-lock"></i>
-            <input type="password" placeholder="密码" v-model="registerForm.password" required>
+            <input 
+              :type="showRegisterPassword ? 'text' : 'password'" 
+              placeholder="密码" 
+              v-model="registerForm.password" 
+              required
+            >
+            <div class="password-toggle" @click="togglePasswordVisibility('register')">
+              <i :class="showRegisterPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </div>
           </div>
           
           <div class="input-group">
             <i class="fas fa-lock"></i>
-            <input type="password" placeholder="确认密码" v-model="registerForm.confirmPassword" required>
+            <input 
+              :type="showRegisterConfirmPassword ? 'text' : 'password'" 
+              placeholder="确认密码" 
+              v-model="registerForm.confirmPassword" 
+              required
+            >
+            <div class="password-toggle" @click="togglePasswordVisibility('registerConfirm')">
+              <i :class="showRegisterConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </div>
           </div>
           
           <div class="terms">
@@ -225,12 +246,28 @@
         
         <div class="input-group">
           <i class="fas fa-lock"></i>
-          <input type="password" placeholder="新密码" v-model="newPassword" @input="validatePassword">
+          <input 
+            :type="showNewPassword ? 'text' : 'password'" 
+            placeholder="新密码" 
+            v-model="newPassword" 
+            @input="validatePassword"
+          >
+          <div class="password-toggle" @click="togglePasswordVisibility('new')">
+            <i :class="showNewPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </div>
         </div>
         
         <div class="input-group">
           <i class="fas fa-lock"></i>
-          <input type="password" placeholder="确认新密码" v-model="confirmNewPassword" @keyup.enter="resetPassword">
+          <input 
+            :type="showConfirmNewPassword ? 'text' : 'password'" 
+            placeholder="确认新密码" 
+            v-model="confirmNewPassword" 
+            @keyup.enter="resetPassword"
+          >
+          <div class="password-toggle" @click="togglePasswordVisibility('confirmNew')">
+            <i :class="showConfirmNewPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </div>
         </div>
         
         <div v-if="newPassword && confirmNewPassword && newPassword !== confirmNewPassword" class="error-message">
@@ -279,6 +316,13 @@ const isLoading = ref(false)
 const loginSuccess = ref(false)
 const isRegistering = ref(false)
 const showRegisterModal = ref(false)
+
+// 密码显示控制
+const showPassword = ref(false)
+const showRegisterPassword = ref(false)
+const showRegisterConfirmPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmNewPassword = ref(false)
 // 忘记密码三层级弹窗状态
 const showPasswordModal = ref(false)      // 第一层：邮箱输入
 const showVerificationModal = ref(false)  // 第二层：验证码输入
@@ -368,6 +412,9 @@ const handleLogin = async () => {
       loginSuccess.value = true
       message.success('登录成功！')
       
+      // 保存登录信息（如果勾选了记住我）
+      saveLoginInfo()
+      
       // 延迟跳转
       setTimeout(() => {
         router.push('/tools')
@@ -435,6 +482,12 @@ const handleRegister = async () => {
       message.success('注册成功！')
       showRegisterModal.value = false
       
+      // 自动填充登录信息并保存
+      loginForm.username = registerForm.username
+      loginForm.password = registerForm.password
+      loginForm.remember = true
+      saveLoginInfo()
+      
       // 跳转到主页
       setTimeout(() => {
         router.push('/tools')
@@ -467,6 +520,27 @@ const handleRegister = async () => {
 
 const socialLogin = (provider: string) => {
   message.info(`${provider} 登录功能开发中...`)
+}
+
+// 切换密码可见性
+const togglePasswordVisibility = (type: string) => {
+  switch (type) {
+    case 'login':
+      showPassword.value = !showPassword.value
+      break
+    case 'register':
+      showRegisterPassword.value = !showRegisterPassword.value
+      break
+    case 'registerConfirm':
+      showRegisterConfirmPassword.value = !showRegisterConfirmPassword.value
+      break
+    case 'new':
+      showNewPassword.value = !showNewPassword.value
+      break
+    case 'confirmNew':
+      showConfirmNewPassword.value = !showConfirmNewPassword.value
+      break
+  }
 }
 
 // 新的验证码和密码重置状态
@@ -669,10 +743,20 @@ const resetPassword = async () => {
     const response = await resetPasswordAPI(params)
     
     if (response.data.code === 200) {
-      message.success('密码重置成功！请使用新密码登录')
+      message.success('密码重置成功！')
       
-      // 关闭所有弹窗，清空表单
+      // 从邮箱中提取用户名（如果邮箱格式），否则使用邮箱作为用户名
+      const username = recoveryEmail.value.includes('@') 
+        ? recoveryEmail.value.split('@')[0] 
+        : recoveryEmail.value
+      
+      // 关闭所有弹窗
       closeAllModals()
+      
+      // 填充新的登录信息
+      fillLoginInfo(username, newPassword.value)
+      
+      // 清空表单
       resetForms()
     } else {
       message.error(response.data.msg || '密码重置失败')
@@ -756,6 +840,55 @@ const setVerificationInput = (index: number, el: any) => {
   }
 }
 
+// 记住我功能 - 保存和恢复登录信息
+const saveLoginInfo = () => {
+  if (loginForm.remember) {
+    localStorage.setItem('rememberedUsername', loginForm.username)
+    localStorage.setItem('rememberedPassword', loginForm.password)
+    localStorage.setItem('rememberMe', 'true')
+  } else {
+    localStorage.removeItem('rememberedUsername')
+    localStorage.removeItem('rememberedPassword')
+    localStorage.removeItem('rememberMe')
+  }
+}
+
+const loadSavedLoginInfo = () => {
+  const rememberMe = localStorage.getItem('rememberMe') === 'true'
+  const savedUsername = localStorage.getItem('rememberedUsername')
+  const savedPassword = localStorage.getItem('rememberedPassword')
+  
+  if (rememberMe && savedUsername) {
+    loginForm.username = savedUsername
+    loginForm.remember = true
+    
+    if (savedPassword) {
+      loginForm.password = savedPassword
+    }
+  }
+}
+
+// 自动填充并登录功能
+const autoFillAndLogin = async (username: string, password: string) => {
+  loginForm.username = username
+  loginForm.password = password
+  loginForm.remember = true
+  
+  // 延迟一点时间让用户看到自动填充，然后自动登录
+  setTimeout(async () => {
+    message.info('正在自动登录...')
+    await handleLogin()
+  }, 800)
+}
+
+// 仅填充登录信息而不自动登录
+const fillLoginInfo = (username: string, password: string) => {
+  loginForm.username = username
+  loginForm.password = password
+  loginForm.remember = true
+  message.success('登录信息已自动填充，您可以直接点击登录')
+}
+
 // 创建背景粒子
 const createParticles = () => {
   if (!particlesRef.value) return
@@ -833,6 +966,7 @@ watch(isModalOpen, (isOpen: boolean) => {
 onMounted(() => {
   createParticles()
   createRippleEffect()
+  loadSavedLoginInfo() // 加载保存的登录信息
 })
 </script>
 
@@ -988,6 +1122,41 @@ onMounted(() => {
   color: rgba(0, 0, 0, 0.4);
 }
 
+/* 密码切换按钮 */
+.password-toggle {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 16px;
+  transition: all 0.3s ease;
+  z-index: 10;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.password-toggle:hover {
+  color: #5E81F4;
+  background: rgba(94, 129, 244, 0.1);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.password-toggle i {
+  /* 确保图标清晰显示 */
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 /* 弹窗内的输入框样式增强 */
 .modal-container .input-group input {
   background: rgba(255, 255, 255, 0.8);
@@ -1040,15 +1209,74 @@ onMounted(() => {
   color: rgba(0, 0, 0, 0.7);
 }
 
+/* 自定义记住我复选框 */
 .remember {
   display: flex;
   align-items: center;
   cursor: pointer;
+  user-select: none;
+  position: relative;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.7);
+  transition: all 0.3s ease;
 }
 
-.remember input {
-  margin-right: 8px;
-  accent-color: #5E81F4;
+.remember:hover {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.remember input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  margin-right: 10px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.remember:hover .checkmark {
+  border-color: #5E81F4;
+  background: rgba(94, 129, 244, 0.1);
+}
+
+.remember input:checked ~ .checkmark {
+  background: linear-gradient(45deg, #5E81F4, #8464F6);
+  border-color: #5E81F4;
+  box-shadow: 0 2px 8px rgba(94, 129, 244, 0.3);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.remember input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.remember-text {
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .forgot-password {
