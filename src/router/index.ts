@@ -57,6 +57,10 @@ const routes: RouteRecordRaw[] = [
     path: '/quiz',
     component: () => import('@/pages/quiz/QuizHome.vue'),
   },
+  {
+    path: '/wendao',
+    component: () => import('@/pages/wendao/WendaoHome.vue'),
+  },
 ]
 
 const router = createRouter({

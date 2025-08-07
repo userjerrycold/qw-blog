@@ -37,6 +37,7 @@ import docsSvg from '@/assets/docs.svg'
 import serverSvg from '@/assets/server.svg'
 import beiwangluSvg from '@/assets/beiwanglu.svg'
 import questionSvg from '@/assets/question.svg'
+import wendaoSvg from '@/assets/wendao.svg'
 
 const collapsed = ref(false)
 
@@ -48,6 +49,11 @@ const router = useRouter()
 const route = useRoute()
 
 const menuOptions: MenuOption[] = [
+  {
+    label: '问道',
+    key: '/wendao',
+    icon: () => h('img', { src: wendaoSvg, class: 'w-4 h-4' }),
+  },
   {
     label: '服务模拟',
     key: '/mock',
@@ -93,6 +99,7 @@ const menuThemeOverrides = {
 }
 
 const activeKey = computed(() => {
+  if (route.path.startsWith('/wendao')) return '/wendao'
   if (route.path.startsWith('/tools')) return '/tools'
   if (route.path.startsWith('/docs')) return '/docs'
   if (route.path.startsWith('/mock')) return '/mock'
