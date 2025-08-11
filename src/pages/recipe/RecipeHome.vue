@@ -126,12 +126,88 @@
                       <button class="action-btn bookmark-btn" :class="{ active: recipe.isBookmarked }" @click.stop="toggleBookmark(recipe)">
                         <i class="fas fa-bookmark"></i>
                       </button>
+                      <button class="action-btn comment-btn" :class="{ active: recipe.commentsExpanded }" @click.stop="toggleComments(recipe)">
+                        <i class="fas fa-comment"></i>
+                        <span v-if="recipe.commentsCount && recipe.commentsCount > 0" class="comment-count">{{ recipe.commentsCount }}</span>
+                      </button>
                       <button class="action-btn edit-btn" @click.stop="editRecipe(recipe)">
                         <i class="fas fa-edit"></i>
                       </button>
                       <button class="action-btn delete-btn" @click.stop="confirmDelete(recipe)">
                         <i class="fas fa-trash-alt"></i>
                       </button>
+                    </div>
+                  </div>
+                  
+                  <!-- 评论区域 -->
+                  <div v-if="recipe.commentsExpanded" class="recipe-comments" @click.stop>
+                    <div class="comments-header">
+                      <h4 class="comments-title">
+                        <i class="fas fa-comment"></i>
+                        评论 ({{ recipe.commentsCount || 0 }})
+                      </h4>
+                    </div>
+                    
+                    <!-- 评论输入框 -->
+                    <div class="comment-input-section">
+                      <div class="comment-input-container">
+                        <img :src="getDefaultAvatar()" alt="用户头像" class="comment-avatar" @error="handleAvatarError" />
+                        <div class="comment-input-wrapper">
+                          <textarea
+                            v-model="recipe.newComment"
+                            placeholder="写下你的评论..."
+                            class="comment-input"
+                            maxlength="500"
+                            rows="2"
+                            @keydown.enter.ctrl="submitComment(recipe)"
+                          ></textarea>
+                          <div class="comment-input-footer">
+                            <span class="comment-length">{{ (recipe.newComment || '').length }}/500</span>
+                            <button 
+                              class="submit-comment-btn" 
+                              :disabled="!recipe.newComment?.trim()"
+                              @click="submitComment(recipe)"
+                            >
+                              <i class="fas fa-paper-plane"></i>
+                              发表
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- 评论列表 -->
+                    <div class="comments-list" v-if="recipe.comments && recipe.comments.length > 0">
+                      <div v-for="comment in recipe.comments.slice(0, 3)" :key="comment.id" class="comment-item">
+                        <img :src="comment.avatar || getDefaultAvatar()" alt="用户头像" class="comment-avatar" @error="handleAvatarError" />
+                        <div class="comment-content">
+                          <div class="comment-header">
+                            <span class="comment-author">{{ comment.author }}</span>
+                            <span class="comment-time">{{ formatCommentTime(comment.createdAt) }}</span>
+                          </div>
+                          <div class="comment-text">{{ comment.content }}</div>
+                          <div class="comment-actions">
+                            <button class="comment-action-btn" @click="likeComment(comment)">
+                              <i class="fas fa-thumbs-up" :class="{ active: comment.isLiked }"></i>
+                              <span v-if="comment.likes > 0">{{ comment.likes }}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- 查看更多评论 -->
+                      <div v-if="recipe.comments.length > 3" class="more-comments">
+                        <button class="more-comments-btn" @click="viewAllComments(recipe)">
+                          查看全部 {{ recipe.comments.length }} 条评论
+                          <i class="fas fa-chevron-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- 暂无评论 -->
+                    <div v-else class="no-comments">
+                      <i class="fas fa-comment-slash"></i>
+                      <span>暂无评论，来抢沙发吧~</span>
                     </div>
                   </div>
                 </div>
@@ -537,6 +613,14 @@ import { NButton, NModal, NInput, NIcon, NSpin, useMessage } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import RecipeRightSidebar from '@/components/layout/RecipeRightSidebar.vue'
 
+// 导入头像资源
+import avatar1 from '@/assets/avatar1.png'
+import avatar2 from '@/assets/avatar2.png'
+import avatar3 from '@/assets/avatar3.png'
+import avatar4 from '@/assets/avatar4.png'
+import avatar5 from '@/assets/avatar5.png'
+import avatar6 from '@/assets/avatar6.png'
+
 
 // 添加FontAwesome CDN
 const head = document.head || document.getElementsByTagName('head')[0]
@@ -570,6 +654,9 @@ interface Recipe {
   isLiked: boolean
   isBookmarked: boolean
   comments?: Comment[]
+  commentsExpanded?: boolean
+  commentsCount?: number
+  newComment?: string
 }
 
 // 评论接口定义
@@ -577,7 +664,10 @@ interface Comment {
   id: number
   author: string
   content: string
+  avatar?: string
   createdAt: number
+  likes: number
+  isLiked: boolean
 }
 
 // 分类类型接口
@@ -666,18 +756,27 @@ const recipes = ref<Recipe[]>([
     bookmarks: 12,
     isLiked: false,
     isBookmarked: false,
+    commentsExpanded: false,
+    commentsCount: 2,
+    newComment: '',
     comments: [
       {
         id: 1,
         author: '小王',
         content: '按照这个方法做出来的红烧肉真的很香，家人都很喜欢！',
-        createdAt: Date.now() - 3600000
+        avatar: avatar2,
+        createdAt: Date.now() - 3600000,
+        likes: 5,
+        isLiked: false
       },
       {
         id: 2,
         author: '美食爱好者',
         content: '炖煮的时间确实很重要，我第一次做就是时间不够，肉质偏硬。',
-        createdAt: Date.now() - 1800000
+        avatar: avatar4,
+        createdAt: Date.now() - 1800000,
+        likes: 3,
+        isLiked: false
       }
     ]
   },
@@ -702,6 +801,9 @@ const recipes = ref<Recipe[]>([
     bookmarks: 25,
     isLiked: false,
     isBookmarked: true,
+    commentsExpanded: false,
+    commentsCount: 0,
+    newComment: '',
     comments: []
   },
   {
@@ -725,12 +827,18 @@ const recipes = ref<Recipe[]>([
     bookmarks: 8,
     isLiked: true,
     isBookmarked: false,
+    commentsExpanded: false,
+    commentsCount: 1,
+    newComment: '',
     comments: [
       {
         id: 1,
         author: '美食爱好者',
         content: '按照这个方法做的，真的很香！',
-        createdAt: Date.now() - 3600000
+        avatar: avatar3,
+        createdAt: Date.now() - 3600000,
+        likes: 8,
+        isLiked: false
       }
     ]
   }
@@ -1070,7 +1178,10 @@ function addComment(): void {
       id: Date.now(),
       author: '当前用户',
       content: newComment.value.trim(),
-      createdAt: Date.now()
+      avatar: getDefaultAvatar(),
+      createdAt: Date.now(),
+      likes: 0,
+      isLiked: false
     }
     
     currentRecipe.value.comments.unshift(comment)
@@ -1080,6 +1191,81 @@ function addComment(): void {
 }
 
 // 格式化时间
+// 头像数组
+const avatars = [avatar1, avatar2, avatar3, avatar4, avatar5, avatar6]
+
+// 获取随机头像
+function getRandomAvatar(): string {
+  return avatars[Math.floor(Math.random() * avatars.length)]
+}
+
+// 获取默认头像
+function getDefaultAvatar(): string {
+  return avatar1
+}
+
+// 头像错误处理
+function handleAvatarError(event: Event): void {
+  const target = event.target as HTMLImageElement
+  target.src = getDefaultAvatar()
+}
+
+// 切换评论显示
+function toggleComments(recipe: Recipe): void {
+  recipe.commentsExpanded = !recipe.commentsExpanded
+}
+
+// 提交评论
+function submitComment(recipe: Recipe): void {
+  if (!recipe.newComment?.trim()) return
+  
+  if (!recipe.comments) {
+    recipe.comments = []
+  }
+  
+  const comment: Comment = {
+    id: Date.now(),
+    author: '当前用户',
+    content: recipe.newComment.trim(),
+    avatar: getDefaultAvatar(),
+    createdAt: Date.now(),
+    likes: 0,
+    isLiked: false
+  }
+  
+  recipe.comments.unshift(comment)
+  recipe.commentsCount = recipe.comments.length
+  recipe.newComment = ''
+  message.success('评论发表成功')
+}
+
+// 格式化评论时间
+function formatCommentTime(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+  
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+  if (diff < 2592000000) return `${Math.floor(diff / 86400000)}天前`
+  
+  return new Date(timestamp).toLocaleDateString()
+}
+
+// 点赞评论
+function likeComment(comment: Comment): void {
+  comment.isLiked = !comment.isLiked
+  comment.likes += comment.isLiked ? 1 : -1
+  message.success(comment.isLiked ? '点赞成功' : '取消点赞')
+}
+
+// 查看所有评论
+function viewAllComments(recipe: Recipe): void {
+  // 这里可以实现查看所有评论的功能
+  recipe.commentsExpanded = true
+  message.info('显示所有评论')
+}
+
 function formatTime(timestamp: number): string {
   const now = Date.now()
   const diff = now - timestamp
@@ -1366,7 +1552,7 @@ onMounted(() => {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  height: 400px;
+  min-height: 400px;
 }
 
 .recipe-card:hover {
@@ -1520,6 +1706,30 @@ onMounted(() => {
   color: #3b82f6;
 }
 
+.comment-btn {
+  position: relative;
+}
+
+.comment-btn:hover, .comment-btn.active {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+.comment-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #a855f7;
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 8px;
+  min-width: 14px;
+  text-align: center;
+  line-height: 1.2;
+}
+
 .edit-btn:hover {
   background: rgba(34, 197, 94, 0.1);
   color: #22c55e;
@@ -1528,6 +1738,258 @@ onMounted(() => {
 .delete-btn:hover {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
+}
+
+/* 评论区域样式 */
+.recipe-comments {
+  background: #fafbfc;
+  border-top: 1px solid #e5e7eb;
+  padding: 16px;
+  margin-top: 12px;
+  border-radius: 0 0 12px 12px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+}
+
+.comments-header {
+  margin-bottom: 16px;
+}
+
+.comments-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comments-title i {
+  color: #a855f7;
+}
+
+/* 评论输入区域 */
+.comment-input-section {
+  margin-bottom: 16px;
+}
+
+.comment-input-container {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.comment-input-wrapper {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.comment-input-wrapper:focus-within {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.comment-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: none;
+  font-family: inherit;
+  color: #374151;
+}
+
+.comment-input::placeholder {
+  color: #9ca3af;
+}
+
+.comment-input-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.comment-length {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.submit-comment-btn {
+  background: linear-gradient(135deg, #a855f7, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.submit-comment-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9333ea, #7c3aed);
+  transform: translateY(-1px);
+}
+
+.submit-comment-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 评论列表 */
+.comments-list {
+  margin-top: 12px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.comment-item:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.comment-author {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.comment-text {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.comment-action-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.comment-action-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.comment-action-btn i.active {
+  color: #a855f7;
+}
+
+/* 更多评论 */
+.more-comments {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.more-comments-btn {
+  background: none;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.more-comments-btn:hover {
+  border-color: #a855f7;
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.05);
+}
+
+/* 暂无评论 */
+.no-comments {
+  text-align: center;
+  padding: 24px;
+  color: #9ca3af;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.no-comments i {
+  font-size: 24px;
+  opacity: 0.5;
 }
 
 /* 弹窗样式 */
