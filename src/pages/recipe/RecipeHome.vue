@@ -535,6 +535,7 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import { NButton, NModal, NInput, NIcon, NSpin, useMessage } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'
+import RecipeRightSidebar from '@/components/layout/RecipeRightSidebar.vue'
 
 
 // 添加FontAwesome CDN
