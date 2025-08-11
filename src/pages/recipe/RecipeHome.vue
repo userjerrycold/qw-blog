@@ -621,6 +621,11 @@ import avatar4 from '@/assets/avatar4.png'
 import avatar5 from '@/assets/avatar5.png'
 import avatar6 from '@/assets/avatar6.png'
 
+// 导入菜谱图片资源
+import hongshaorou from '@/assets/hongshaorou.png'
+import danchaofan from '@/assets/danchaofan.png'
+import dangao from '@/assets/dangao.png'
+
 
 // 添加FontAwesome CDN
 const head = document.head || document.getElementsByTagName('head')[0]
@@ -739,7 +744,7 @@ const recipes = ref<Recipe[]>([
     id: 1,
     title: '红烧肉',
     description: '经典的中式红烧肉，肥瘦相间，入口即化，是家常菜的代表之一。',
-    image: '',
+    image: hongshaorou,
     steps: [
       { id: 1, text: '五花肉切成2cm见方的块，冷水下锅焯水去腥', type: 'text' as const },
       { id: 2, text: '热锅下少许油，放入肉块煎至表面微黄', type: 'text' as const },
@@ -784,7 +789,7 @@ const recipes = ref<Recipe[]>([
     id: 2,
     title: '提拉米苏',
     description: '意式经典甜品，层次丰富，口感顺滑，咖啡与奶香的完美结合。',
-    image: '',
+    image: dangao,
     steps: [
       { id: 1, text: '马斯卡彭奶酪室温软化，加入蛋黄搅拌均匀', type: 'text' as const },
       { id: 2, text: '淡奶油打发至6分，与奶酪糊混合', type: 'text' as const },
@@ -810,7 +815,7 @@ const recipes = ref<Recipe[]>([
     id: 3,
     title: '蛋炒饭',
     description: '简单易学的家常蛋炒饭，色香味俱全，是夜宵和快手餐的不二选择。',
-    image: '',
+    image: danchaofan,
     steps: [
       { id: 1, text: '准备食材：米饭、鸡蛋、胡萝卜丁、豌豆、香肠丁', type: 'text' as const },
       { id: 2, text: '热锅下油，倒入打散的蛋液', image: '', type: 'both' as const },
@@ -1541,6 +1546,7 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   padding: 2px 0;
+  align-items: start; /* 防止卡片高度自动调整 */
 }
 
 .recipe-card {
