@@ -38,6 +38,7 @@ import serverSvg from '@/assets/server.svg'
 import beiwangluSvg from '@/assets/beiwanglu.svg'
 import questionSvg from '@/assets/question.svg'
 import wendaoSvg from '@/assets/wendao.svg'
+import recipeSvg from '@/assets/recipe.svg'
 
 const collapsed = ref(false)
 
@@ -49,11 +50,6 @@ const router = useRouter()
 const route = useRoute()
 
 const menuOptions: MenuOption[] = [
-  {
-    label: '问道',
-    key: '/wendao',
-    icon: () => h('img', { src: wendaoSvg, class: 'w-4 h-4' }),
-  },
   {
     label: '服务模拟',
     key: '/mock',
@@ -70,6 +66,11 @@ const menuOptions: MenuOption[] = [
     icon: () => h('img', { src: beiwangluSvg, class: 'w-4 h-4' }),
   },
   {
+    label: '菜谱',
+    key: '/recipe',
+    icon: () => h('img', { src: recipeSvg, class: 'w-4 h-4' }),
+  },
+  {
     label: '动态题集',
     key: '/quiz',
     icon: () => h('img', { src: questionSvg, class: 'w-4 h-4' }),
@@ -78,6 +79,11 @@ const menuOptions: MenuOption[] = [
     label: '工具',
     key: '/tools',
     icon: () => h('img', { src: toolsSvg, class: 'w-4 h-4' }),
+  },
+  {
+    label: '问道',
+    key: '/wendao',
+    icon: () => h('img', { src: wendaoSvg, class: 'w-4 h-4' }),
   },
   // 隐藏博客菜单，保留代码但不显示
   /*
@@ -104,6 +110,7 @@ const activeKey = computed(() => {
   if (route.path.startsWith('/docs')) return '/docs'
   if (route.path.startsWith('/mock')) return '/mock'
   if (route.path.startsWith('/memo')) return '/memo'
+  if (route.path.startsWith('/recipe')) return '/recipe'
   if (route.path.startsWith('/quiz')) return '/quiz'
   return '/blog'
 })

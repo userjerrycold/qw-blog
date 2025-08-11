@@ -73,6 +73,10 @@ const routes: RouteRecordRaw[] = [
     path: '/wendao/material',
     component: () => import('@/pages/wendao/WendaoMaterial.vue'),
   },
+  {
+    path: '/recipe',
+    component: () => import('@/pages/recipe/RecipeHome.vue'),
+  },
 ]
 
 const router = createRouter({
