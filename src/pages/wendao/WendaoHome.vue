@@ -11,16 +11,16 @@
         <div class="hero-story">
           <p class="story-paragraph">
             指尖敲击老式键盘，屏幕泛起水墨微光——那是独属90后的修仙江湖初体验。<br>
-            揽仙镇外蛙鸣阵阵，我们攥着木剑追捕<strong class="highlight-term">野狗白猿</strong>，却在卧龙坡被小怪送回多闻道人面前，戏称一声"<strong class="highlight-term">见多多</strong>"。
+            揽仙镇外蛙鸣阵阵，我们攥着木剑追捕野狗白猿，却在卧龙坡被小怪送回多闻道人面前，戏称一声"见多多"。
           </p>
           
           <p class="story-paragraph">
-            通宵的网吧烟雾缭绕，少年们为一只<strong class="highlight-term">海龟</strong>匍匐北海滩。体宠加点、血厚为王的时代，满血龟壳是全网吧的焦点，连陌生道友都会凑近夸赞一句："兄弟，龟不错！"。更痴狂者彻夜蹲守<strong class="highlight-term">天技花妖</strong>，凌晨四点金光闪过——三天技在手，全班沸腾三日。
+            通宵的网吧烟雾缭绕，少年们为一只海龟匍匐北海滩。体宠加点、血厚为王的时代，满血龟壳是全网吧的焦点，连陌生道友都会凑近夸赞一句："兄弟，龟不错！"。更痴狂者彻夜蹲守天技花妖，凌晨四点金光闪过——三天技在手，全班沸腾三日。
           </p>
           
           <p class="story-paragraph">
-            百环长路漫漫，<strong class="highlight-term">除暴（CB）、伏魔（FM）、除妖（CY）</strong> 是刻进DNA的暗号。组队栏刷屏的"Q4力战桃柳林"，攒钱买的改三金套，年兽爆竹映红北海的夜……<br>
-            如今坐骑光效绚烂，却再难寻回当年攥着<strong class="highlight-term">点卡换328元宝</strong>时，那份笨拙而炽热的欢喜。
+            百环长路漫漫，除暴（CB）、伏魔（FM）、除妖（CY） 是刻进DNA的暗号。组队栏刷屏的"Q4力战桃柳林"，攒钱买的改三金套，年兽爆竹映红北海的夜……<br>
+            如今坐骑光效绚烂，却再难寻回当年攥着点卡换328元宝时，那份笨拙而炽热的欢喜。
           </p>
           
           <blockquote class="story-quote">
