@@ -39,7 +39,7 @@
       <div class="features-grid">
         <div 
           class="feature-card" 
-          @click="selectFeature('搭建')"
+          @click="navigateToFeature('build')"
           :class="{ active: selectedFeature === '搭建' }"
         >
           <div class="feature-icon">🏗️</div>
@@ -49,7 +49,7 @@
         
         <div 
           class="feature-card" 
-          @click="selectFeature('辅助')"
+          @click="navigateToFeature('assist')"
           :class="{ active: selectedFeature === '辅助' }"
         >
           <div class="feature-icon">🤖</div>
@@ -59,7 +59,7 @@
         
         <div 
           class="feature-card" 
-          @click="selectFeature('素材')"
+          @click="navigateToFeature('material')"
           :class="{ active: selectedFeature === '素材' }"
         >
           <div class="feature-icon">🎨</div>
@@ -133,10 +133,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 // 响应式状态
 const selectedFeature = ref<string>('')
 const heroRef = ref<HTMLElement>()
+const router = useRouter()
 
 // 功能卡片选择
 const selectFeature = (featureName: string) => {
@@ -155,6 +157,12 @@ const selectFeature = (featureName: string) => {
   setTimeout(() => {
     alert(`即将进入 ${featureName} 模块！`)
   }, 300)
+}
+
+// 导航到功能页面
+const navigateToFeature = (featurePath: string) => {
+  console.log(`导航到功能页面: ${featurePath}`)
+  router.push(`/wendao/${featurePath}`)
 }
 
 // 鼠标跟随效果

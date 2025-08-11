@@ -61,6 +61,18 @@ const routes: RouteRecordRaw[] = [
     path: '/wendao',
     component: () => import('@/pages/wendao/WendaoHome.vue'),
   },
+  {
+    path: '/wendao/build',
+    component: () => import('@/pages/wendao/WendaoBuild.vue'),
+  },
+  {
+    path: '/wendao/assist',
+    component: () => import('@/pages/wendao/WendaoAssist.vue'),
+  },
+  {
+    path: '/wendao/material',
+    component: () => import('@/pages/wendao/WendaoMaterial.vue'),
+  },
 ]
 
 const router = createRouter({
