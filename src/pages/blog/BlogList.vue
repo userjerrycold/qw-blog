@@ -54,6 +54,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'BlogList'
+})
 import { ref, onMounted } from 'vue'
 import { usePostStore } from '@/store/post'
 import { storeToRefs } from 'pinia'

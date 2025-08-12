@@ -210,6 +210,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'ToolsHome'
+})
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NCard, NButton, NTag, NTabs, NTabPane } from 'naive-ui'

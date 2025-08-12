@@ -132,6 +132,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'WendaoHome'
+})
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 

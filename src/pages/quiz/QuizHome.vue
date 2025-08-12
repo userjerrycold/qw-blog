@@ -455,6 +455,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'QuizHome'
+})
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import QuizRightSidebar from '@/components/layout/QuizRightSidebar.vue'

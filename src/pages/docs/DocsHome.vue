@@ -194,6 +194,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'DocsHome'
+})
 import { ref, computed, reactive, onMounted, h } from 'vue'
 import { NTag, NButton, NModal, NInput, NSelect, NSpace, NMessageProvider, useMessage, NSpin, NIcon } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'

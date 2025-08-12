@@ -383,6 +383,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'MemoHome'
+})
 import { ref, computed, reactive, onMounted, h, nextTick } from 'vue'
 import { NTag, NButton, NModal, NInput, NSelect, NSpace, NMessageProvider, useMessage, NSpin, NIcon, NSwitch, NDatePicker } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'

@@ -61,20 +61,15 @@
             <!-- 仓库信息栏 -->
             <div class="repo-info" v-if="currentRepo">
               <div class="repo-status">
-                <div class="status-item">
-                  <i class="fas fa-code-branch"></i>
-                  <span class="label">分支:</span>
-                  <span class="value branch-name">{{ currentRepo.currentBranch }}</span>
-                </div>
-                <div class="status-item">
-                  <i class="fas fa-history"></i>
-                  <span class="label">最近提交:</span>
-                  <span class="value">{{ formatCommitTime(currentRepo.lastCommit?.date) }}</span>
-                </div>
-                <div class="status-item">
-                  <i class="fas fa-user"></i>
-                  <span class="label">作者:</span>
-                  <span class="value">{{ currentRepo.lastCommit?.author || '暂无' }}</span>
+                <div class="branch-info">
+                  <div class="branch-primary">
+                    <i class="fas fa-code-branch branch-icon"></i>
+                    <span class="branch-name">{{ currentRepo.currentBranch }}</span>
+                  </div>
+                  <div class="commit-info" v-if="currentRepo.lastCommit">
+                    <span class="commit-time">{{ formatCommitTime(currentRepo.lastCommit.date) }}</span>
+                    <span class="commit-author">by {{ currentRepo.lastCommit.author }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -94,18 +89,15 @@
           </div>
           
           <div v-else>
-            <!-- Changes可折叠区域 -->
-            <div class="changes-section">
+            <!-- Changes可折叠区域 - 仅当有修改时显示 -->
+            <div class="changes-section" v-if="hasChanges">
               <div class="changes-header" @click="toggleChanges">
                 <div class="changes-title">
                   <i class="fas fa-chevron-down" :class="{ rotated: !changesExpanded }"></i>
                   <span>Changes</span>
                 </div>
-                <div class="changes-count" v-if="hasChanges">
+                <div class="changes-count">
                   <span class="count-badge">{{ totalChanges }}</span>
-                </div>
-                <div class="changes-count" v-else>
-                  <span class="clean-badge">✓</span>
                 </div>
               </div>
               
@@ -243,9 +235,23 @@
           </div>
           
           <div class="modal-footer">
-            <n-button class="cancel-button" @click="showQuickCommit = false">取消</n-button>
-            <n-button type="primary" class="save-button" @click="executeCommit" :disabled="!commitForm.message.trim()">
-              {{ commitForm.pushAfterCommit ? '提交并推送' : '提交' }}
+            <n-button class="cancel-button" @click="showQuickCommit = false" :disabled="isCommitting || isPushing">取消</n-button>
+            <n-button 
+              type="primary" 
+              class="save-button" 
+              @click="executeCommit" 
+              :disabled="!commitForm.message.trim() || isCommitting || isPushing"
+              :loading="isCommitting || isPushing"
+            >
+              <template v-if="isCommitting">
+                正在提交...
+              </template>
+              <template v-else-if="isPushing">
+                正在推送...
+              </template>
+              <template v-else>
+                {{ commitForm.pushAfterCommit ? '提交并推送' : '提交' }}
+              </template>
             </n-button>
           </div>
         </div>
@@ -308,6 +314,10 @@
 </template>
 
 <script setup lang="ts">
+// 组件名称 - 用于keep-alive缓存
+defineOptions({
+  name: 'GitHome'
+})
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { NButton, NModal, NInput, NIcon, NSpin, useMessage } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'
@@ -378,6 +388,8 @@ const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
 const hideWarning = ref(false)
 const changesExpanded = ref(true)
+const isCommitting = ref(false)
+const isPushing = ref(false)
 
 // 自动刷新定时器
 let refreshTimer: NodeJS.Timeout | null = null
@@ -742,6 +754,7 @@ async function discardChanges(file: GitFile): Promise<void> {
 async function executeCommit(): Promise<void> {
   if (!currentRepo.value || !commitForm.message.trim()) return
   
+  isCommitting.value = true
   try {
     if (commitForm.stageAll) {
       await gitService.stageAll(currentRepo.value.path)
@@ -751,7 +764,12 @@ async function executeCommit(): Promise<void> {
     message.success('提交成功')
     
     if (commitForm.pushAfterCommit) {
-      await handlePush()
+      isPushing.value = true
+      try {
+        await handlePush()
+      } finally {
+        isPushing.value = false
+      }
     }
     
     showQuickCommit.value = false
@@ -761,6 +779,8 @@ async function executeCommit(): Promise<void> {
     
   } catch (error: any) {
     message.error(`提交失败: ${error.message}`)
+  } finally {
+    isCommitting.value = false
   }
 }
 
@@ -1088,45 +1108,62 @@ onUnmounted(() => {
 
 /* 仓库信息栏 */
 .repo-info {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .repo-status {
   display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
 
-.status-item {
+.branch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.branch-primary {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.branch-icon {
+  color: #6366f1;
   font-size: 14px;
 }
 
-.status-item i {
-  color: #6b7280;
+.branch-name {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  background: #f8fafc;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
 }
 
-.status-item .label {
+.commit-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 22px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.commit-time {
   color: #6b7280;
   font-weight: 500;
 }
 
-.status-item .value {
-  color: #374151;
-  font-weight: 600;
-}
-
-.branch-name {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
+.commit-author {
+  color: #6b7280;
 }
 
 /* 空状态 */

@@ -608,6 +608,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'RecipeHome'
+})
 import { ref, computed, reactive, onMounted } from 'vue'
 import { NButton, NModal, NInput, NIcon, NSpin, useMessage } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'

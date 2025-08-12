@@ -15,7 +15,9 @@
         <main class="main">
           <router-view v-slot="{ Component }">
             <transition name="fade" mode="out-in">
-              <component :is="Component" />
+              <keep-alive :include="['GitHome', 'ToolsHome', 'DocsHome', 'MockService', 'MemoHome', 'QuizHome', 'WendaoHome', 'RecipeHome', 'BlogList']">
+                <component :is="Component" />
+              </keep-alive>
             </transition>
           </router-view>
         </main>

@@ -294,6 +294,9 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'MockService'
+})
 import { ref, reactive, h, computed, watch, nextTick, onMounted } from 'vue'
 import { 
   NButton, NSpace, NPopconfirm, NTag, FormInst, useMessage, 
