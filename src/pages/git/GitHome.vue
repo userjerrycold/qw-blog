@@ -62,14 +62,12 @@
             <div class="repo-info" v-if="currentRepo">
               <div class="repo-status">
                 <div class="branch-info">
-                  <div class="branch-primary">
-                    <i class="fas fa-code-branch branch-icon"></i>
-                    <span class="branch-name">{{ currentRepo.currentBranch }}</span>
-                  </div>
-                  <div class="commit-info" v-if="currentRepo.lastCommit">
+                  <i class="fas fa-code-branch branch-icon"></i>
+                  <span class="branch-name">{{ currentRepo.currentBranch }}</span>
+                  <span class="commit-info" v-if="currentRepo.lastCommit">
                     <span class="commit-time">{{ formatCommitTime(currentRepo.lastCommit.date) }}</span>
                     <span class="commit-author">by {{ currentRepo.lastCommit.author }}</span>
-                  </div>
+                  </span>
                 </div>
               </div>
             </div>
@@ -264,7 +262,7 @@
         <div class="modal-inner" style="max-height: 90vh; overflow: hidden; background: white;">
           <div class="modal-header" style="background: white; color: #333;">
             <div class="modal-title">
-              <span style="color: #333;">文件差异: {{ diffFile?.relativePath }}</span>
+              <span style="color: #333;">{{ diffFile?.relativePath }}</span>
             </div>
             <n-button quaternary circle class="close-btn" @click="showDiffModal = false" style="color: #666;">
               <n-icon>
@@ -275,7 +273,7 @@
             </n-button>
           </div>
           
-          <div class="modal-content diff-content" style="overflow-y: auto; max-height: calc(90vh - 120px); background: white;">
+          <div class="modal-content diff-content diff-scroll-container">
             <div v-if="diffContent" class="gitlab-diff-viewer" style="background: white;">
               <div class="diff-lines">
                 <div 
@@ -1122,14 +1120,9 @@ onUnmounted(() => {
 
 .branch-info {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.branch-primary {
-  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .branch-icon {
@@ -1152,9 +1145,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: 22px;
   font-size: 12px;
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .commit-time {
@@ -1712,18 +1704,18 @@ onUnmounted(() => {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 14px;
   line-height: 1.4;
-  background: #ffffff !important;
+  background: #ffffff;
 }
 
 .diff-line {
   display: flex;
   min-height: 20px;
   align-items: stretch;
-  background: #ffffff !important;
+  background: #ffffff; /* 默认白色，差异行会覆盖此背景 */
 }
 
 .diff-line-number {
-  background: #f6f8fa !important;
+  background: #f6f8fa;
   border-right: 1px solid #e1e4e8;
   display: flex;
   flex-shrink: 0;
@@ -1752,7 +1744,6 @@ onUnmounted(() => {
   display: flex;
   align-items: stretch;
   min-height: 20px;
-  background: #ffffff !important;
 }
 
 .diff-prefix {
@@ -1772,8 +1763,7 @@ onUnmounted(() => {
   overflow-x: auto;
   display: flex;
   align-items: center;
-  background: #ffffff !important;
-  color: #333 !important;
+  color: #333; /* 默认黑色，差异行会覆盖此颜色 */
 }
 
 /* 新增行样式 - GitLab绿色 */
@@ -1783,6 +1773,10 @@ onUnmounted(() => {
 
 .diff-line-added .diff-line-number {
   background-color: #cdffd8;
+}
+
+.diff-line-added .diff-line-content {
+  background-color: #e6ffed;
 }
 
 .diff-line-added .line-num-new {
@@ -1796,6 +1790,7 @@ onUnmounted(() => {
 }
 
 .diff-line-added .diff-text {
+  background-color: #e6ffed;
   color: #0d7d32;
 }
 
@@ -1806,6 +1801,10 @@ onUnmounted(() => {
 
 .diff-line-removed .diff-line-number {
   background-color: #ffdce0;
+}
+
+.diff-line-removed .diff-line-content {
+  background-color: #ffeef0;
 }
 
 .diff-line-removed .line-num-old {
@@ -1819,16 +1818,27 @@ onUnmounted(() => {
 }
 
 .diff-line-removed .diff-text {
+  background-color: #ffeef0;
   color: #b91c1c;
 }
 
 /* 上下文行样式 */
+.diff-line-context {
+  background-color: #ffffff;
+}
+
+.diff-line-context .diff-line-content {
+  background-color: #ffffff;
+}
+
 .diff-line-context .diff-prefix {
   color: #333;
+  background-color: transparent;
 }
 
 .diff-line-context .diff-text {
   color: #333;
+  background-color: #ffffff;
 }
 
 /* 头部信息样式 */
@@ -1863,7 +1873,31 @@ onUnmounted(() => {
   background-color: #d4f5da;
 }
 
+.diff-line-added:hover .diff-line-content,
+.diff-line-added:hover .diff-text {
+  background-color: #d4f5da;
+}
+
 .diff-line-removed:hover {
   background-color: #fce8ea;
+}
+
+.diff-line-removed:hover .diff-line-content,
+.diff-line-removed:hover .diff-text {
+  background-color: #fce8ea;
+}
+
+/* 差异弹窗滚动容器 - 隐藏滚动条但保持功能 */
+.diff-scroll-container {
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+  background: white;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.diff-scroll-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/WebKit */
 }
 </style>
