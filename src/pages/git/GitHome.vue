@@ -199,10 +199,7 @@
           :current-repo="currentRepo"
           :selected-file="selectedFile"
           :recent-commits="recentCommits"
-          :selected-file-diff="selectedFileDiff"
-          :selected-file-diff-loading="selectedFileDiffLoading"
           @commit="handleCommit"
-          @load-diff="loadFileDiff"
         />
       </template>
     </PageLayout>
@@ -304,8 +301,31 @@
           </div>
           
           <div class="modal-content diff-content" style="overflow-y: auto; max-height: calc(90vh - 120px);">
-            <div v-if="diffContent" class="diff-viewer">
-              <pre class="diff-text">{{ diffContent }}</pre>
+            <div v-if="diffContent" class="gitlab-diff-viewer">
+              <div class="diff-lines">
+                <div 
+                  v-for="(line, index) in parsedDiffLines" 
+                  :key="index"
+                  :class="[
+                    'diff-line',
+                    {
+                      'diff-line-added': line.type === 'added',
+                      'diff-line-removed': line.type === 'removed',
+                      'diff-line-context': line.type === 'context',
+                      'diff-line-header': line.type === 'header'
+                    }
+                  ]"
+                >
+                  <div class="diff-line-number">
+                    <span class="line-num-old">{{ line.oldNumber || '' }}</span>
+                    <span class="line-num-new">{{ line.newNumber || '' }}</span>
+                  </div>
+                  <div class="diff-line-content">
+                    <span class="diff-prefix">{{ line.prefix }}</span>
+                    <span class="diff-text">{{ line.content }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div v-else class="loading-diff">
               <n-spin size="large" />
@@ -363,6 +383,15 @@ interface GitCommit {
   files: string[]
 }
 
+// 差异行接口
+interface DiffLine {
+  type: 'added' | 'removed' | 'context' | 'header'
+  oldNumber?: number
+  newNumber?: number
+  prefix: string
+  content: string
+}
+
 // 创建全局message实例
 const message = useMessage()
 
@@ -371,8 +400,6 @@ const repoPath = ref('')
 const currentRepo = ref<GitRepo | null>(null)
 const files = ref<GitFile[]>([])
 const selectedFile = ref<GitFile | null>(null)
-const selectedFileDiff = ref('')
-const selectedFileDiffLoading = ref(false)
 const isLoading = ref(false)
 const activeFilter = ref('all')
 const showQuickCommit = ref(false)
@@ -407,6 +434,66 @@ const fileFilters = computed(() => [
   { key: 'deleted', label: '删除', icon: 'fas fa-minus', count: deletedFiles.value.length },
   { key: 'staged', label: '已暂存', icon: 'fas fa-check', count: stagedFiles.value.length }
 ])
+
+// 解析差异内容的计算属性
+const parsedDiffLines = computed((): DiffLine[] => {
+  if (!diffContent.value) return []
+  
+  const lines = diffContent.value.split('\n')
+  const result: DiffLine[] = []
+  let oldLineNumber = 0
+  let newLineNumber = 0
+  
+  for (const line of lines) {
+    if (line.startsWith('@@')) {
+      // 解析行号信息 @@-1,4 +1,4 @@
+      const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/)
+      if (match) {
+        oldLineNumber = parseInt(match[1]) - 1
+        newLineNumber = parseInt(match[2]) - 1
+      }
+      result.push({
+        type: 'header',
+        prefix: '',
+        content: line
+      })
+    } else if (line.startsWith('+')) {
+      newLineNumber++
+      result.push({
+        type: 'added',
+        newNumber: newLineNumber,
+        prefix: '+',
+        content: line.slice(1)
+      })
+    } else if (line.startsWith('-')) {
+      oldLineNumber++
+      result.push({
+        type: 'removed',
+        oldNumber: oldLineNumber,
+        prefix: '-',
+        content: line.slice(1)
+      })
+    } else if (line.startsWith(' ')) {
+      oldLineNumber++
+      newLineNumber++
+      result.push({
+        type: 'context',
+        oldNumber: oldLineNumber,
+        newNumber: newLineNumber,
+        prefix: ' ',
+        content: line.slice(1)
+      })
+    } else if (line.trim() && !line.startsWith('diff --git') && !line.startsWith('index')) {
+      result.push({
+        type: 'context',
+        prefix: '',
+        content: line
+      })
+    }
+  }
+  
+  return result
+})
 
 // 过滤后的文件列表
 const filteredFiles = computed(() => {
@@ -594,33 +681,17 @@ function setActiveFilter(filter: string): void {
 // 选择文件
 function selectFile(file: GitFile): void {
   selectedFile.value = file
-  // 清空之前的差异内容
-  selectedFileDiff.value = ''
 }
 
 // 双击文件处理
 async function handleFileDoubleClick(file: GitFile): Promise<void> {
   if (file.status === 'MODIFIED' && currentRepo.value) {
     selectFile(file)
-    await loadFileDiff(file)
+    await viewDiff(file)  // 触发弹窗显示
   }
 }
 
-// 加载文件差异
-async function loadFileDiff(file: GitFile): Promise<void> {
-  if (!currentRepo.value || file.status === 'UNTRACKED') return
-  
-  selectedFileDiffLoading.value = true
-  try {
-    const diff = await gitService.getDiff(currentRepo.value.path, file.path)
-    selectedFileDiff.value = diff
-  } catch (error: any) {
-    message.error(`获取差异失败: ${error.message}`)
-    selectedFileDiff.value = ''
-  } finally {
-    selectedFileDiffLoading.value = false
-  }
-}
+
 
 // 获取文件图标
 function getFileIcon(filePath: string): string {
@@ -1671,5 +1742,167 @@ onUnmounted(() => {
     opacity: 1;
     align-self: flex-end;
   }
+}
+
+/* GitLab风格差异显示样式 */
+.gitlab-diff-viewer {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.diff-lines {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.diff-line {
+  display: flex;
+  min-height: 20px;
+  align-items: stretch;
+}
+
+.diff-line-number {
+  background: #f6f8fa;
+  border-right: 1px solid #e1e4e8;
+  display: flex;
+  flex-shrink: 0;
+  width: 80px;
+}
+
+.line-num-old,
+.line-num-new {
+  width: 40px;
+  padding: 2px 8px;
+  text-align: right;
+  color: #6b7280;
+  font-size: 12px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.line-num-old {
+  border-right: 1px solid #e1e4e8;
+}
+
+.diff-line-content {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 20px;
+}
+
+.diff-prefix {
+  width: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  user-select: none;
+}
+
+.diff-text {
+  flex: 1;
+  padding: 2px 8px;
+  white-space: pre;
+  overflow-x: auto;
+  display: flex;
+  align-items: center;
+}
+
+/* 新增行样式 - GitLab绿色 */
+.diff-line-added {
+  background-color: #e6ffed;
+}
+
+.diff-line-added .diff-line-number {
+  background-color: #cdffd8;
+}
+
+.diff-line-added .line-num-new {
+  background-color: #acf2bd;
+  color: #0d7d32;
+}
+
+.diff-line-added .diff-prefix {
+  background-color: #28a745;
+  color: white;
+}
+
+.diff-line-added .diff-text {
+  color: #0d7d32;
+}
+
+/* 删除行样式 - GitLab红色 */
+.diff-line-removed {
+  background-color: #ffeef0;
+}
+
+.diff-line-removed .diff-line-number {
+  background-color: #ffdce0;
+}
+
+.diff-line-removed .line-num-old {
+  background-color: #fdb8c0;
+  color: #b91c1c;
+}
+
+.diff-line-removed .diff-prefix {
+  background-color: #dc3545;
+  color: white;
+}
+
+.diff-line-removed .diff-text {
+  color: #b91c1c;
+}
+
+/* 上下文行样式 */
+.diff-line-context .diff-prefix {
+  color: #6b7280;
+}
+
+.diff-line-context .diff-text {
+  color: #374151;
+}
+
+/* 头部信息样式 */
+.diff-line-header {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.diff-line-header .diff-line-number {
+  background-color: #e9ecef;
+}
+
+.diff-line-header .line-num-old,
+.diff-line-header .line-num-new {
+  background-color: #e9ecef;
+  color: #6c757d;
+}
+
+.diff-line-header .diff-text {
+  color: #495057;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+
+/* 悬停效果 */
+.diff-line:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.diff-line-added:hover {
+  background-color: #d4f5da;
+}
+
+.diff-line-removed:hover {
+  background-color: #fce8ea;
 }
 </style>

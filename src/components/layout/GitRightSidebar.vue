@@ -87,7 +87,7 @@
       </div>
     </div>
 
-    <!-- 文件差异预览 -->
+    <!-- 文件预览 -->
     <div class="sidebar-section" v-if="selectedFile">
       <h3 class="section-title">
         <i class="fas fa-file-code"></i>
@@ -108,10 +108,6 @@
           <div class="file-path">{{ selectedFile.relativePath }}</div>
           
           <div class="preview-actions">
-            <button class="preview-action-btn" @click="handleLoadDiff" title="加载差异" v-if="selectedFile.status !== 'UNTRACKED' && !selectedFileDiff">
-              <i class="fas fa-code-compare"></i>
-              加载差异
-            </button>
             <button class="preview-action-btn" @click="handleStageFile" :title="selectedFile.staged ? '取消暂存' : '添加到暂存'">
               <i class="fas fa-plus" v-if="!selectedFile.staged"></i>
               <i class="fas fa-minus" v-else></i>
@@ -119,45 +115,9 @@
             </button>
           </div>
           
-          <!-- GitLab风格的差异显示 -->
-          <div class="diff-container" v-if="selectedFileDiff || selectedFileDiffLoading">
-            <div class="diff-header">
-              <i class="fas fa-code-compare"></i>
-              <span>代码差异</span>
-              <span class="diff-hint">(双击 M 文件自动加载)</span>
-            </div>
-            
-            <div class="diff-loading" v-if="selectedFileDiffLoading">
-              <i class="fas fa-spinner fa-spin"></i>
-              加载中...
-            </div>
-            
-            <div class="diff-content" v-else-if="selectedFileDiff">
-              <div class="diff-lines">
-                <div 
-                  v-for="(line, index) in parsedDiffLines" 
-                  :key="index"
-                  :class="[
-                    'diff-line',
-                    {
-                      'diff-line-added': line.type === 'added',
-                      'diff-line-removed': line.type === 'removed',
-                      'diff-line-context': line.type === 'context',
-                      'diff-line-header': line.type === 'header'
-                    }
-                  ]"
-                >
-                  <div class="diff-line-number">
-                    <span class="line-num-old">{{ line.oldNumber || '' }}</span>
-                    <span class="line-num-new">{{ line.newNumber || '' }}</span>
-                  </div>
-                  <div class="diff-line-content">
-                    <span class="diff-prefix">{{ line.prefix }}</span>
-                    <span class="diff-text">{{ line.content }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="preview-hint" v-if="selectedFile.status === 'MODIFIED'">
+            <i class="fas fa-info-circle"></i>
+            <span>双击文件查看差异详情</span>
           </div>
         </div>
       </div>
@@ -239,14 +199,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 
-// 差异行接口
-interface DiffLine {
-  type: 'added' | 'removed' | 'context' | 'header'
-  oldNumber?: number
-  newNumber?: number
-  prefix: string
-  content: string
-}
+
 
 // 创建全局message实例
 const message = useMessage()
@@ -295,14 +248,11 @@ const props = defineProps<{
   currentRepo: GitRepo | null
   selectedFile: GitFile | null
   recentCommits: GitCommit[]
-  selectedFileDiff: string
-  selectedFileDiffLoading: boolean
 }>()
 
 // Emits定义  
 const emit = defineEmits<{
   'commit': [data: { message: string; files?: string[]; pushAfterCommit?: boolean }]
-  'load-diff': [file: GitFile]
 }>()
 
 // 响应式状态
@@ -310,65 +260,7 @@ const commitMessage = ref('')
 const stageAllFiles = ref(true)
 const pushAfterCommit = ref(false)
 
-// 解析差异内容的计算属性
-const parsedDiffLines = computed((): DiffLine[] => {
-  if (!props.selectedFileDiff) return []
-  
-  const lines = props.selectedFileDiff.split('\n')
-  const result: DiffLine[] = []
-  let oldLineNumber = 0
-  let newLineNumber = 0
-  
-  for (const line of lines) {
-    if (line.startsWith('@@')) {
-      // 解析行号信息 @@-1,4 +1,4 @@
-      const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/)
-      if (match) {
-        oldLineNumber = parseInt(match[1]) - 1
-        newLineNumber = parseInt(match[2]) - 1
-      }
-      result.push({
-        type: 'header',
-        prefix: '',
-        content: line
-      })
-    } else if (line.startsWith('+')) {
-      newLineNumber++
-      result.push({
-        type: 'added',
-        newNumber: newLineNumber,
-        prefix: '+',
-        content: line.slice(1)
-      })
-    } else if (line.startsWith('-')) {
-      oldLineNumber++
-      result.push({
-        type: 'removed',
-        oldNumber: oldLineNumber,
-        prefix: '-',
-        content: line.slice(1)
-      })
-    } else if (line.startsWith(' ')) {
-      oldLineNumber++
-      newLineNumber++
-      result.push({
-        type: 'context',
-        oldNumber: oldLineNumber,
-        newNumber: newLineNumber,
-        prefix: ' ',
-        content: line.slice(1)
-      })
-    } else if (line.trim() && !line.startsWith('diff --git') && !line.startsWith('index')) {
-      result.push({
-        type: 'context',
-        prefix: '',
-        content: line
-      })
-    }
-  }
-  
-  return result
-})
+
 
 
 
@@ -382,12 +274,6 @@ function handleSwitchBranch(): void {
 }
 
 // 文件操作
-function handleLoadDiff(): void {
-  if (props.selectedFile && props.selectedFile.status !== 'UNTRACKED') {
-    emit('load-diff', props.selectedFile)
-  }
-}
-
 function handleStageFile(): void {
   if (props.selectedFile) {
     const action = props.selectedFile.staged ? '取消暂存' : '暂存'
@@ -1113,213 +999,23 @@ export default {
   box-shadow: none;
 }
 
-/* GitLab风格差异显示样式 */
-.diff-container {
-  margin-top: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  overflow: hidden;
-}
-
-.diff-header {
-  background: #f1f3f4;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e9ecef;
+/* 预览提示样式 */
+.preview-hint {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.1);
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.diff-header i {
-  color: #6b7280;
-}
-
-.diff-hint {
-  color: #9ca3af;
-  font-size: 10px;
-  font-style: italic;
-  margin-left: auto;
-}
-
-.diff-loading {
-  padding: 20px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.diff-content {
-  max-height: 300px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.diff-content::-webkit-scrollbar {
-  display: none;
-}
-
-.diff-lines {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  gap: 6px;
   font-size: 11px;
-  line-height: 1.4;
+  color: #3b82f6;
 }
 
-.diff-line {
-  display: flex;
-  min-height: 18px;
-  align-items: stretch;
-}
-
-.diff-line-number {
-  background: #f6f8fa;
-  border-right: 1px solid #e1e4e8;
-  display: flex;
-  flex-shrink: 0;
-  width: 60px;
-}
-
-.line-num-old,
-.line-num-new {
-  width: 30px;
-  padding: 1px 4px;
-  text-align: right;
-  color: #6b7280;
+.preview-hint i {
+  color: #3b82f6;
   font-size: 10px;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.line-num-old {
-  border-right: 1px solid #e1e4e8;
-}
-
-.diff-line-content {
-  flex: 1;
-  display: flex;
-  align-items: stretch;
-  min-height: 18px;
-}
-
-.diff-prefix {
-  width: 16px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  user-select: none;
-}
-
-.diff-text {
-  flex: 1;
-  padding: 1px 4px;
-  white-space: pre;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-}
-
-/* 新增行样式 - GitLab绿色 */
-.diff-line-added {
-  background-color: #e6ffed;
-}
-
-.diff-line-added .diff-line-number {
-  background-color: #cdffd8;
-}
-
-.diff-line-added .line-num-new {
-  background-color: #acf2bd;
-  color: #0d7d32;
-}
-
-.diff-line-added .diff-prefix {
-  background-color: #28a745;
-  color: white;
-}
-
-.diff-line-added .diff-text {
-  color: #0d7d32;
-}
-
-/* 删除行样式 - GitLab红色 */
-.diff-line-removed {
-  background-color: #ffeef0;
-}
-
-.diff-line-removed .diff-line-number {
-  background-color: #ffdce0;
-}
-
-.diff-line-removed .line-num-old {
-  background-color: #fdb8c0;
-  color: #b91c1c;
-}
-
-.diff-line-removed .diff-prefix {
-  background-color: #dc3545;
-  color: white;
-}
-
-.diff-line-removed .diff-text {
-  color: #b91c1c;
-}
-
-/* 上下文行样式 */
-.diff-line-context .diff-prefix {
-  color: #6b7280;
-}
-
-.diff-line-context .diff-text {
-  color: #374151;
-}
-
-/* 头部信息样式 */
-.diff-line-header {
-  background-color: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.diff-line-header .diff-line-number {
-  background-color: #e9ecef;
-}
-
-.diff-line-header .line-num-old,
-.diff-line-header .line-num-new {
-  background-color: #e9ecef;
-  color: #6c757d;
-}
-
-.diff-line-header .diff-text {
-  color: #495057;
-  font-weight: 500;
-  padding: 2px 8px;
-}
-
-/* 悬停效果 */
-.diff-line:hover {
-  background-color: rgba(0, 0, 0, 0.02);
-}
-
-.diff-line-added:hover {
-  background-color: #d4f5da;
-}
-
-.diff-line-removed:hover {
-  background-color: #fce8ea;
 }
 
 /* 响应式 */
