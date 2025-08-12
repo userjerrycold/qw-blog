@@ -38,15 +38,19 @@ export interface GitStatus {
 
 class GitService {
   private isElectronEnv(): boolean {
-    return typeof window !== 'undefined' && window.process?.type === 'renderer'
+    return typeof window !== 'undefined' && (window as any).electronAPI
   }
 
   // 检查路径是否为有效的Git仓库
   private async isValidGitRepo(path: string): Promise<boolean> {
     try {
-      // 在实际环境中，这里应该检查.git文件夹是否存在
-      // 模拟实现
-      return path.trim().length > 0 && !path.includes('invalid')
+      if (this.isElectronEnv()) {
+        const result = await (window as any).electronAPI.checkGitRepo(path)
+        return result.success && result.isRepo
+      } else {
+        // 浏览器环境中的简单检查
+        return path.trim().length > 0 && !path.includes('invalid')
+      }
     } catch (error) {
       return false
     }
@@ -55,15 +59,14 @@ class GitService {
   // 执行Git命令的通用方法
   private async executeGitCommand(command: string, cwd: string): Promise<string> {
     if (this.isElectronEnv()) {
-      // 在Electron环境中，使用Node.js的child_process
+      // 在Electron环境中，使用IPC调用主进程执行Git命令
       try {
-        const { execSync } = window.require('child_process')
-        const result = execSync(command, { 
-          cwd, 
-          encoding: 'utf8',
-          env: { ...process.env, LC_ALL: 'C.UTF-8' } // 确保UTF-8编码支持
-        })
-        return result.toString()
+        const result = await (window as any).electronAPI.executeGitCommand(command, cwd)
+        if (result.success) {
+          return result.stdout || ''
+        } else {
+          throw new Error(result.error || 'Git命令执行失败')
+        }
       } catch (error: any) {
         throw new Error(`Git命令执行失败: ${error.message}`)
       }

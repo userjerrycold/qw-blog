@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -83,8 +83,17 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
+// 检测是否在 Electron 环境中
+const isElectron = typeof window !== 'undefined' && (
+  window.location.protocol === 'file:' || 
+  navigator.userAgent.includes('Electron') ||
+  (window as any).electronAPI ||
+  (window as any).require
+)
+
 const router = createRouter({
-  history: createWebHistory(),
+  // 在 Electron 中使用 hash 模式，在浏览器中使用 history 模式
+  history: isElectron ? createWebHashHistory() : createWebHistory(),
   routes,
 })
 

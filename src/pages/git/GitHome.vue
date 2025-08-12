@@ -503,6 +503,23 @@ function stopAutoRefresh(): void {
 // 浏览文件夹
 async function browseFolder(): Promise<void> {
   try {
+    // 优先使用Electron API
+    if (isElectronEnv() && (window as any).electronAPI) {
+      try {
+        const result = await (window as any).electronAPI.selectDirectory()
+        if (result.success && result.path) {
+          repoPath.value = result.path
+          message.success(`已选择文件夹: ${result.path}`)
+          return
+        } else if (result.error && !result.error.includes('未选择')) {
+          message.error(`选择文件夹失败: ${result.error}`)
+          return
+        }
+      } catch (error: any) {
+        console.warn('Electron directory picker error:', error)
+      }
+    }
+    
     // 检查是否支持File System Access API (Chrome等现代浏览器)
     if ('showDirectoryPicker' in window) {
       try {
