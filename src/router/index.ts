@@ -77,6 +77,10 @@ const routes: RouteRecordRaw[] = [
     path: '/recipe',
     component: () => import('@/pages/recipe/RecipeHome.vue'),
   },
+  {
+    path: '/git',
+    component: () => import('@/pages/git/GitHome.vue'),
+  },
 ]
 
 const router = createRouter({

@@ -2,6 +2,15 @@
   <div class="git-page">
     <PageLayout>
       <div class="git-container">
+        <!-- 环境提示横幅 -->
+        <div v-if="!isElectronEnv() && !hideWarning" class="environment-warning">
+          <i class="fas fa-info-circle"></i>
+          <span class="warning-text">
+            当前运行在浏览器环境下，显示的是演示数据。要使用真实Git功能，请在Electron环境下运行此应用。
+          </span>
+          <i class="fas fa-times close-warning" @click="hideWarning = true"></i>
+        </div>
+        
         <div class="page-header">
           <h1 class="page-title">GIT 管理</h1>
           
@@ -146,9 +155,8 @@
                   v-for="file in filteredFiles" 
                   :key="file.path" 
                   class="file-item"
-                  :class="`file-${file.status.toLowerCase()}`"
+                  :class="[`file-${file.status.toLowerCase()}`, { selected: selectedFile?.path === file.path }]"
                   @click="selectFile(file)"
-                  :class="{ selected: selectedFile?.path === file.path }"
                 >
                   <div class="file-info">
                     <div class="file-icon">
@@ -368,6 +376,7 @@ const showDiffModal = ref(false)
 const diffFile = ref<GitFile | null>(null)
 const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
+const hideWarning = ref(false)
 
 // 自动刷新定时器
 let refreshTimer: NodeJS.Timeout | null = null
@@ -411,6 +420,11 @@ const filteredFiles = computed(() => {
   }
 })
 
+// 检查是否为Electron环境
+function isElectronEnv(): boolean {
+  return typeof window !== 'undefined' && (window as any).process?.type === 'renderer'
+}
+
 // 加载Git仓库
 async function loadRepository(): Promise<void> {
   if (!repoPath.value.trim()) {
@@ -426,7 +440,12 @@ async function loadRepository(): Promise<void> {
     await refreshStatus()
     await loadRecentCommits()
     
-    message.success('仓库加载成功')
+    // 根据环境显示不同的成功消息
+    if (isElectronEnv()) {
+      message.success('仓库加载成功')
+    } else {
+      message.warning('仓库加载成功 (演示模式) - 浏览器环境下显示的是模拟数据，要使用真实Git功能请在Electron环境下运行')
+    }
     
     // 启动自动刷新
     startAutoRefresh()
@@ -482,9 +501,52 @@ function stopAutoRefresh(): void {
 }
 
 // 浏览文件夹
-function browseFolder(): void {
-  // 在实际应用中，这里应该调用Electron的文件选择API
-  message.info('文件夹浏览功能需要在Electron环境中实现')
+async function browseFolder(): Promise<void> {
+  try {
+    // 检查是否支持File System Access API (Chrome等现代浏览器)
+    if ('showDirectoryPicker' in window) {
+      try {
+        const dirHandle = await (window as any).showDirectoryPicker()
+        repoPath.value = dirHandle.name // 使用文件夹名称
+        message.success(`已选择文件夹: ${dirHandle.name}`)
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.warn('Directory picker error:', error)
+          fallbackFolderSelect()
+        }
+      }
+    } else {
+      fallbackFolderSelect()
+    }
+  } catch (error) {
+    console.error('Folder browse error:', error)
+    fallbackFolderSelect()
+  }
+}
+
+// 备用文件夹选择方案
+function fallbackFolderSelect(): void {
+  // 创建隐藏的文件输入元素
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.webkitdirectory = true
+  input.style.display = 'none'
+  
+  input.onchange = (event: any) => {
+    const files = event.target.files
+    if (files && files.length > 0) {
+      // 从第一个文件的路径提取文件夹路径
+      const firstFile = files[0]
+      const pathParts = firstFile.webkitRelativePath.split('/')
+      const folderName = pathParts[0]
+      repoPath.value = folderName
+      message.success(`已选择文件夹: ${folderName}`)
+    }
+    document.body.removeChild(input)
+  }
+  
+  document.body.appendChild(input)
+  input.click()
 }
 
 // 设置活动过滤器
@@ -751,6 +813,47 @@ onUnmounted(() => {
   height: 1px;
   background-color: rgba(0, 0, 0, 0.08);
   margin: 0;
+}
+
+/* 环境警告横幅样式 */
+.environment-warning {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.environment-warning i.fas.fa-info-circle {
+  color: #856404;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.warning-text {
+  flex: 1;
+  color: #856404;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.close-warning {
+  color: #856404;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.close-warning:hover {
+  background: rgba(133, 100, 4, 0.1);
+  color: #333;
 }
 
 /* 仓库控制区样式 */

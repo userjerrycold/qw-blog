@@ -73,8 +73,11 @@ class GitService {
     }
   }
 
-  // 模拟Git命令结果
+  // 模拟Git命令结果（浏览器环境演示用）
   private getMockCommandResult(command: string, cwd: string): string {
+    // 注意：这是浏览器环境下的演示数据
+    console.warn(`[Git Service] 浏览器环境下使用模拟数据: ${command}`)
+    
     if (command.includes('status --porcelain')) {
       return `M  src/components/TestComponent.vue
 A  src/pages/新建页面.vue
@@ -121,6 +124,11 @@ origin  https://github.com/user/repo.git (push)`
         throw new Error('指定路径不是有效的Git仓库')
       }
 
+      // 在浏览器环境下显示警告
+      if (!this.isElectronEnv()) {
+        console.warn('[Git Service] 当前在浏览器环境下运行，显示的是演示数据而非真实Git仓库信息')
+      }
+
       const currentBranch = await this.executeGitCommand('git branch --show-current', path)
       const remoteOutput = await this.executeGitCommand('git remote -v', path)
       
@@ -148,6 +156,21 @@ origin  https://github.com/user/repo.git (push)`
         // 如果没有提交历史，忽略错误
       }
 
+      // 在浏览器环境下使用演示数据
+      if (!this.isElectronEnv()) {
+        return {
+          path: `${path.trim()} (演示模式)`,
+          currentBranch: currentBranch.trim(),
+          lastCommit: {
+            hash: 'abc1234',
+            message: '这是演示数据 - 浏览器环境无法读取真实Git信息',
+            author: 'Demo User',
+            date: Date.now() - 3600000 // 1小时前
+          },
+          remotes
+        }
+      }
+
       return {
         path: path.trim(),
         currentBranch: currentBranch.trim(),
@@ -155,6 +178,9 @@ origin  https://github.com/user/repo.git (push)`
         remotes
       }
     } catch (error: any) {
+      if (!this.isElectronEnv()) {
+        throw new Error(`浏览器环境限制: ${error.message}。要使用真实Git功能，请在Electron环境下运行此应用。`)
+      }
       throw new Error(`加载仓库失败: ${error.message}`)
     }
   }

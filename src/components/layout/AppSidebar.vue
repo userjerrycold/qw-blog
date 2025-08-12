@@ -39,6 +39,7 @@ import beiwangluSvg from '@/assets/beiwanglu.svg'
 import questionSvg from '@/assets/question.svg'
 import wendaoSvg from '@/assets/wendao.svg'
 import recipeSvg from '@/assets/recipe.svg'
+import gitSvg from '@/assets/git.svg'
 
 const collapsed = ref(false)
 
@@ -59,6 +60,11 @@ const menuOptions: MenuOption[] = [
     label: '文档管理',
     key: '/docs',
     icon: () => h('img', { src: docsSvg, class: 'w-4 h-4' }),
+  },
+  {
+    label: 'GIT 管理',
+    key: '/git',
+    icon: () => h('img', { src: gitSvg, class: 'w-4 h-4' }),
   },
   {
     label: '备忘录',
@@ -108,6 +114,7 @@ const activeKey = computed(() => {
   if (route.path.startsWith('/wendao')) return '/wendao'
   if (route.path.startsWith('/tools')) return '/tools'
   if (route.path.startsWith('/docs')) return '/docs'
+  if (route.path.startsWith('/git')) return '/git'
   if (route.path.startsWith('/mock')) return '/mock'
   if (route.path.startsWith('/memo')) return '/memo'
   if (route.path.startsWith('/recipe')) return '/recipe'

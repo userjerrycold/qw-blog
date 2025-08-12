@@ -39,6 +39,7 @@
     "@unocss/preset-wind": "^0.57.0",
     "@vitejs/plugin-vue": "^5.0.3",
     "@vue/eslint-config-typescript": "^11.0.3",
+    "electron": "^37.2.6",
     "eslint": "^8.56.0",
     "eslint-plugin-vue": "^9.19.2",
     "prettier": "^3.0.3",
