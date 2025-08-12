@@ -94,98 +94,67 @@
           </div>
           
           <div v-else>
-            <!-- 状态统计 -->
-            <div class="status-summary">
-              <div class="summary-card modified" v-if="modifiedFiles.length > 0">
-                <i class="fas fa-edit"></i>
-                <span class="count">{{ modifiedFiles.length }}</span>
-                <span class="label">已修改</span>
+            <!-- Changes可折叠区域 -->
+            <div class="changes-section">
+              <div class="changes-header" @click="toggleChanges">
+                <div class="changes-title">
+                  <i class="fas fa-chevron-down" :class="{ rotated: !changesExpanded }"></i>
+                  <span>Changes</span>
+                </div>
+                <div class="changes-count" v-if="hasChanges">
+                  <span class="count-badge">{{ totalChanges }}</span>
+                </div>
+                <div class="changes-count" v-else>
+                  <span class="clean-badge">✓</span>
+                </div>
               </div>
               
-              <div class="summary-card added" v-if="addedFiles.length > 0">
-                <i class="fas fa-plus"></i>
-                <span class="count">{{ addedFiles.length }}</span>
-                <span class="label">新增</span>
-              </div>
-              
-              <div class="summary-card deleted" v-if="deletedFiles.length > 0">
-                <i class="fas fa-minus"></i>
-                <span class="count">{{ deletedFiles.length }}</span>
-                <span class="label">删除</span>
-              </div>
-              
-              <div class="summary-card staged" v-if="stagedFiles.length > 0">
-                <i class="fas fa-check"></i>
-                <span class="count">{{ stagedFiles.length }}</span>
-                <span class="label">暂存</span>
-              </div>
-              
-              <div class="summary-card clean" v-if="!hasChanges">
-                <i class="fas fa-check-circle"></i>
-                <span class="label">工作区干净</span>
-              </div>
-            </div>
-            
-            <!-- 文件筛选 -->
-            <div class="file-filters">
-              <div class="filter-tabs">
-                <button 
-                  v-for="filter in fileFilters" 
-                  :key="filter.key"
-                  class="filter-tab"
-                  :class="{ active: activeFilter === filter.key }"
-                  @click="setActiveFilter(filter.key)"
-                >
-                  <i :class="filter.icon"></i>
-                  {{ filter.label }}
-                  <span v-if="filter.count > 0" class="filter-count">{{ filter.count }}</span>
-                </button>
-              </div>
-            </div>
-            
-            <!-- 文件列表 -->
-            <div class="file-list-container">
-              <div v-if="filteredFiles.length === 0" class="no-files">
-                <i class="fas fa-file-code"></i>
-                <p>{{ getNoFilesMessage() }}</p>
-              </div>
-              
-              <div v-else class="file-list">
-                <div 
-                  v-for="file in filteredFiles" 
-                  :key="file.path" 
-                  class="file-item"
-                  :class="[`file-${file.status.toLowerCase()}`, { selected: selectedFile?.path === file.path }]"
-                  @click="selectFile(file)"
-                  @dblclick="handleFileDoubleClick(file)"
-                >
-                  <div class="file-info">
-                    <div class="file-icon">
-                      <i :class="getFileIcon(file.path)"></i>
-                    </div>
-                    <div class="file-details">
-                      <div class="file-name">{{ file.name }}</div>
-                      <div class="file-path">{{ file.relativePath }}</div>
-                    </div>
+              <div class="changes-content" v-show="changesExpanded">
+                <!-- 文件列表 -->
+                <div class="file-list-container">
+                  <div v-if="filteredFiles.length === 0" class="no-files">
+                    <i class="fas fa-file-code"></i>
+                    <p>{{ getNoFilesMessage() }}</p>
                   </div>
                   
-                  <div class="file-status">
-                    <span class="status-badge" :class="`status-${file.status.toLowerCase()}`">
-                      {{ getStatusText(file.status) }}
-                    </span>
-                  </div>
-                  
-                  <div class="file-actions">
-                    <button class="file-action-btn" @click.stop="viewDiff(file)" title="查看差异" v-if="file.status !== 'UNTRACKED'">
-                      <i class="fas fa-code-compare"></i>
-                    </button>
-                    <button class="file-action-btn" @click.stop="toggleStage(file)" :title="file.staged ? '取消暂存' : '添加到暂存'">
-                      <i class="fas fa-plus" v-if="!file.staged"></i>
-                      <i class="fas fa-minus" v-else></i>
-                    </button>
-                    <button class="file-action-btn danger" @click.stop="discardChanges(file)" title="撤销更改" v-if="file.status === 'MODIFIED'">
-                      <i class="fas fa-undo"></i>
-                    </button>
+                  <div v-else class="file-list">
+                    <div 
+                      v-for="file in filteredFiles" 
+                      :key="file.path" 
+                      class="file-item"
+                      :class="[`file-${file.status.toLowerCase()}`, { selected: selectedFile?.path === file.path }]"
+                      @click="selectFile(file)"
+                      @dblclick="handleFileDoubleClick(file)"
+                    >
+                      <div class="file-info">
+                        <div class="file-icon">
+                          <i :class="getFileIcon(file.path)"></i>
+                        </div>
+                        <div class="file-details">
+                          <div class="file-name">{{ file.name }}</div>
+                          <div class="file-path">{{ file.relativePath }}</div>
+                        </div>
+                      </div>
+                      
+                      <div class="file-status">
+                        <span class="status-badge" :class="`status-${file.status.toLowerCase()}`">
+                          {{ getStatusText(file.status) }}
+                        </span>
+                      </div>
+                      
+                      <div class="file-actions">
+                        <button class="file-action-btn" @click.stop="viewDiff(file)" title="查看差异" v-if="file.status !== 'UNTRACKED'">
+                          <i class="fas fa-code-compare"></i>
+                        </button>
+                        <button class="file-action-btn" @click.stop="toggleStage(file)" :title="file.staged ? '取消暂存' : '添加到暂存'">
+                          <i class="fas fa-plus" v-if="!file.staged"></i>
+                          <i class="fas fa-minus" v-else></i>
+                        </button>
+                        <button class="file-action-btn danger" @click.stop="discardChanges(file)" title="撤销更改" v-if="file.status === 'MODIFIED'">
+                          <i class="fas fa-undo"></i>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -283,15 +252,15 @@
       </div>
     </n-modal>
     
-    <!-- 差异查看弹窗 -->
+                <!-- 差异查看弹窗 - 白色背景黑色字体 -->
     <n-modal v-model:show="showDiffModal" class="git-modal diff-modal" style="width: 90vw; max-width: 1200px; max-height: 90vh;">
       <div class="modal-container">
-        <div class="modal-inner" style="max-height: 90vh; overflow: hidden;">
-          <div class="modal-header">
+        <div class="modal-inner" style="max-height: 90vh; overflow: hidden; background: white;">
+          <div class="modal-header" style="background: white; color: #333;">
             <div class="modal-title">
-              <span>文件差异: {{ diffFile?.relativePath }}</span>
+              <span style="color: #333;">文件差异: {{ diffFile?.relativePath }}</span>
             </div>
-            <n-button quaternary circle class="close-btn" @click="showDiffModal = false">
+            <n-button quaternary circle class="close-btn" @click="showDiffModal = false" style="color: #666;">
               <n-icon>
                 <svg width="16" height="16" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
@@ -300,8 +269,8 @@
             </n-button>
           </div>
           
-          <div class="modal-content diff-content" style="overflow-y: auto; max-height: calc(90vh - 120px);">
-            <div v-if="diffContent" class="gitlab-diff-viewer">
+          <div class="modal-content diff-content" style="overflow-y: auto; max-height: calc(90vh - 120px); background: white;">
+            <div v-if="diffContent" class="gitlab-diff-viewer" style="background: white;">
               <div class="diff-lines">
                 <div 
                   v-for="(line, index) in parsedDiffLines" 
@@ -327,9 +296,9 @@
                 </div>
               </div>
             </div>
-            <div v-else class="loading-diff">
+            <div v-else class="loading-diff" style="background: white; color: #333;">
               <n-spin size="large" />
-              <p>正在加载差异内容...</p>
+              <p style="color: #333;">正在加载差异内容...</p>
             </div>
           </div>
         </div>
@@ -401,13 +370,14 @@ const currentRepo = ref<GitRepo | null>(null)
 const files = ref<GitFile[]>([])
 const selectedFile = ref<GitFile | null>(null)
 const isLoading = ref(false)
-const activeFilter = ref('all')
+
 const showQuickCommit = ref(false)
 const showDiffModal = ref(false)
 const diffFile = ref<GitFile | null>(null)
 const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
 const hideWarning = ref(false)
+const changesExpanded = ref(true)
 
 // 自动刷新定时器
 let refreshTimer: NodeJS.Timeout | null = null
@@ -425,15 +395,7 @@ const addedFiles = computed(() => files.value.filter(f => f.status === 'ADDED' |
 const deletedFiles = computed(() => files.value.filter(f => f.status === 'DELETED'))
 const stagedFiles = computed(() => files.value.filter(f => f.staged))
 const hasChanges = computed(() => files.value.length > 0)
-
-// 文件过滤器
-const fileFilters = computed(() => [
-  { key: 'all', label: '全部', icon: 'fas fa-list', count: files.value.length },
-  { key: 'modified', label: '已修改', icon: 'fas fa-edit', count: modifiedFiles.value.length },
-  { key: 'added', label: '新增', icon: 'fas fa-plus', count: addedFiles.value.length },
-  { key: 'deleted', label: '删除', icon: 'fas fa-minus', count: deletedFiles.value.length },
-  { key: 'staged', label: '已暂存', icon: 'fas fa-check', count: stagedFiles.value.length }
-])
+const totalChanges = computed(() => files.value.length)
 
 // 解析差异内容的计算属性
 const parsedDiffLines = computed((): DiffLine[] => {
@@ -495,21 +457,8 @@ const parsedDiffLines = computed((): DiffLine[] => {
   return result
 })
 
-// 过滤后的文件列表
-const filteredFiles = computed(() => {
-  switch (activeFilter.value) {
-    case 'modified':
-      return modifiedFiles.value
-    case 'added':
-      return addedFiles.value
-    case 'deleted':
-      return deletedFiles.value
-    case 'staged':
-      return stagedFiles.value
-    default:
-      return files.value
-  }
-})
+// 显示所有文件
+const filteredFiles = computed(() => files.value)
 
 // 检查是否为Electron环境
 function isElectronEnv(): boolean {
@@ -617,6 +566,8 @@ async function browseFolder(): Promise<void> {
         if (result.success && result.path) {
           repoPath.value = result.path
           message.success(`已选择文件夹: ${result.path}`)
+          // 自动加载仓库
+          await loadRepository()
           return
         } else if (result.error && !result.error.includes('未选择')) {
           message.error(`选择文件夹失败: ${result.error}`)
@@ -633,6 +584,8 @@ async function browseFolder(): Promise<void> {
         const dirHandle = await (window as any).showDirectoryPicker()
         repoPath.value = dirHandle.name // 使用文件夹名称
         message.success(`已选择文件夹: ${dirHandle.name}`)
+        // 自动加载仓库
+        await loadRepository()
       } catch (error: any) {
         if (error.name !== 'AbortError') {
           console.warn('Directory picker error:', error)
@@ -673,9 +626,11 @@ function fallbackFolderSelect(): void {
   input.click()
 }
 
-// 设置活动过滤器
-function setActiveFilter(filter: string): void {
-  activeFilter.value = filter
+
+
+// 切换Changes展开状态
+function toggleChanges(): void {
+  changesExpanded.value = !changesExpanded.value
 }
 
 // 选择文件
@@ -731,18 +686,7 @@ function getStatusText(status: string): string {
 
 // 获取空文件列表消息
 function getNoFilesMessage(): string {
-  switch (activeFilter.value) {
-    case 'modified':
-      return '没有已修改的文件'
-    case 'added':
-      return '没有新增的文件'
-    case 'deleted':
-      return '没有删除的文件'
-    case 'staged':
-      return '没有已暂存的文件'
-    default:
-      return '工作目录是干净的'
-  }
+  return '工作目录是干净的'
 }
 
 // 查看文件差异
@@ -1205,111 +1149,86 @@ onUnmounted(() => {
   font-size: 84px;
 }
 
-/* 状态统计 */
-.status-summary {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+/* Changes可折叠区域样式 */
+.changes-section {
   margin-bottom: 20px;
 }
 
-.summary-card {
+.changes-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-  border: 1px solid transparent;
-}
-
-.summary-card.modified {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.2);
-  color: #d97706;
-}
-
-.summary-card.added {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.2);
-  color: #059669;
-}
-
-.summary-card.deleted {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.2);
-  color: #dc2626;
-}
-
-.summary-card.staged {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.2);
-  color: #2563eb;
-}
-
-.summary-card.clean {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.2);
-  color: #059669;
-}
-
-.summary-card .count {
-  font-weight: 700;
-}
-
-/* 文件过滤器 */
-.file-filters {
-  margin-bottom: 16px;
-}
-
-.filter-tabs {
-  display: flex;
-  gap: 4px;
-  background: #f8fafc;
-  padding: 4px;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 12px;
-  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
 }
 
-.filter-tab {
+.changes-header:hover {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.changes-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.filter-tab:hover {
-  background: rgba(255, 255, 255, 0.7);
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
   color: #374151;
 }
 
-.filter-tab.active {
-  background: white;
-  color: #3b82f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.changes-title i {
+  transition: transform 0.2s ease;
+  color: #6b7280;
 }
 
-.filter-count {
-  background: currentColor;
-  color: white;
-  padding: 1px 6px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  min-width: 18px;
-  text-align: center;
-  line-height: 1.2;
+.changes-title i.rotated {
+  transform: rotate(-90deg);
 }
+
+.changes-count {
+  display: flex;
+  align-items: center;
+}
+
+.count-badge {
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.clean-badge {
+  background: #10b981;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.changes-content {
+  margin-top: 16px;
+}
+
+
 
 /* 文件列表 */
 .file-list-container {
@@ -1744,9 +1663,9 @@ onUnmounted(() => {
   }
 }
 
-/* GitLab风格差异显示样式 */
+/* GitLab风格差异显示样式 - 强制白色背景 */
 .gitlab-diff-viewer {
-  background: #ffffff;
+  background: #ffffff !important;
   border-radius: 8px;
   border: 1px solid #e9ecef;
   overflow: hidden;
@@ -1756,16 +1675,18 @@ onUnmounted(() => {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 14px;
   line-height: 1.4;
+  background: #ffffff !important;
 }
 
 .diff-line {
   display: flex;
   min-height: 20px;
   align-items: stretch;
+  background: #ffffff !important;
 }
 
 .diff-line-number {
-  background: #f6f8fa;
+  background: #f6f8fa !important;
   border-right: 1px solid #e1e4e8;
   display: flex;
   flex-shrink: 0;
@@ -1777,7 +1698,7 @@ onUnmounted(() => {
   width: 40px;
   padding: 2px 8px;
   text-align: right;
-  color: #6b7280;
+  color: #333;
   font-size: 12px;
   user-select: none;
   display: flex;
@@ -1794,6 +1715,7 @@ onUnmounted(() => {
   display: flex;
   align-items: stretch;
   min-height: 20px;
+  background: #ffffff !important;
 }
 
 .diff-prefix {
@@ -1813,6 +1735,8 @@ onUnmounted(() => {
   overflow-x: auto;
   display: flex;
   align-items: center;
+  background: #ffffff !important;
+  color: #333 !important;
 }
 
 /* 新增行样式 - GitLab绿色 */
@@ -1863,11 +1787,11 @@ onUnmounted(() => {
 
 /* 上下文行样式 */
 .diff-line-context .diff-prefix {
-  color: #6b7280;
+  color: #333;
 }
 
 .diff-line-context .diff-text {
-  color: #374151;
+  color: #333;
 }
 
 /* 头部信息样式 */
