@@ -157,6 +157,7 @@
                   class="file-item"
                   :class="[`file-${file.status.toLowerCase()}`, { selected: selectedFile?.path === file.path }]"
                   @click="selectFile(file)"
+                  @dblclick="handleFileDoubleClick(file)"
                 >
                   <div class="file-info">
                     <div class="file-icon">
@@ -198,7 +199,10 @@
           :current-repo="currentRepo"
           :selected-file="selectedFile"
           :recent-commits="recentCommits"
+          :selected-file-diff="selectedFileDiff"
+          :selected-file-diff-loading="selectedFileDiffLoading"
           @commit="handleCommit"
+          @load-diff="loadFileDiff"
         />
       </template>
     </PageLayout>
@@ -367,6 +371,8 @@ const repoPath = ref('')
 const currentRepo = ref<GitRepo | null>(null)
 const files = ref<GitFile[]>([])
 const selectedFile = ref<GitFile | null>(null)
+const selectedFileDiff = ref('')
+const selectedFileDiffLoading = ref(false)
 const isLoading = ref(false)
 const activeFilter = ref('all')
 const showQuickCommit = ref(false)
@@ -588,6 +594,32 @@ function setActiveFilter(filter: string): void {
 // 选择文件
 function selectFile(file: GitFile): void {
   selectedFile.value = file
+  // 清空之前的差异内容
+  selectedFileDiff.value = ''
+}
+
+// 双击文件处理
+async function handleFileDoubleClick(file: GitFile): Promise<void> {
+  if (file.status === 'MODIFIED' && currentRepo.value) {
+    selectFile(file)
+    await loadFileDiff(file)
+  }
+}
+
+// 加载文件差异
+async function loadFileDiff(file: GitFile): Promise<void> {
+  if (!currentRepo.value || file.status === 'UNTRACKED') return
+  
+  selectedFileDiffLoading.value = true
+  try {
+    const diff = await gitService.getDiff(currentRepo.value.path, file.path)
+    selectedFileDiff.value = diff
+  } catch (error: any) {
+    message.error(`获取差异失败: ${error.message}`)
+    selectedFileDiff.value = ''
+  } finally {
+    selectedFileDiffLoading.value = false
+  }
 }
 
 // 获取文件图标
