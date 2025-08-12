@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+const { contextBridge, ipcRenderer } = require('electron')
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -45,6 +45,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openWin: (arg: string) => 
     ipcRenderer.invoke('open-win', arg),
 })
+
+// 添加调试信息
+console.log('🔧 [Preload] electronAPI 已暴露到 window 对象')
+console.log('🔧 [Preload] 可用的API方法:', Object.keys({
+  selectDirectory: true,
+  executeGitCommand: true,
+  checkGitRepo: true,
+  readFile: true,
+  writeFile: true,
+  openWin: true
+}))
 
 // --------- Preload scripts loading ---------
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {

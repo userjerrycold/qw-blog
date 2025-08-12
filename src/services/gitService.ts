@@ -38,7 +38,17 @@ export interface GitStatus {
 
 class GitService {
   private isElectronEnv(): boolean {
-    return typeof window !== 'undefined' && (window as any).electronAPI
+    // 统一使用与GitHome.vue相同的检测逻辑
+    const hasElectronAPI = typeof window !== 'undefined' && (window as any).electronAPI
+    
+    // 调试信息
+    console.log('🔧 [GitService Debug] Electron环境检测:')
+    console.log('  - window对象存在:', typeof window !== 'undefined')
+    console.log('  - electronAPI存在:', !!(window as any).electronAPI)
+    console.log('  - electronAPI内容:', (window as any).electronAPI)
+    console.log('  - 最终判断结果:', hasElectronAPI)
+    
+    return hasElectronAPI
   }
 
   // 检查路径是否为有效的Git仓库

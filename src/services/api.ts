@@ -1,7 +1,43 @@
 import axios from 'axios'
 
+// 检测是否在 Electron 环境中
+const isElectron = () => {
+  // 详细调试信息
+  console.log('🔍 [API Debug] 详细环境检测:')
+  console.log('  - window存在:', typeof window !== 'undefined')
+  console.log('  - window.electronAPI:', !!(typeof window !== 'undefined' && window.electronAPI))
+  console.log('  - window.require:', !!(typeof window !== 'undefined' && (window as any).require))
+  console.log('  - navigator.userAgent:', typeof navigator !== 'undefined' ? navigator.userAgent : 'undefined')
+  console.log('  - userAgent包含Electron:', typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron'))
+  console.log('  - process.env.ELECTRON:', typeof process !== 'undefined' ? process.env.ELECTRON : 'undefined')
+  console.log('  - window全部属性:', typeof window !== 'undefined' ? Object.keys(window).filter(key => key.toLowerCase().includes('electron')) : [])
+  
+  // 检查多个 Electron 环境标识
+  const result = !!(
+    (typeof window !== 'undefined' && window.electronAPI) ||
+    (typeof window !== 'undefined' && (window as any).require) ||
+    (typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron')) ||
+    (typeof process !== 'undefined' && process.env.ELECTRON === 'true')
+  )
+  
+  console.log('  - 最终检测结果:', result)
+  return result
+}
+
+// 根据环境设置不同的 baseURL
+const getBaseURL = () => {
+  if (isElectron()) {
+    // Electron 环境下直接使用后端服务器地址
+    console.log('🚀 Electron环境检测到，直接连接后端:', 'http://localhost:9090')
+    return 'http://localhost:9090'
+  }
+  // Web 环境下使用代理
+  console.log('🌐 Web环境检测到，使用代理:', '/api')
+  return '/api'
+}
+
 const http = axios.create({
-  baseURL: '/api',
+  baseURL: getBaseURL(),
   timeout: 10000,
 })
 

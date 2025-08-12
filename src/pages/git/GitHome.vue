@@ -422,7 +422,23 @@ const filteredFiles = computed(() => {
 
 // 检查是否为Electron环境
 function isElectronEnv(): boolean {
-  return typeof window !== 'undefined' && (window as any).process?.type === 'renderer'
+  const hasElectronAPI = typeof window !== 'undefined' && !!(window as any).electronAPI
+  
+  // 调试信息
+  console.log('🔧 [Git Debug] Electron环境检测:')
+  console.log('  - window对象存在:', typeof window !== 'undefined')
+  console.log('  - electronAPI存在:', !!(window as any).electronAPI)
+  console.log('  - process对象存在:', !!(window as any).process)
+  console.log('  - process.type:', (window as any).process?.type)
+  console.log('  - 最终判断结果:', hasElectronAPI)
+  
+  if (hasElectronAPI) {
+    console.log('✅ [Git Debug] 检测到Electron环境，将使用真实Git功能')
+  } else {
+    console.log('⚠️ [Git Debug] 未检测到Electron环境，将使用演示数据')
+  }
+  
+  return hasElectronAPI
 }
 
 // 加载Git仓库

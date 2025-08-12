@@ -46,7 +46,7 @@ if (!app.requestSingleInstanceLock()) {
 
 let win: BrowserWindow | null = null
 // Here, you can also use other preload
-const preload = path.join(__dirname, '../preload/index.js')
+const preload = path.join(__dirname, 'preload.js')
 const url = process.env.VITE_DEV_SERVER_URL || ''
 const indexHtml = path.join(process.env.DIST || '', 'index.html')
 
@@ -60,11 +60,9 @@ async function createWindow() {
     minHeight: 800,
     webPreferences: {
       preload,
-      // Warning: Enabling nodeIntegration and disabling contextIsolation is not secure in production
-      // Consider using contextBridge.exposeInMainWorld
-      // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
-      nodeIntegration: true,
-      contextIsolation: false,
+      // 使用安全的contextIsolation配置
+      nodeIntegration: false,
+      contextIsolation: true,
       webSecurity: false, // 开发环境下禁用web安全，允许访问本地文件
     },
   })
@@ -121,8 +119,8 @@ ipcMain.handle('open-win', (_, arg) => {
   const childWindow = new BrowserWindow({
     webPreferences: {
       preload,
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   })
 
