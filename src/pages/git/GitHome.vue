@@ -199,8 +199,6 @@
           :selected-file="selectedFile"
           :recent-commits="recentCommits"
           @commit="handleCommit"
-          @push="handlePush"
-          @pull="handlePull"
         />
       </template>
     </PageLayout>
@@ -720,7 +718,7 @@ async function executeCommit(): Promise<void> {
 }
 
 // 处理提交
-async function handleCommit(data: { message: string; files?: string[] }): Promise<void> {
+async function handleCommit(data: { message: string; files?: string[]; pushAfterCommit?: boolean }): Promise<void> {
   if (!currentRepo.value) return
   
   try {
@@ -736,6 +734,16 @@ async function handleCommit(data: { message: string; files?: string[] }): Promis
     
     await gitService.commit(currentRepo.value.path, data.message)
     message.success('提交成功')
+    
+    // 如果选择了提交后推送
+    if (data.pushAfterCommit) {
+      try {
+        await gitService.push(currentRepo.value.path)
+        message.success('推送成功')
+      } catch (error: any) {
+        message.error(`推送失败: ${error.message}`)
+      }
+    }
     
     await refreshStatus()
     await loadRecentCommits()

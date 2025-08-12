@@ -1,23 +1,43 @@
 <template>
   <aside class="git-sidebar">
-    <!-- Git 快速操作区域 -->
-    <div class="sidebar-section">
-      <h3 class="section-title">快速操作</h3>
-      <div class="quick-actions">
-        <button class="quick-btn commit-btn" @click="handleQuickCommit" :disabled="!currentRepo">
-          <i class="fas fa-check-circle"></i>
-          快速提交
-        </button>
-        
-        <button class="quick-btn push-btn" @click="handlePush" :disabled="!currentRepo">
-          <i class="fas fa-upload"></i>
-          推送
-        </button>
-        
-        <button class="quick-btn pull-btn" @click="handlePull" :disabled="!currentRepo">
-          <i class="fas fa-download"></i>
-          拉取
-        </button>
+    <!-- 快速提交区域 - 置顶 -->
+    <div class="sidebar-section" v-if="currentRepo">
+      <h3 class="section-title">
+        <i class="fas fa-rocket"></i>
+        快速提交
+      </h3>
+      <div class="quick-commit">
+        <div class="commit-form">
+          <textarea 
+            v-model="commitMessage" 
+            placeholder="输入提交信息..."
+            class="commit-input"
+            rows="3"
+            maxlength="500"
+          ></textarea>
+          <div class="commit-char-count">{{ commitMessage.length }}/500</div>
+          
+          <div class="commit-options">
+            <label class="commit-option">
+              <input type="checkbox" v-model="stageAllFiles" />
+              <span class="checkmark"></span>
+              <span class="option-text">暂存所有文件</span>
+            </label>
+            
+            <label class="commit-option">
+              <input type="checkbox" v-model="pushAfterCommit" />
+              <span class="checkmark"></span>
+              <span class="option-text">提交后推送</span>
+            </label>
+          </div>
+          
+          <div class="commit-actions">
+            <button class="commit-action-btn primary" @click="executeCommit" :disabled="!commitMessage.trim()">
+              <i class="fas fa-check"></i>
+              {{ pushAfterCommit ? '提交并推送' : '提交' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -167,43 +187,7 @@
       </div>
     </div>
 
-    <!-- 快速提交区域 -->
-    <div class="sidebar-section" v-if="currentRepo">
-      <h3 class="section-title">快速提交</h3>
-      <div class="quick-commit">
-        <div class="commit-form">
-          <textarea 
-            v-model="commitMessage" 
-            placeholder="输入提交信息..."
-            class="commit-input"
-            rows="3"
-            maxlength="500"
-          ></textarea>
-          <div class="commit-char-count">{{ commitMessage.length }}/500</div>
-          
-          <div class="commit-options">
-            <label class="commit-option">
-              <input type="checkbox" v-model="stageAllFiles" />
-              <span class="checkmark"></span>
-              <span class="option-text">暂存所有文件</span>
-            </label>
-            
-            <label class="commit-option">
-              <input type="checkbox" v-model="pushAfterCommit" />
-              <span class="checkmark"></span>
-              <span class="option-text">提交后推送</span>
-            </label>
-          </div>
-          
-          <div class="commit-actions">
-            <button class="commit-action-btn primary" @click="executeCommit" :disabled="!commitMessage.trim()">
-              <i class="fas fa-check"></i>
-              {{ pushAfterCommit ? '提交并推送' : '提交' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+
   </aside>
 </template>
 
@@ -262,9 +246,7 @@ const props = defineProps<{
 
 // Emits定义  
 const emit = defineEmits<{
-  'commit': [data: { message: string; files?: string[] }]
-  'push': []
-  'pull': []
+  'commit': [data: { message: string; files?: string[]; pushAfterCommit?: boolean }]
 }>()
 
 // 响应式状态
@@ -272,33 +254,7 @@ const commitMessage = ref('')
 const stageAllFiles = ref(true)
 const pushAfterCommit = ref(false)
 
-// 快速操作
-function handleQuickCommit(): void {
-  if (!props.currentRepo) {
-    message.warning('请先加载Git仓库')
-    return
-  }
-  
-  message.info('快速提交功能开发中...')
-}
 
-function handlePush(): void {
-  if (!props.currentRepo) {
-    message.warning('请先加载Git仓库')
-    return
-  }
-  
-  emit('push')
-}
-
-function handlePull(): void {
-  if (!props.currentRepo) {
-    message.warning('请先加载Git仓库')
-    return
-  }
-  
-  emit('pull')
-}
 
 // 分支管理
 function handleCreateBranch(): void {
@@ -340,16 +296,11 @@ function executeCommit(): void {
   
   const commitData = {
     message: commitMessage.value.trim(),
-    files: stageAllFiles.value ? undefined : []
+    files: stageAllFiles.value ? undefined : [],
+    pushAfterCommit: pushAfterCommit.value
   }
   
   emit('commit', commitData)
-  
-  if (pushAfterCommit.value) {
-    setTimeout(() => {
-      emit('push')
-    }, 1000)
-  }
   
   // 清空表单
   commitMessage.value = ''
@@ -478,7 +429,14 @@ export default {
   margin-bottom: 12px;
   color: #333;
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-title i {
+  color: #10b981;
+  font-size: 12px;
 }
 
 .section-title::after {
@@ -492,71 +450,7 @@ export default {
   border-radius: 2px;
 }
 
-/* 快速操作样式 */
-.quick-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-}
 
-.quick-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.commit-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 2px 3px rgba(16, 185, 129, 0.3);
-}
-
-.commit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(16, 185, 129, 0.4);
-}
-
-.push-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  box-shadow: 0 2px 3px rgba(59, 130, 246, 0.3);
-}
-
-.push-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
-}
-
-.pull-btn {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
-  box-shadow: 0 2px 3px rgba(245, 158, 11, 0.3);
-}
-
-.pull-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(245, 158, 11, 0.4);
-}
-
-.quick-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
 
 /* 仓库统计样式 */
 .repo-stats {
@@ -1112,10 +1006,6 @@ export default {
   .repo-stats {
     grid-template-columns: 1fr;
     gap: 8px;
-  }
-  
-  .quick-actions {
-    gap: 6px;
   }
 }
 </style>
