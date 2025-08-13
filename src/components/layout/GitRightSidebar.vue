@@ -32,7 +32,8 @@
         快速提交
       </h3>
       <div class="quick-commit">
-        <div class="commit-form">
+        <!-- 当有变更时显示提交表单 -->
+        <div class="commit-form" v-if="props.hasChanges">
           <textarea 
             v-model="commitMessage" 
             placeholder="输入提交信息..."
@@ -68,6 +69,23 @@
               <span v-else-if="props.isPushing">正在推送...</span>
               <span v-else>{{ pushAfterCommit ? '提交并推送' : '提交' }}</span>
             </button>
+          </div>
+        </div>
+        
+        <!-- 当没有变更时显示提示信息 -->
+        <div class="no-changes-prompt" v-else>
+          <div class="no-changes-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="no-changes-title">没有需要提交的更改</div>
+          <div class="no-changes-description">
+            工作目录是干净的，所有更改都已提交
+          </div>
+          <div class="no-changes-suggestions">
+            <div class="suggestion-tip">
+              <i class="fas fa-lightbulb"></i>
+              <span>修改文件后可在此进行快速提交</span>
+            </div>
           </div>
         </div>
       </div>
@@ -289,6 +307,7 @@ const props = defineProps<{
   recentRepos: RecentRepo[]
   isCommitting?: boolean
   isPushing?: boolean
+  hasChanges?: boolean
 }>()
 
 // Emits定义  
@@ -1026,6 +1045,69 @@ export default {
 
 .commit-input::placeholder {
   color: #9ca3af;
+}
+
+/* 无变更提示样式 */
+.no-changes-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 16px;
+  gap: 12px;
+}
+
+.no-changes-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  margin-bottom: 8px;
+}
+
+.no-changes-icon i {
+  font-size: 24px;
+  color: white;
+}
+
+.no-changes-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.no-changes-description {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.no-changes-suggestions {
+  width: 100%;
+}
+
+.suggestion-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.suggestion-tip i {
+  color: #3b82f6;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .commit-char-count {
