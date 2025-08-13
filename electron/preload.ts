@@ -44,6 +44,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 打开新窗口
   openWin: (arg: string) => 
     ipcRenderer.invoke('open-win', arg),
+  
+  // GBITS 文件解析相关 API
+  scanGbitsFiles: (folderPath: string) => 
+    ipcRenderer.invoke('scan-gbits-files', folderPath),
+  
+  parseGbitsFile: (filePath: string) => 
+    ipcRenderer.invoke('parse-gbits-file', filePath),
+  
+  batchParseGbitsFiles: (filePaths: string[]) => 
+    ipcRenderer.invoke('batch-parse-gbits-files', filePaths),
 })
 
 // 添加调试信息
@@ -54,7 +64,10 @@ console.log('🔧 [Preload] 可用的API方法:', Object.keys({
   checkGitRepo: true,
   readFile: true,
   writeFile: true,
-  openWin: true
+  openWin: true,
+  scanGbitsFiles: true,
+  parseGbitsFile: true,
+  batchParseGbitsFiles: true
 }))
 
 // --------- Preload scripts loading ---------

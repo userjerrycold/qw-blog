@@ -81,6 +81,10 @@ const routes: RouteRecordRaw[] = [
     path: '/git',
     component: () => import('@/pages/git/GitHome.vue'),
   },
+  {
+    path: '/gbits',
+    component: () => import('@/pages/gbits/GbitsHome.vue'),
+  },
 ]
 
 // 检测是否在 Electron 环境中

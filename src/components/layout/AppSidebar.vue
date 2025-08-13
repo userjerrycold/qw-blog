@@ -40,6 +40,7 @@ import questionSvg from '@/assets/question.svg'
 import wendaoSvg from '@/assets/wendao.svg'
 import recipeSvg from '@/assets/recipe.svg'
 import gitSvg from '@/assets/git.svg'
+import gbitsSvg from '@/assets/gbits.svg'
 
 const collapsed = ref(false)
 
@@ -65,6 +66,11 @@ const menuOptions: MenuOption[] = [
     label: 'GIT 管理',
     key: '/git',
     icon: () => h('img', { src: gitSvg, class: 'w-4 h-4' }),
+  },
+  {
+    label: 'GBITS 解析',
+    key: '/gbits',
+    icon: () => h('img', { src: gbitsSvg, class: 'w-4 h-4' }),
   },
   {
     label: '备忘录',
@@ -115,6 +121,7 @@ const activeKey = computed(() => {
   if (route.path.startsWith('/tools')) return '/tools'
   if (route.path.startsWith('/docs')) return '/docs'
   if (route.path.startsWith('/git')) return '/git'
+  if (route.path.startsWith('/gbits')) return '/gbits'
   if (route.path.startsWith('/mock')) return '/mock'
   if (route.path.startsWith('/memo')) return '/memo'
   if (route.path.startsWith('/recipe')) return '/recipe'
