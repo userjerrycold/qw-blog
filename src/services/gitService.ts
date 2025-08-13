@@ -304,6 +304,84 @@ origin  https://github.com/user/repo.git (push)`
     }
   }
 
+  // 获取两个提交之间的差异
+  async getCommitDiff(repoPath: string, commitHash: string, previousCommitHash?: string): Promise<{
+    files: Array<{
+      path: string
+      name: string
+      status: 'MODIFIED' | 'ADDED' | 'DELETED'
+      diff: string
+      additions: number
+      deletions: number
+    }>
+  }> {
+    try {
+      // 如果没有上一次提交，则与空树比较
+      const compareWith = previousCommitHash || '4b825dc642cb6eb9a060e54bf8d69288fbee4904' // Git空树hash
+      
+      // 获取文件变更列表
+      const nameStatusOutput = await this.executeGitCommand(
+        `git diff --name-status ${compareWith} ${commitHash}`,
+        repoPath
+      )
+      
+      const files = []
+      
+      if (nameStatusOutput.trim()) {
+        const lines = nameStatusOutput.split('\n').filter(line => line.trim())
+        
+        for (const line of lines) {
+          const parts = line.split('\t')
+          if (parts.length < 2) continue
+          
+          const statusCode = parts[0]
+          const filePath = parts[1]
+          const fileName = filePath.split('/').pop() || filePath
+          
+          // 解析状态
+          let status: 'MODIFIED' | 'ADDED' | 'DELETED'
+          if (statusCode === 'A') status = 'ADDED'
+          else if (statusCode === 'D') status = 'DELETED'
+          else status = 'MODIFIED'
+          
+          // 获取该文件的具体差异
+          const fileDiff = await this.executeGitCommand(
+            `git diff ${compareWith} ${commitHash} -- "${filePath}"`,
+            repoPath
+          )
+          
+          // 统计增删行数
+          let additions = 0
+          let deletions = 0
+          
+          if (fileDiff) {
+            const diffLines = fileDiff.split('\n')
+            for (const diffLine of diffLines) {
+              if (diffLine.startsWith('+') && !diffLine.startsWith('+++')) {
+                additions++
+              } else if (diffLine.startsWith('-') && !diffLine.startsWith('---')) {
+                deletions++
+              }
+            }
+          }
+          
+          files.push({
+            path: filePath,
+            name: fileName,
+            status,
+            diff: fileDiff || '无法获取差异内容',
+            additions,
+            deletions
+          })
+        }
+      }
+      
+      return { files }
+    } catch (error: any) {
+      throw new Error(`获取提交差异失败: ${error.message}`)
+    }
+  }
+
   // 暂存文件
   async stageFile(repoPath: string, filePath: string): Promise<void> {
     try {
