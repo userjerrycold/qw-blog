@@ -57,9 +57,16 @@
           </div>
           
           <div class="commit-actions">
-            <button class="commit-action-btn primary" @click="executeCommit" :disabled="!commitMessage.trim()">
-              <i class="fas fa-check"></i>
-              {{ pushAfterCommit ? '提交并推送' : '提交' }}
+            <button 
+              class="commit-action-btn primary" 
+              @click="executeCommit" 
+              :disabled="!commitMessage.trim() || props.isCommitting || props.isPushing"
+            >
+              <i class="fas fa-spinner fa-spin" v-if="props.isCommitting || props.isPushing"></i>
+              <i class="fas fa-check" v-else></i>
+              <span v-if="props.isCommitting">正在提交...</span>
+              <span v-else-if="props.isPushing">正在推送...</span>
+              <span v-else>{{ pushAfterCommit ? '提交并推送' : '提交' }}</span>
             </button>
           </div>
         </div>
@@ -222,12 +229,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useMessage } from 'naive-ui'
+import { useGlobalNotification } from '@/services/notification'
 
+// 初始化通知服务
+const notification = useGlobalNotification()
 
-
-// 创建全局message实例
-const message = useMessage()
 
 // 添加FontAwesome CDN
 const head = document.head || document.getElementsByTagName('head')[0]
@@ -281,6 +287,8 @@ const props = defineProps<{
   selectedFile: GitFile | null
   recentCommits: GitCommit[]
   recentRepos: RecentRepo[]
+  isCommitting?: boolean
+  isPushing?: boolean
 }>()
 
 // Emits定义  
@@ -300,33 +308,33 @@ const pushAfterCommit = ref(false)
 
 // 分支管理
 function handleCreateBranch(): void {
-  message.info('创建分支功能开发中...')
+  notification.info('创建分支功能开发中...')
 }
 
 function handleSwitchBranch(): void {
-  message.info('切换分支功能开发中...')
+  notification.info('切换分支功能开发中...')
 }
 
 // 文件操作
 function handleStageFile(): void {
   if (props.selectedFile) {
     const action = props.selectedFile.staged ? '取消暂存' : '暂存'
-    message.info(`${action}文件: ${props.selectedFile.name}`)
+    notification.info(`${action}文件: ${props.selectedFile.name}`)
   }
 }
 
 // 提交相关
 function handleViewCommit(commit: GitCommit): void {
-  message.info(`查看提交: ${commit.hash.substring(0, 7)}`)
+  notification.info(`查看提交: ${commit.hash.substring(0, 7)}`)
 }
 
 function handleViewAllCommits(): void {
-  message.info('查看所有提交历史')
+  notification.info('查看所有提交历史')
 }
 
 function executeCommit(): void {
   if (!commitMessage.value.trim()) {
-    message.error('请输入提交信息')
+    notification.error('请输入提交信息')
     return
   }
   
@@ -349,11 +357,11 @@ function handleLoadFromRecentRepo(repo: RecentRepo): void {
 
 // 远程仓库操作
 function handleFetch(): void {
-  message.info('获取远程更新功能开发中...')
+  notification.info('获取远程更新功能开发中...')
 }
 
 function handleSync(): void {
-  message.info('同步功能开发中...')
+  notification.info('同步功能开发中...')
 }
 
 // 工具函数

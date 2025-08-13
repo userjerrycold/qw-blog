@@ -65,10 +65,6 @@
                 <div class="branch-info">
                   <i class="fas fa-code-branch branch-icon"></i>
                   <span class="branch-name">{{ currentRepo.currentBranch }}</span>
-                  <span class="commit-info" v-if="currentRepo.lastCommit">
-                    <span class="commit-time">{{ formatCommitTime(currentRepo.lastCommit.date) }}</span>
-                    <span class="commit-author">by {{ currentRepo.lastCommit.author }}</span>
-                  </span>
                 </div>
               </div>
             </div>
@@ -160,6 +156,8 @@
           :selected-file="selectedFile"
           :recent-commits="recentCommits"
           :recent-repos="recentRepos"
+          :is-committing="isCommitting"
+          :is-pushing="isPushing"
           @commit="handleCommit"
           @load-repo="loadFromRecentRepo"
         />
@@ -320,10 +318,11 @@ defineOptions({
   name: 'GitHome'
 })
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
-import { NButton, NModal, NInput, NIcon, NSpin, useMessage } from 'naive-ui'
+import { NButton, NModal, NInput, NIcon, NSpin } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import GitRightSidebar from '@/components/layout/GitRightSidebar.vue'
 import { gitService } from '@/services/gitService'
+import { useGitNotifications, useGlobalNotification } from '@/services/notification'
 
 // 添加FontAwesome CDN
 const head = document.head || document.getElementsByTagName('head')[0]
@@ -379,8 +378,9 @@ interface DiffLine {
   content: string
 }
 
-// 创建全局message实例
-const message = useMessage()
+// 初始化通知服务
+const gitNotifications = useGitNotifications()
+const notification = useGlobalNotification()
 
 // 响应式状态
 const repoPath = ref('')
@@ -505,7 +505,7 @@ function isElectronEnv(): boolean {
 // 加载Git仓库
 async function loadRepository(): Promise<void> {
   if (!repoPath.value.trim()) {
-    message.error('请输入仓库路径')
+    notification.error('请输入仓库路径')
     return
   }
 
@@ -522,16 +522,16 @@ async function loadRepository(): Promise<void> {
     
     // 根据环境显示不同的成功消息
     if (isElectronEnv()) {
-      message.success('仓库加载成功')
+      gitNotifications.repoLoadSuccess()
     } else {
-      message.warning('仓库加载成功 (演示模式) - 浏览器环境下显示的是模拟数据，要使用真实Git功能请在Electron环境下运行')
+      gitNotifications.repoLoadSuccessDemo()
     }
     
     // 启动自动刷新
     startAutoRefresh()
     
   } catch (error: any) {
-    message.error(`加载仓库失败: ${error.message}`)
+    gitNotifications.repoLoadError(error.message)
     currentRepo.value = null
     files.value = []
   } finally {
@@ -547,7 +547,7 @@ async function refreshStatus(): Promise<void> {
     const status = await gitService.getStatus(currentRepo.value.path)
     files.value = status.files
   } catch (error: any) {
-    message.error(`刷新状态失败: ${error.message}`)
+    notification.error(`刷新状态失败: ${error.message}`)
   }
 }
 
@@ -589,12 +589,12 @@ async function browseFolder(): Promise<void> {
         const result = await (window as any).electronAPI.selectDirectory()
         if (result.success && result.path) {
           repoPath.value = result.path
-          message.success(`已选择文件夹: ${result.path}`)
+          notification.success(`已选择文件夹: ${result.path}`)
           // 自动加载仓库
           await loadRepository()
           return
         } else if (result.error && !result.error.includes('未选择')) {
-          message.error(`选择文件夹失败: ${result.error}`)
+          notification.error(`选择文件夹失败: ${result.error}`)
           return
         }
       } catch (error: any) {
@@ -607,7 +607,7 @@ async function browseFolder(): Promise<void> {
       try {
         const dirHandle = await (window as any).showDirectoryPicker()
         repoPath.value = dirHandle.name // 使用文件夹名称
-        message.success(`已选择文件夹: ${dirHandle.name}`)
+        notification.success(`已选择文件夹: ${dirHandle.name}`)
         // 自动加载仓库
         await loadRepository()
       } catch (error: any) {
@@ -641,7 +641,7 @@ function fallbackFolderSelect(): void {
       const pathParts = firstFile.webkitRelativePath.split('/')
       const folderName = pathParts[0]
       repoPath.value = folderName
-      message.success(`已选择文件夹: ${folderName}`)
+      notification.success(`已选择文件夹: ${folderName}`)
     }
     document.body.removeChild(input)
   }
@@ -778,7 +778,7 @@ async function viewDiff(file: GitFile): Promise<void> {
     const diff = await gitService.getDiff(currentRepo.value.path, file.path)
     diffContent.value = diff
   } catch (error: any) {
-    message.error(`获取差异失败: ${error.message}`)
+    notification.error(`获取差异失败: ${error.message}`)
     diffContent.value = '无法获取差异内容'
   }
 }
@@ -790,15 +790,15 @@ async function toggleStage(file: GitFile): Promise<void> {
   try {
     if (file.staged) {
       await gitService.unstageFile(currentRepo.value.path, file.path)
-      message.success(`已取消暂存: ${file.name}`)
+      gitNotifications.unstageFileSuccess(file.name)
     } else {
       await gitService.stageFile(currentRepo.value.path, file.path)
-      message.success(`已添加到暂存: ${file.name}`)
+      gitNotifications.stageFileSuccess(file.name)
     }
     
     await refreshStatus()
   } catch (error: any) {
-    message.error(`操作失败: ${error.message}`)
+    notification.error(`操作失败: ${error.message}`)
   }
 }
 
@@ -808,10 +808,10 @@ async function discardChanges(file: GitFile): Promise<void> {
   
   try {
     await gitService.discardChanges(currentRepo.value.path, file.path)
-    message.success(`已撤销更改: ${file.name}`)
+    gitNotifications.discardSuccess(file.name)
     await refreshStatus()
   } catch (error: any) {
-    message.error(`撤销失败: ${error.message}`)
+    notification.error(`撤销失败: ${error.message}`)
   }
 }
 
@@ -826,7 +826,7 @@ async function executeCommit(): Promise<void> {
     }
     
     await gitService.commit(currentRepo.value.path, commitForm.message.trim())
-    message.success('提交成功')
+    gitNotifications.commitSuccess()
     
     if (commitForm.pushAfterCommit) {
       isPushing.value = true
@@ -843,7 +843,7 @@ async function executeCommit(): Promise<void> {
     await loadRecentCommits()
     
   } catch (error: any) {
-    message.error(`提交失败: ${error.message}`)
+    gitNotifications.commitError(error.message)
   } finally {
     isCommitting.value = false
   }
@@ -865,15 +865,15 @@ async function handleCommit(data: { message: string; files?: string[]; pushAfter
     }
     
     await gitService.commit(currentRepo.value.path, data.message)
-    message.success('提交成功')
+    gitNotifications.commitSuccess()
     
     // 如果选择了提交后推送
     if (data.pushAfterCommit) {
       try {
         await gitService.push(currentRepo.value.path)
-        message.success('推送成功')
+        gitNotifications.pushSuccess()
       } catch (error: any) {
-        message.error(`推送失败: ${error.message}`)
+        gitNotifications.pushError(error.message)
       }
     }
     
@@ -881,7 +881,7 @@ async function handleCommit(data: { message: string; files?: string[]; pushAfter
     await loadRecentCommits()
     
   } catch (error: any) {
-    message.error(`提交失败: ${error.message}`)
+    gitNotifications.commitError(error.message)
   }
 }
 
@@ -891,9 +891,9 @@ async function handlePush(): Promise<void> {
   
   try {
     await gitService.push(currentRepo.value.path)
-    message.success('推送成功')
+    gitNotifications.pushSuccess()
   } catch (error: any) {
-    message.error(`推送失败: ${error.message}`)
+    gitNotifications.pushError(error.message)
   }
 }
 
@@ -903,11 +903,11 @@ async function handlePull(): Promise<void> {
   
   try {
     await gitService.pull(currentRepo.value.path)
-    message.success('拉取成功')
+    notification.success('拉取成功')
     await refreshStatus()
     await loadRecentCommits()
   } catch (error: any) {
-    message.error(`拉取失败: ${error.message}`)
+    notification.error(`拉取失败: ${error.message}`)
   }
 }
 
@@ -1211,22 +1211,7 @@ onUnmounted(() => {
   border: 1px solid #e2e8f0;
 }
 
-.commit-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  opacity: 0.7;
-}
 
-.commit-time {
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.commit-author {
-  color: #6b7280;
-}
 
 /* 空状态 */
 .empty-repo {

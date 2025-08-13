@@ -1,7 +1,8 @@
 <template>
   <n-config-provider :theme="theme" :theme-overrides="themeOverrides">
-    <n-message-provider>
-      <!-- 登录页面全屏显示，不显示侧边栏 -->
+    <n-notification-provider>
+      <n-message-provider>
+        <!-- 登录页面全屏显示，不显示侧边栏 -->
       <template v-if="isLoginPage">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -22,7 +23,8 @@
           </router-view>
         </main>
       </template>
-    </n-message-provider>
+      </n-message-provider>
+    </n-notification-provider>
   </n-config-provider>
 </template>
 
