@@ -1574,17 +1574,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 24px;
-  padding: 32px 40px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   max-width: 500px;
-  transition: all 0.3s ease;
-}
-
-.clean-status-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .status-icon {
@@ -1668,7 +1658,6 @@ onUnmounted(() => {
   .clean-status-card {
     flex-direction: column;
     text-align: center;
-    padding: 24px 20px;
     gap: 16px;
     max-width: 100%;
   }
