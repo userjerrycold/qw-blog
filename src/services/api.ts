@@ -24,7 +24,7 @@ const isElectron = () => {
   return result
 }
 
-// 根据环境设置不同的 baseURL
+// 根据环境设置不同的 baseURL1
 const getBaseURL = () => {
   if (isElectron()) {
     // Electron 环境下直接使用后端服务器地址

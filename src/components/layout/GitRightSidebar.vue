@@ -135,6 +135,10 @@
             <i class="fas fa-exchange-alt"></i>
             切换分支
           </button>
+          <button class="branch-action-btn backup-btn" @click="showBackupBranchModal = true" title="备份分支">
+            <i class="fas fa-save"></i>
+            备份分支
+          </button>
         </div>
       </div>
     </div>
@@ -265,62 +269,212 @@
 
   </aside>
   
-  <!-- 创建分支弹窗 -->
-  <n-modal v-model:show="showCreateBranchModal" :mask-closable="false" class="branch-modal">
-    <div class="modal-container">
-      <div class="modal-inner">
-        <div class="modal-header">
-          <h3>创建新分支</h3>
-          <n-button quaternary circle @click="showCreateBranchModal = false">
-            <n-icon><i class="fas fa-times"></i></n-icon>
+  <!-- 创建分支弹窗 - 美化版 -->
+  <n-modal v-model:show="showCreateBranchModal" :mask-closable="false" class="git-branch-modal">
+    <div class="branch-modal-container">
+      <div class="branch-modal-inner">
+        <div class="branch-modal-header">
+          <div class="modal-icon create-icon">
+            <i class="fas fa-code-branch"></i>
+          </div>
+          <div class="modal-title-section">
+            <h3 class="modal-title">创建新分支</h3>
+            <p class="modal-subtitle">基于现有分支或标签创建新的开发分支</p>
+          </div>
+          <n-button quaternary circle @click="showCreateBranchModal = false" class="close-button">
+            <n-icon>
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+              </svg>
+            </n-icon>
           </n-button>
         </div>
-        <div class="modal-content">
+        
+        <div class="branch-modal-content">
           <div class="form-group">
-            <label>分支名称</label>
-            <n-input v-model:value="newBranchName" placeholder="请输入新分支名称" />
+            <label class="form-label">分支名称 <span class="required">*</span></label>
+            <n-input 
+              v-model:value="newBranchName" 
+              placeholder="请输入新分支名称 (例如: feature/new-feature)"
+              class="form-input"
+              size="large"
+            />
           </div>
+          
           <div class="form-group">
-            <label>基于</label>
+            <label class="form-label">基于分支/标签</label>
             <n-select 
               v-model:value="createBranchBase" 
               :options="branchBaseOptions" 
-              placeholder="选择基于哪个分支或标签创建"
+              placeholder="选择基于哪个分支或标签创建 (留空则基于当前分支)"
+              class="form-input"
+              size="large"
+              filterable
+              clearable
+              :loading="loadingBranchData"
             />
+            <div class="form-hint" v-if="props.currentRepo?.currentBranch">
+              <i class="fas fa-info-circle"></i>
+              <span>当前分支: <strong>{{ props.currentRepo.currentBranch }}</strong></span>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <n-button @click="showCreateBranchModal = false">取消</n-button>
-          <n-button type="primary" @click="executeCreateBranch" :disabled="!newBranchName.trim()">创建</n-button>
+        
+        <div class="branch-modal-footer">
+          <n-button size="large" @click="showCreateBranchModal = false" class="cancel-btn">取消</n-button>
+          <n-button 
+            type="primary" 
+            size="large"
+            @click="executeCreateBranch" 
+            :disabled="!newBranchName.trim()"
+            class="primary-btn"
+          >
+            <i class="fas fa-plus"></i>
+            创建分支
+          </n-button>
         </div>
       </div>
     </div>
   </n-modal>
   
-  <!-- 切换分支弹窗 -->
-  <n-modal v-model:show="showSwitchBranchModal" :mask-closable="false" class="branch-modal">
-    <div class="modal-container">
-      <div class="modal-inner">
-        <div class="modal-header">
-          <h3>切换分支</h3>
-          <n-button quaternary circle @click="showSwitchBranchModal = false">
-            <n-icon><i class="fas fa-times"></i></n-icon>
+  <!-- 切换分支弹窗 - 美化版 -->
+  <n-modal v-model:show="showSwitchBranchModal" :mask-closable="false" class="git-branch-modal">
+    <div class="branch-modal-container">
+      <div class="branch-modal-inner">
+        <div class="branch-modal-header">
+          <div class="modal-icon switch-icon">
+            <i class="fas fa-exchange-alt"></i>
+          </div>
+          <div class="modal-title-section">
+            <h3 class="modal-title">切换分支</h3>
+            <p class="modal-subtitle">选择要切换到的目标分支</p>
+          </div>
+          <n-button quaternary circle @click="showSwitchBranchModal = false" class="close-button">
+            <n-icon>
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+              </svg>
+            </n-icon>
           </n-button>
         </div>
-        <div class="modal-content">
+        
+        <div class="branch-modal-content">
           <div class="form-group">
-            <label>选择分支</label>
+            <label class="form-label">目标分支 <span class="required">*</span></label>
             <n-select 
               v-model:value="targetBranch" 
               :options="branchOptions" 
               placeholder="选择要切换的分支"
+              class="form-input"
+              size="large"
               filterable
+              :loading="loadingBranchData"
             />
+            <div class="form-hint" v-if="props.currentRepo?.currentBranch">
+              <i class="fas fa-info-circle"></i>
+              <span>当前分支: <strong>{{ props.currentRepo.currentBranch }}</strong></span>
+            </div>
+          </div>
+          
+          <div class="branch-switch-warning" v-if="targetBranch">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div class="warning-content">
+              <p><strong>注意:</strong> 切换分支前请确保当前分支的更改已提交</p>
+              <p>未提交的更改可能会丢失或产生冲突</p>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <n-button @click="showSwitchBranchModal = false">取消</n-button>
-          <n-button type="primary" @click="executeSwitchBranch" :disabled="!targetBranch">切换</n-button>
+        
+        <div class="branch-modal-footer">
+          <n-button size="large" @click="showSwitchBranchModal = false" class="cancel-btn">取消</n-button>
+          <n-button 
+            type="primary" 
+            size="large"
+            @click="executeSwitchBranch" 
+            :disabled="!targetBranch"
+            class="primary-btn"
+          >
+            <i class="fas fa-exchange-alt"></i>
+            切换分支
+          </n-button>
+        </div>
+      </div>
+    </div>
+  </n-modal>
+  
+  <!-- 备份分支弹窗 - 新增 -->
+  <n-modal v-model:show="showBackupBranchModal" :mask-closable="false" class="git-branch-modal">
+    <div class="branch-modal-container">
+      <div class="branch-modal-inner">
+        <div class="branch-modal-header">
+          <div class="modal-icon backup-icon">
+            <i class="fas fa-save"></i>
+          </div>
+          <div class="modal-title-section">
+            <h3 class="modal-title">备份分支</h3>
+            <p class="modal-subtitle">为当前分支创建备份副本</p>
+          </div>
+          <n-button quaternary circle @click="showBackupBranchModal = false" class="close-button">
+            <n-icon>
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+              </svg>
+            </n-icon>
+          </n-button>
+        </div>
+        
+        <div class="branch-modal-content">
+          <div class="current-branch-info">
+            <i class="fas fa-code-branch"></i>
+            <div class="branch-info-content">
+              <span class="info-label">当前分支:</span>
+              <span class="info-value">{{ props.currentRepo?.currentBranch }}</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">备份分支名称 <span class="required">*</span></label>
+            <div class="backup-name-container">
+              <n-input 
+                v-model:value="backupBranchName" 
+                placeholder="备份分支名称"
+                class="form-input"
+                size="large"
+              />
+              <button 
+                class="auto-generate-btn" 
+                @click="generateBackupBranchName"
+                type="button"
+                title="自动生成备份名称"
+              >
+                <i class="fas fa-magic"></i>
+                自动生成
+              </button>
+            </div>
+          </div>
+          
+          <div class="backup-explanation">
+            <i class="fas fa-info-circle"></i>
+            <div class="explanation-content">
+              <h4>备份说明</h4>
+              <p>备份会创建当前分支的完整副本，包含所有提交历史</p>
+              <p>备份完成后会自动切换回当前分支</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="branch-modal-footer">
+          <n-button size="large" @click="showBackupBranchModal = false" class="cancel-btn">取消</n-button>
+          <n-button 
+            type="primary" 
+            size="large"
+            @click="executeBackupBranch" 
+            :disabled="!backupBranchName.trim()"
+            class="primary-btn backup-primary"
+          >
+            <i class="fas fa-save"></i>
+            创建备份
+          </n-button>
         </div>
       </div>
     </div>
@@ -414,11 +568,14 @@ const recentReposScrollContainer = ref<HTMLElement>()
 // 分支管理相关
 const showCreateBranchModal = ref(false)
 const showSwitchBranchModal = ref(false)
+const showBackupBranchModal = ref(false)
 const newBranchName = ref('')
 const createBranchBase = ref('')
 const targetBranch = ref('')
+const backupBranchName = ref('')
 const branches = ref<string[]>([])
 const tags = ref<string[]>([])
+const loadingBranchData = ref(false)
 
 // 计算属性
 const displayedRecentRepos = computed(() => {
@@ -431,7 +588,7 @@ const branchBaseOptions = computed(() => {
   // 添加分支选项
   branches.value.forEach(branch => {
     options.push({
-      label: `分支: ${branch}`,
+      label: branch,
       value: branch,
       type: 'branch'
     })
@@ -473,18 +630,31 @@ function scrollRecentRepos(direction: 'up' | 'down'): void {
 
 // 分支管理
 async function loadBranchesAndTags(): Promise<void> {
-  if (!props.currentRepo) return
+  if (!props.currentRepo || loadingBranchData.value) return
   
+  loadingBranchData.value = true
   try {
-    const [branchList, tagList] = await Promise.all([
+    // 并行获取本地分支、远程分支和标签
+    const [localBranches, remoteBranches, tagList] = await Promise.all([
       gitService.getBranches(props.currentRepo.path),
-      gitService.getTags(props.currentRepo.path)
+      gitService.getRemoteBranches(props.currentRepo.path).catch(() => []),
+      gitService.getTags(props.currentRepo.path).catch(() => [])
     ])
     
-    branches.value = branchList
+    // 合并本地和远程分支，去重
+    const allBranches = new Set([...localBranches, ...remoteBranches])
+    branches.value = Array.from(allBranches).sort()
     tags.value = tagList
+    
+    console.log('✅ 分支和标签加载完成:', { 
+      branches: branches.value.length, 
+      tags: tags.value.length 
+    })
   } catch (error: any) {
     console.warn('加载分支和标签列表失败:', error.message)
+    notification.error(`加载分支列表失败: ${error.message}`)
+  } finally {
+    loadingBranchData.value = false
   }
 }
 
@@ -532,6 +702,49 @@ async function executeSwitchBranch(): Promise<void> {
   } catch (error: any) {
     notification.error(`切换分支失败: ${error.message}`)
   }
+}
+
+// 执行备份分支
+async function executeBackupBranch(): Promise<void> {
+  if (!props.currentRepo || !backupBranchName.value.trim()) return
+  
+  const currentBranch = props.currentRepo.currentBranch
+  const backupName = backupBranchName.value.trim()
+  
+  try {
+    // 检查分支名是否已存在
+    if (branches.value.includes(backupName)) {
+      notification.error(`分支 "${backupName}" 已存在，请使用其他名称`)
+      return
+    }
+    
+    // 创建备份分支
+    await gitService.executeGitCommand(`git checkout -b ${backupName}`, props.currentRepo.path)
+    
+    // 切换回原分支
+    await gitService.switchBranch(props.currentRepo.path, currentBranch)
+    
+    notification.success(`分支 "${currentBranch}" 已备份为 "${backupName}"`)
+    showBackupBranchModal.value = false
+    backupBranchName.value = ''
+    
+    // 刷新分支列表
+    await loadBranchesAndTags()
+    
+  } catch (error: any) {
+    notification.error(`备份分支失败: ${error.message}`)
+  }
+}
+
+// 生成备份分支名称
+function generateBackupBranchName(): void {
+  if (!props.currentRepo) return
+  
+  const currentBranch = props.currentRepo.currentBranch
+  const now = new Date()
+  const timestamp = now.toISOString().slice(0, 19).replace(/[:T]/g, '-')
+  
+  backupBranchName.value = `backup/${currentBranch}-${timestamp}`
 }
 
 // 文件操作
@@ -647,6 +860,20 @@ onMounted(() => {
 computed(() => {
   if (props.currentRepo) {
     loadBranchesAndTags()
+  }
+})
+
+// 监听弹窗打开，加载分支数据
+computed(() => {
+  if ((showCreateBranchModal.value || showSwitchBranchModal.value || showBackupBranchModal.value) && props.currentRepo) {
+    loadBranchesAndTags()
+  }
+})
+
+// 监听备份弹窗打开，自动生成备份名称
+computed(() => {
+  if (showBackupBranchModal.value && props.currentRepo && !backupBranchName.value) {
+    generateBackupBranchName()
   }
 })
 </script>
@@ -854,6 +1081,19 @@ export default {
   border-color: #3b82f6;
   color: #3b82f6;
   background: rgba(59, 130, 246, 0.05);
+}
+
+.branch-action-btn.backup-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.branch-action-btn.backup-btn:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(245, 158, 11, 0.4);
 }
 
 /* 文件预览样式 */
@@ -1464,66 +1704,329 @@ export default {
 
 
 
-/* 分支弹窗样式 */
-.branch-modal {
+/* 美化分支弹窗样式 */
+.git-branch-modal {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.branch-modal .modal-container {
+.git-branch-modal :deep(.n-modal) {
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.branch-modal-container {
   position: relative;
   margin: 0 auto;
-  width: 400px;
+  width: 520px;
   max-width: 90vw;
 }
 
-.branch-modal .modal-inner {
+.branch-modal-inner {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
-.branch-modal .modal-header {
+.branch-modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f8fafc;
+  gap: 16px;
+  padding: 24px 24px 20px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  position: relative;
 }
 
-.branch-modal .modal-header h3 {
+.modal-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modal-icon.create-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.modal-icon.switch-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.modal-icon.backup-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.modal-icon i {
+  font-size: 24px;
+  color: white;
+}
+
+.modal-title-section {
+  flex: 1;
+}
+
+.modal-title {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.modal-subtitle {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #374151;
+}
+
+.branch-modal-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
   font-weight: 600;
   color: #374151;
+  margin: 0;
 }
 
-.branch-modal .modal-content {
-  padding: 20px;
+.required {
+  color: #ef4444;
+  margin-left: 2px;
 }
 
-.branch-modal .form-group {
-  margin-bottom: 16px;
+.form-input {
+  width: 100%;
 }
 
-.branch-modal .form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
+.form-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  color: #0369a1;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-hint i {
+  color: #0284c7;
+  font-size: 11px;
+}
+
+.current-branch-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.current-branch-info i {
+  color: #3b82f6;
+  font-size: 16px;
+}
+
+.branch-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #6b7280;
   font-weight: 500;
-  color: #374151;
 }
 
-.branch-modal .modal-footer {
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.backup-name-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.auto-generate-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.auto-generate-btn:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+}
+
+.backup-explanation {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  color: #92400e;
+}
+
+.backup-explanation i {
+  color: #d97706;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.explanation-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #78350f;
+}
+
+.explanation-content p {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.explanation-content p:last-child {
+  margin-bottom: 0;
+}
+
+.branch-switch-warning {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #991b1b;
+}
+
+.branch-switch-warning i {
+  color: #dc2626;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.warning-content p {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.warning-content p:last-child {
+  margin-bottom: 0;
+}
+
+.branch-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 14px 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: 12px;
+  padding: 20px 24px 24px 24px;
   background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cancel-btn {
+  min-width: 80px;
+  color: #6b7280 !important;
+  border-color: #d1d5db !important;
+}
+
+.cancel-btn:hover {
+  color: #374151 !important;
+  border-color: #9ca3af !important;
+}
+
+.primary-btn {
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(16, 185, 129, 0.4);
+}
+
+.primary-btn.backup-primary {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.primary-btn.backup-primary:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  box-shadow: 0 3px 6px rgba(245, 158, 11, 0.4);
 }
 
 /* 响应式 */
@@ -1552,6 +2055,63 @@ export default {
   
   .diff-lines {
     font-size: 10px;
+  }
+  
+  /* 弹窗响应式 */
+  .branch-modal-container {
+    width: 95vw;
+    max-width: none;
+  }
+  
+  .branch-modal-header {
+    padding: 20px 20px 16px 20px;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .modal-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modal-icon i {
+    font-size: 20px;
+  }
+  
+  .modal-title {
+    font-size: 18px;
+  }
+  
+  .modal-subtitle {
+    font-size: 13px;
+  }
+  
+  .branch-modal-content {
+    padding: 20px;
+    gap: 16px;
+  }
+  
+  .backup-name-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .auto-generate-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .branch-modal-footer {
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 20px 20px 20px;
+  }
+  
+  .cancel-btn,
+  .primary-btn {
+    width: 100%;
+    min-width: unset;
   }
 }
 </style>
