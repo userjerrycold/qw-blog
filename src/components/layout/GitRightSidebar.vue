@@ -295,6 +295,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'commit': [data: { message: string; files?: string[]; pushAfterCommit?: boolean }]
   'load-repo': [repo: RecentRepo]
+  'view-commit': [commit: GitCommit]
 }>()
 
 // 响应式状态
@@ -325,7 +326,7 @@ function handleStageFile(): void {
 
 // 提交相关
 function handleViewCommit(commit: GitCommit): void {
-  notification.info(`查看提交: ${commit.hash.substring(0, 7)}`)
+  emit('view-commit', commit)
 }
 
 function handleViewAllCommits(): void {

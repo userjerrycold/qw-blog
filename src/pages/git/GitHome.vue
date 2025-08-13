@@ -142,18 +142,19 @@
         </n-spin>
       </div>
       
-      <template #rightSidebar>
-        <GitRightSidebar 
-          :current-repo="currentRepo"
-          :selected-file="selectedFile"
-          :recent-commits="recentCommits"
-          :recent-repos="recentRepos"
-          :is-committing="isCommitting"
-          :is-pushing="isPushing"
-          @commit="handleCommit"
-          @load-repo="loadFromRecentRepo"
-        />
-      </template>
+              <template #rightSidebar>
+          <GitRightSidebar
+            :current-repo="currentRepo"
+            :selected-file="selectedFile"
+            :recent-commits="recentCommits"
+            :recent-repos="recentRepos"
+            :is-committing="isCommitting"
+            :is-pushing="isPushing"
+            @commit="handleCommit"
+            @load-repo="loadFromRecentRepo"
+            @view-commit="viewCommitDiff"
+          />
+        </template>
     </PageLayout>
     
     <!-- 快速提交弹窗 -->
@@ -301,6 +302,107 @@
         </div>
       </div>
     </n-modal>
+
+    <!-- 提交对比弹窗 -->
+    <n-modal :show="!!selectedCommit" @update:show="(value) => !value && closeCommitDiff()" class="git-modal commit-diff-modal" style="width: 95vw; max-width: 1400px; max-height: 95vh;">
+      <div class="modal-container">
+        <div class="modal-inner commit-diff-inner">
+          <div class="modal-header commit-diff-header">
+            <div class="modal-title commit-diff-title">
+              <div class="commit-info">
+                <span class="commit-hash">
+                  <i class="fas fa-code-branch"></i>
+                  {{ selectedCommit?.hash.substring(0, 7) }}
+                </span>
+                <span class="commit-message">{{ selectedCommit?.message }}</span>
+              </div>
+              <div class="commit-meta">
+                <span class="commit-author">
+                  <i class="fas fa-user"></i>
+                  {{ selectedCommit?.author }}
+                </span>
+                <span class="commit-time">{{ formatCommitTime(selectedCommit?.date || 0) }}</span>
+              </div>
+            </div>
+            <n-button quaternary circle class="close-btn" @click="closeCommitDiff">
+              <n-icon>
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                </svg>
+              </n-icon>
+            </n-button>
+          </div>
+          
+          <div class="modal-content commit-diff-content">
+            <div v-if="commitDiffData" class="commit-diff-container">
+              <!-- 变更统计 -->
+              <div class="diff-stats">
+                <div class="stats-summary">
+                  <span class="files-count">
+                    <i class="fas fa-file"></i>
+                    {{ commitDiffData.files.length }} 个文件变更
+                  </span>
+                  <span class="additions">
+                    <i class="fas fa-plus"></i>
+                    +{{ commitDiffData.files.reduce((sum, file) => sum + file.additions, 0) }}
+                  </span>
+                  <span class="deletions">
+                    <i class="fas fa-minus"></i>
+                    -{{ commitDiffData.files.reduce((sum, file) => sum + file.deletions, 0) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- 文件列表 -->
+              <div class="diff-files-list">
+                <div 
+                  v-for="(file, index) in commitDiffData.files" 
+                  :key="index"
+                  class="diff-file-item"
+                >
+                  <div class="file-header">
+                    <div class="file-info">
+                      <i :class="getFileIcon(file.path)" class="file-icon"></i>
+                      <span class="file-name">{{ file.name }}</span>
+                      <span class="file-path">{{ file.path }}</span>
+                      <span class="file-status" :class="`status-${file.status.toLowerCase()}`">
+                        {{ getStatusText(file.status) }}
+                      </span>
+                    </div>
+                    <div class="file-stats">
+                      <span class="additions" v-if="file.additions > 0">+{{ file.additions }}</span>
+                      <span class="deletions" v-if="file.deletions > 0">-{{ file.deletions }}</span>
+                    </div>
+                  </div>
+                  
+                  <!-- 文件差异内容 -->
+                  <div class="file-diff" v-if="file.diff">
+                    <div class="diff-viewer">
+                      <div class="diff-lines">
+                        <div 
+                          v-for="(line, lineIndex) in file.diff.split('\n')"
+                          :key="lineIndex"
+                          :class="getDiffLineClass(line)"
+                          class="diff-line"
+                        >
+                          <span class="line-number">{{ lineIndex + 1 }}</span>
+                          <span class="line-content">{{ line }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div v-else class="loading-state">
+              <n-spin size="medium" />
+              <span>正在加载提交对比...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -387,6 +489,21 @@ const diffFile = ref<GitFile | null>(null)
 const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
 const hideWarning = ref(false)
+
+// 提交对比相关状态
+const selectedCommit = ref<GitCommit | null>(null)
+const commitDiffData = ref<{
+  commit: GitCommit
+  previousCommit?: GitCommit
+  files: Array<{
+    path: string
+    name: string
+    status: 'MODIFIED' | 'ADDED' | 'DELETED'
+    diff?: string
+    additions: number
+    deletions: number
+  }>
+} | null>(null)
 const changesExpanded = ref(true)
 const isCommitting = ref(false)
 const isPushing = ref(false)
@@ -782,6 +899,133 @@ async function viewDiff(file: GitFile): Promise<void> {
     notification.error(`获取差异失败: ${error.message}`)
     diffContent.value = '无法获取差异内容'
   }
+}
+
+// 查看提交对比
+async function viewCommitDiff(commit: GitCommit): Promise<void> {
+  if (!currentRepo.value) return
+  
+  try {
+    selectedCommit.value = commit
+    
+    // 找到上一个提交
+    const currentIndex = recentCommits.value.findIndex(c => c.hash === commit.hash)
+    const previousCommit = currentIndex < recentCommits.value.length - 1 
+      ? recentCommits.value[currentIndex + 1] 
+      : null
+    
+    // 模拟获取提交差异数据
+    const commitDiff = await getCommitDiffData(commit, previousCommit)
+    commitDiffData.value = commitDiff
+    
+    notification.success({
+      title: '提交对比',
+      content: `正在查看提交 ${commit.hash.substring(0, 7)} 的更改`
+    })
+  } catch (error: any) {
+    notification.error({
+      title: '获取提交对比失败',
+      content: error.message
+    })
+  }
+}
+
+// 模拟获取提交差异数据
+async function getCommitDiffData(commit: GitCommit, previousCommit?: GitCommit | null): Promise<any> {
+  // 这里模拟真实的Git diff数据
+  const mockFiles = [
+    {
+      path: 'src/components/Header.vue',
+      name: 'Header.vue',
+      status: 'MODIFIED' as const,
+      additions: 15,
+      deletions: 3,
+      diff: `@@ -1,5 +1,10 @@
+<template>
+-  <header class="header">
++  <header class="header modern-header">
++    <div class="header-brand">
++      <img src="/logo.png" alt="Logo" />
++    </div>
+     <nav class="nav">
+       <a href="/">首页</a>
+       <a href="/about">关于</a>
++      <a href="/contact">联系</a>
+     </nav>
+   </header>
+ </template>`
+    },
+    {
+      path: 'src/styles/global.css',
+      name: 'global.css', 
+      status: 'MODIFIED' as const,
+      additions: 8,
+      deletions: 2,
+      diff: `@@ -10,6 +10,12 @@
+ }
+ 
+ .header {
++  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
++  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
++}
++
++.modern-header {
+   padding: 1rem 2rem;
+   border-bottom: 1px solid #eee;
+-  background: #fff;
++  color: white;
+ }`
+    },
+    {
+      path: 'src/utils/helpers.ts',
+      name: 'helpers.ts',
+      status: 'ADDED' as const,
+      additions: 12,
+      deletions: 0,
+      diff: `@@ -0,0 +1,12 @@
++export function formatDate(date: Date): string {
++  return new Intl.DateTimeFormat('zh-CN', {
++    year: 'numeric',
++    month: '2-digit', 
++    day: '2-digit'
++  }).format(date)
++}
++
++export function debounce<T extends (...args: any[]) => any>(
++  func: T,
++  wait: number
++): (...args: Parameters<T>) => void {
++  let timeout: NodeJS.Timeout
++  return (...args: Parameters<T>) => {
++    clearTimeout(timeout)
++    timeout = setTimeout(() => func(...args), wait)
++  }
++}`
+    }
+  ]
+  
+  // 模拟异步操作
+  await new Promise(resolve => setTimeout(resolve, 300))
+  
+  return {
+    commit,
+    previousCommit,
+    files: mockFiles
+  }
+}
+
+// 关闭提交对比
+function closeCommitDiff(): void {
+  selectedCommit.value = null
+  commitDiffData.value = null
+}
+
+// 获取diff行的样式类
+function getDiffLineClass(line: string): string {
+  if (line.startsWith('+')) return 'diff-line-added'
+  if (line.startsWith('-')) return 'diff-line-removed'
+  if (line.startsWith('@@')) return 'diff-line-hunk'
+  return 'diff-line-normal'
 }
 
 // 切换文件暂存状态
@@ -1680,6 +1924,289 @@ onUnmounted(() => {
   padding: 60px 20px;
   gap: 16px;
   color: #6b7280;
+}
+
+/* 提交对比样式 */
+.commit-diff-modal .modal-inner {
+  max-height: 95vh !important;
+  background: #f8fafc !important;
+}
+
+.commit-diff-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  padding: 20px 24px !important;
+}
+
+.commit-diff-title {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.commit-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.commit-hash {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.commit-message {
+  flex: 1;
+  max-width: 600px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.commit-author, .commit-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.commit-diff-content {
+  padding: 0 !important;
+  overflow-y: auto !important;
+  max-height: calc(95vh - 120px) !important;
+}
+
+.commit-diff-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 变更统计 */
+.diff-stats {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.stats-summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.files-count {
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.additions {
+  color: #059669;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.deletions {
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 文件列表 */
+.diff-files-list {
+  background: #f8fafc;
+}
+
+.diff-file-item {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.file-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-icon {
+  color: #6b7280;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+}
+
+.file-path {
+  color: #6b7280;
+  font-size: 13px;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.file-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.file-stats .additions {
+  color: #059669;
+}
+
+.file-stats .deletions {
+  color: #dc2626;
+}
+
+/* 文件差异内容 */
+.file-diff {
+  background: white;
+}
+
+.diff-viewer {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: white;
+}
+
+.diff-lines {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.diff-line {
+  display: table-row;
+  width: 100%;
+}
+
+.diff-line:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.line-number {
+  display: table-cell;
+  padding: 2px 12px;
+  text-align: right;
+  vertical-align: top;
+  color: #9ca3af;
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  font-size: 12px;
+  min-width: 60px;
+  user-select: none;
+}
+
+.line-content {
+  display: table-cell;
+  padding: 2px 12px;
+  vertical-align: top;
+  white-space: pre-wrap;
+  word-break: break-all;
+  width: 100%;
+}
+
+/* diff行类型样式 */
+.diff-line-added {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.diff-line-added .line-number {
+  background-color: #bbf7d0;
+  color: #166534;
+}
+
+.diff-line-removed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.diff-line-removed .line-number {
+  background-color: #fecaca;
+  color: #991b1b;
+}
+
+.diff-line-hunk {
+  background-color: #eff6ff;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.diff-line-hunk .line-number {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.diff-line-normal {
+  background-color: white;
+  color: #374151;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+  color: #6b7280;
+  background: white;
+  font-size: 14px;
 }
 
 /* 响应式 */
