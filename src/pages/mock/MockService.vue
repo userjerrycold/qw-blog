@@ -245,7 +245,7 @@
                     </div>
                     
                     <!-- Monaco 编辑器 -->
-                    <monaco-editor
+                    <MonacoEditor
                       v-model:value="editForm.response"
                       language="json"
                       :options="editorOptions"
