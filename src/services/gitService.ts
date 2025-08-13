@@ -579,10 +579,39 @@ origin  https://github.com/user/repo.git (push)`
     }
   }
 
-  // 删除标签
-  async deleteTag(repoPath: string, tagName: string): Promise<void> {
+  // 推送标签到远程仓库
+  async pushTag(repoPath: string, tagName: string, remote: string = 'origin'): Promise<void> {
     try {
+      await this.executeGitCommand(`git push ${remote} ${tagName}`, repoPath)
+    } catch (error: any) {
+      throw new Error(`推送标签失败: ${error.message}`)
+    }
+  }
+
+  // 推送所有标签到远程仓库
+  async pushAllTags(repoPath: string, remote: string = 'origin'): Promise<void> {
+    try {
+      await this.executeGitCommand(`git push ${remote} --tags`, repoPath)
+    } catch (error: any) {
+      throw new Error(`推送所有标签失败: ${error.message}`)
+    }
+  }
+
+  // 删除标签（本地和远程）
+  async deleteTag(repoPath: string, tagName: string, deleteRemote: boolean = true, remote: string = 'origin'): Promise<void> {
+    try {
+      // 删除本地标签
       await this.executeGitCommand(`git tag -d "${tagName}"`, repoPath)
+      
+      // 删除远程标签
+      if (deleteRemote) {
+        try {
+          await this.executeGitCommand(`git push ${remote} --delete ${tagName}`, repoPath)
+        } catch (error: any) {
+          console.warn(`删除远程标签失败: ${error.message}`)
+          // 远程标签删除失败不影响整体操作
+        }
+      }
     } catch (error: any) {
       throw new Error(`删除标签失败: ${error.message}`)
     }

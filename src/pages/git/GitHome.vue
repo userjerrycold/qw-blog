@@ -368,6 +368,17 @@
               </div>
             </div>
             
+            <!-- 推送选项 -->
+            <div class="form-group">
+              <div class="tag-options">
+                <label class="tag-option">
+                  <input type="checkbox" v-model="tagForm.pushToRemote" />
+                  <span class="checkmark"></span>
+                  <span class="option-text">创建后推送到远程仓库</span>
+                </label>
+              </div>
+            </div>
+            
             <!-- 基于信息 -->
             <div class="form-group">
               <div class="tag-base-info">
@@ -378,15 +389,23 @@
           </div>
           
           <div class="modal-footer">
-            <n-button class="cancel-button" @click="showCreateTag = false" :disabled="isCreatingTag">取消</n-button>
+            <n-button class="cancel-button" @click="showCreateTag = false" :disabled="isCreatingTag || isPushingTag">取消</n-button>
             <n-button 
               type="primary" 
               class="save-button" 
               @click="executeCreateTag" 
-              :disabled="!tagForm.name.trim() || isCreatingTag"
-              :loading="isCreatingTag"
+              :disabled="!tagForm.name.trim() || isCreatingTag || isPushingTag"
+              :loading="isCreatingTag || isPushingTag"
             >
-              {{ isCreatingTag ? '创建中...' : '创建标签' }}
+              <template v-if="isCreatingTag">
+                正在创建标签...
+              </template>
+              <template v-else-if="isPushingTag">
+                正在推送标签...
+              </template>
+              <template v-else>
+                {{ tagForm.pushToRemote ? '创建并推送标签' : '创建标签' }}
+              </template>
             </n-button>
           </div>
         </div>
@@ -687,6 +706,7 @@ const changesExpanded = ref(true)
 const isCommitting = ref(false)
 const isPushing = ref(false)
 const isCreatingTag = ref(false)
+const isPushingTag = ref(false)
 const recentRepos = ref<RecentRepo[]>([])
 
 // 自动刷新定时器
@@ -702,7 +722,8 @@ const commitForm = reactive({
 // 标签表单
 const tagForm = reactive({
   name: '',
-  message: ''
+  message: '',
+  pushToRemote: true // 默认推送到远程
 })
 
 // 计算属性
@@ -1476,18 +1497,39 @@ async function handleCommit(data: { message: string; files?: string[]; pushAfter
 async function executeCreateTag(): Promise<void> {
   if (!currentRepo.value || !tagForm.name.trim()) return
   
+  const tagName = tagForm.name.trim()
+  
   isCreatingTag.value = true
   try {
+    // 1. 创建本地标签
     await gitService.createTag(
       currentRepo.value.path,
-      tagForm.name.trim(),
+      tagName,
       undefined // 不使用描述信息
     )
     
-    notification.success(`标签 "${tagForm.name}" 创建成功`)
+    notification.success(`标签 "${tagName}" 创建成功`)
+    
+    // 2. 如果选择推送到远程，则推送标签
+    if (tagForm.pushToRemote) {
+      isCreatingTag.value = false
+      isPushingTag.value = true
+      
+      try {
+        await gitService.pushTag(currentRepo.value.path, tagName)
+        notification.success(`标签 "${tagName}" 推送成功`)
+      } catch (error: any) {
+        notification.warning(`标签创建成功，但推送失败: ${error.message}`)
+      } finally {
+        isPushingTag.value = false
+      }
+    }
+    
     showCreateTag.value = false
     tagForm.name = ''
     tagForm.message = ''
+    tagForm.pushToRemote = true // 重置为默认值
+    
     // 如果当前显示了标签列表，则刷新
     if (showRecentTags.value) {
       await loadRecentTags()
@@ -1497,6 +1539,7 @@ async function executeCreateTag(): Promise<void> {
     notification.error(`创建标签失败: ${error.message}`)
   } finally {
     isCreatingTag.value = false
+    isPushingTag.value = false
   }
 }
 
@@ -2039,6 +2082,49 @@ watch(showCreateTag, (newValue) => {
 
 .no-tags-hint i {
   color: #d1d5db;
+}
+
+/* 标签选项样式 */
+.tag-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+}
+
+.tag-option input[type="checkbox"] {
+  display: none;
+}
+
+.tag-option .checkmark {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.tag-option input[type="checkbox"]:checked + .checkmark {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.tag-option input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
 }
 
 
