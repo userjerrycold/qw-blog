@@ -58,6 +58,29 @@
               </div>
             </div>
             
+            <!-- 最近使用的仓库 -->
+            <div class="recent-repos" v-if="recentRepos.length > 0">
+              <div class="recent-repos-header">
+                <i class="fas fa-history"></i>
+                <span>最近使用的仓库</span>
+              </div>
+              <div class="recent-repos-list">
+                <div 
+                  v-for="repo in recentRepos" 
+                  :key="repo.path"
+                  class="recent-repo-item"
+                  @click="loadFromRecentRepo(repo)"
+                  :title="repo.path"
+                >
+                  <div class="repo-info">
+                    <i class="fas fa-folder-open repo-icon"></i>
+                    <span class="repo-name">{{ repo.name }}</span>
+                  </div>
+                  <span class="repo-time">{{ formatCommitTime(repo.lastAccess) }}</span>
+                </div>
+              </div>
+            </div>
+            
             <!-- 仓库信息栏 -->
             <div class="repo-info" v-if="currentRepo">
               <div class="repo-status">
@@ -351,6 +374,13 @@ interface GitRepo {
   remotes: string[]
 }
 
+// 最近仓库接口
+interface RecentRepo {
+  path: string
+  name: string
+  lastAccess: number
+}
+
 // Git提交信息接口
 interface GitCommit {
   hash: string
@@ -388,6 +418,7 @@ const hideWarning = ref(false)
 const changesExpanded = ref(true)
 const isCommitting = ref(false)
 const isPushing = ref(false)
+const recentRepos = ref<RecentRepo[]>([])
 
 // 自动刷新定时器
 let refreshTimer: NodeJS.Timeout | null = null
@@ -505,6 +536,9 @@ async function loadRepository(): Promise<void> {
     currentRepo.value = repo
     await refreshStatus()
     await loadRecentCommits()
+    
+    // 添加到最近仓库历史
+    addToRecentRepos(repoPath.value.trim())
     
     // 根据环境显示不同的成功消息
     if (isElectronEnv()) {
@@ -641,6 +675,59 @@ function fallbackFolderSelect(): void {
 // 切换Changes展开状态
 function toggleChanges(): void {
   changesExpanded.value = !changesExpanded.value
+}
+
+// 仓库历史管理
+const RECENT_REPOS_KEY = 'git-recent-repos'
+
+// 获取最近仓库列表
+function getRecentRepos(): RecentRepo[] {
+  try {
+    const stored = localStorage.getItem(RECENT_REPOS_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch (error) {
+    console.warn('获取最近仓库失败:', error)
+    return []
+  }
+}
+
+// 保存最近仓库列表
+function saveRecentRepos(repos: RecentRepo[]): void {
+  try {
+    localStorage.setItem(RECENT_REPOS_KEY, JSON.stringify(repos))
+  } catch (error) {
+    console.warn('保存最近仓库失败:', error)
+  }
+}
+
+// 添加仓库到历史记录
+function addToRecentRepos(path: string): void {
+  const name = path.split('/').pop() || path.split('\\').pop() || path
+  const newRepo: RecentRepo = {
+    path,
+    name,
+    lastAccess: Date.now()
+  }
+  
+  let repos = getRecentRepos()
+  
+  // 移除相同路径的旧记录
+  repos = repos.filter(repo => repo.path !== path)
+  
+  // 添加到开头
+  repos.unshift(newRepo)
+  
+  // 只保留最近3个
+  repos = repos.slice(0, 3)
+  
+  recentRepos.value = repos
+  saveRecentRepos(repos)
+}
+
+// 从最近仓库加载
+async function loadFromRecentRepo(repo: RecentRepo): Promise<void> {
+  repoPath.value = repo.path
+  await loadRepository()
 }
 
 // 选择文件
@@ -861,7 +948,8 @@ function formatCommitTime(timestamp?: number): string {
 
 // 生命周期
 onMounted(() => {
-  // 初始化时可以检查是否有默认路径
+  // 加载最近仓库历史
+  recentRepos.value = getRecentRepos()
 })
 
 onUnmounted(() => {
@@ -1019,6 +1107,84 @@ onUnmounted(() => {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 最近仓库样式 */
+.recent-repos {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  border: 1px solid rgba(230, 230, 230, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.recent-repos-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+}
+
+.recent-repos-header i {
+  color: #10b981;
+}
+
+.recent-repos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-repo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(230, 230, 230, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recent-repo-item:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.recent-repo-item .repo-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.recent-repo-item .repo-icon {
+  color: #10b981;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.recent-repo-item .repo-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-repo-item .repo-time {
+  font-size: 12px;
+  color: #999;
+  flex-shrink: 0;
 }
 
 .browse-btn {
