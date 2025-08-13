@@ -55,6 +55,11 @@
                   <i class="fas fa-tag"></i>
                   新增标签
                 </button>
+                
+                <button class="action-btn compare-btn" @click="showCompare = true" :disabled="!currentRepo" title="分支比较">
+                  <i class="fas fa-code-compare"></i>
+                  分支比较
+                </button>
               </div>
             </div>
             
@@ -412,6 +417,130 @@
       </div>
     </n-modal>
     
+    <!-- 分支比较弹窗 -->
+    <n-modal v-model:show="showCompare" :mask-closable="false" class="git-modal compare-modal" style="width: 65vw; max-width: 750px;">
+      <div class="modal-container">
+        <div class="modal-inner">
+          <div class="modal-header">
+            <div class="modal-title">分支比较</div>
+            <n-button quaternary circle class="close-btn" @click="showCompare = false">
+              <n-icon>
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                </svg>
+              </n-icon>
+            </n-button>
+          </div>
+          
+          <div class="modal-content">
+            <!-- 基础分支选择 -->
+            <div class="form-group">
+              <label class="form-label">基础分支（比较起点）<span class="required">*</span></label>
+              <div class="branch-select-container">
+                <n-select
+                  v-model:value="compareForm.baseBranch"
+                  :options="branches.filter(branch => branch !== compareForm.currentBranch).map(branch => ({ label: branch, value: branch }))"
+                  placeholder="选择基础分支（通常是主分支或开发基于的分支）"
+                  class="form-control"
+                  :loading="loadingBranches"
+                  filterable
+                  clearable
+                />
+              </div>
+            </div>
+            
+            <!-- 当前分支选择 -->
+            <div class="form-group">
+              <label class="form-label">当前分支（比较终点）<span class="required">*</span></label>
+              <div class="branch-select-container">
+                <n-select
+                  v-model:value="compareForm.currentBranch"
+                  :options="branches.map(branch => ({ label: branch, value: branch }))"
+                  placeholder="选择当前分支"
+                  class="form-control"
+                  :loading="loadingBranches"
+                  filterable
+                  clearable
+                />
+                <div class="current-branch-hint" v-if="currentRepo?.currentBranch">
+                  <i class="fas fa-info-circle"></i>
+                  <span>当前Git分支: <strong>{{ currentRepo.currentBranch }}</strong></span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- GitLab配置 -->
+            <div class="form-group">
+              <label class="form-label">GitLab仓库设置</label>
+              <div class="gitlab-config">
+                <div class="config-item">
+                  <label class="config-label">仓库URL</label>
+                  <n-input 
+                    v-model:value="compareForm.gitlabUrl" 
+                    placeholder="GitLab仓库URL"
+                    class="config-input"
+                  />
+                </div>
+                <div class="config-item">
+                  <label class="config-label">项目ID</label>
+                  <n-input 
+                    v-model:value="compareForm.projectId" 
+                    placeholder="项目ID"
+                    class="config-input"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <!-- 预览URL -->
+            <div class="form-group" v-if="compareForm.baseBranch && compareForm.currentBranch">
+              <label class="form-label">预览比较链接</label>
+              <div class="url-preview">
+                <div class="preview-box">
+                  <i class="fas fa-link"></i>
+                  <span class="preview-url">{{ generateCompareUrl() }}</span>
+                </div>
+                <button 
+                  class="copy-url-btn" 
+                  @click="copyToClipboard(generateCompareUrl())"
+                  title="复制链接"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- 比较说明 -->
+            <div class="form-group">
+              <div class="compare-info">
+                <i class="fas fa-info-circle"></i>
+                <div class="info-content">
+                  <h4>比较说明</h4>
+                  <p>将会比较 <span class="branch-highlight">{{ compareForm.baseBranch || '基础分支' }}</span> 
+                     到 <span class="branch-highlight">{{ compareForm.currentBranch || '当前分支' }}</span> 的差异</p>
+                  <p>显示当前分支相对于基础分支的所有改动</p>
+                  <p>点击"开始比较"将在新窗口中打开GitLab比较页面</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <n-button class="cancel-button" @click="showCompare = false">取消</n-button>
+            <n-button 
+              type="primary" 
+              class="save-button" 
+              @click="executeCompare" 
+              :disabled="!compareForm.baseBranch || !compareForm.currentBranch || compareForm.baseBranch === compareForm.currentBranch"
+            >
+              <i class="fas fa-external-link-alt"></i>
+              开始比较
+            </n-button>
+          </div>
+        </div>
+      </div>
+    </n-modal>
+    
                 <!-- 差异查看弹窗 - 白色背景黑色字体 -->
     <n-modal v-model:show="showDiffModal" class="git-modal diff-modal" style="width: 90vw; max-width: 1200px; max-height: 90vh;">
       <div class="modal-container">
@@ -677,6 +806,7 @@ const isLoading = ref(false)
 const showQuickCommit = ref(false)
 const showDiffModal = ref(false)
 const showCreateTag = ref(false)
+const showCompare = ref(false)
 const diffFile = ref<GitFile | null>(null)
 const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
@@ -687,6 +817,10 @@ const recentTags = ref<Array<{
 const showRecentTags = ref(false) // 控制最近标签是否显示
 const loadingRecentTags = ref(false) // 控制标签加载状态
 const hideWarning = ref(false)
+
+// 分支比较相关状态
+const branches = ref<string[]>([])
+const loadingBranches = ref(false)
 
 // 提交对比相关状态
 const selectedCommit = ref<GitCommit | null>(null)
@@ -724,6 +858,14 @@ const tagForm = reactive({
   name: '',
   message: '',
   pushToRemote: true // 默认推送到远程
+})
+
+// 分支比较表单
+const compareForm = reactive({
+  baseBranch: '',      // 基础分支（比较起点）
+  currentBranch: '',   // 当前分支（比较终点）
+  gitlabUrl: 'http://gitlab.ott.bestv.com.cn/redscarf/ps_soa',
+  projectId: '719'
 })
 
 // 计算属性
@@ -896,6 +1038,35 @@ async function loadRecentTags(): Promise<void> {
   }
 }
 
+// 加载分支列表（本地+远程分支）
+async function loadBranches(): Promise<void> {
+  if (!currentRepo.value || loadingBranches.value) return
+  
+  loadingBranches.value = true
+  try {
+    // 并行获取本地和远程分支
+    const [localBranches, remoteBranches] = await Promise.all([
+      gitService.getBranches(currentRepo.value.path),
+      gitService.getRemoteBranches(currentRepo.value.path).catch(() => [])
+    ])
+    
+    // 合并分支列表，去重并排序
+    const allBranches = new Set([...localBranches, ...remoteBranches])
+    branches.value = Array.from(allBranches).sort()
+    
+    // 初始化比较表单，默认选择当前分支作为当前分支
+    if (currentRepo.value.currentBranch && !compareForm.currentBranch) {
+      compareForm.currentBranch = currentRepo.value.currentBranch
+    }
+    
+  } catch (error: any) {
+    console.warn('加载分支列表失败:', error.message)
+    notification.error(`加载分支列表失败: ${error.message}`)
+  } finally {
+    loadingBranches.value = false
+  }
+}
+
 // 切换最近标签显示状态
 async function toggleRecentTags(): Promise<void> {
   if (showRecentTags.value) {
@@ -966,6 +1137,74 @@ function formatTagTime(timestamp: number): string {
   if (diff < 2592000000) return `${Math.floor(diff / 86400000)}天前`
   
   return new Date(timestamp).toLocaleDateString('zh-CN')
+}
+
+// 生成GitLab分支比较URL
+function generateCompareUrl(): string {
+  const { baseBranch, currentBranch, gitlabUrl, projectId } = compareForm
+  
+  if (!baseBranch || !currentBranch) {
+    return ''
+  }
+  
+  // URL编码分支名称（将/替换为%2F）
+  const encodedBase = encodeURIComponent(baseBranch).replace(/%2F/g, '%2F')
+  const encodedCurrent = encodeURIComponent(currentBranch).replace(/%2F/g, '%2F')
+  
+  // GitLab比较格式：基础分支...当前分支
+  return `${gitlabUrl}/-/compare/${encodedBase}...${encodedCurrent}?from_project_id=${projectId}`
+}
+
+// 执行分支比较
+async function executeCompare(): Promise<void> {
+  if (!compareForm.baseBranch || !compareForm.currentBranch) {
+    notification.error('请选择要比较的分支')
+    return
+  }
+  
+  if (compareForm.baseBranch === compareForm.currentBranch) {
+    notification.error('基础分支和当前分支不能相同')
+    return
+  }
+  
+  try {
+    const compareUrl = generateCompareUrl()
+    
+    // 在新窗口中打开GitLab比较页面
+    window.open(compareUrl, '_blank')
+    
+    notification.success({
+      title: '分支比较',
+      content: `已打开 ${compareForm.baseBranch} 到 ${compareForm.currentBranch} 的比较页面`
+    })
+    
+    showCompare.value = false
+    
+  } catch (error: any) {
+    notification.error(`生成比较链接失败: ${error.message}`)
+  }
+}
+
+// 复制文本到剪贴板
+async function copyToClipboard(text: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text)
+    notification.success('链接已复制到剪贴板')
+  } catch (error) {
+    // 如果clipboard API不可用，使用fallback方法
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    try {
+      document.execCommand('copy')
+      notification.success('链接已复制到剪贴板')
+    } catch (err) {
+      notification.error('复制失败，请手动复制链接')
+    }
+    document.body.removeChild(textArea)
+  }
 }
 
 // 启动自动刷新
@@ -1605,6 +1844,20 @@ watch(showCreateTag, (newValue) => {
     recentTags.value = []
   }
 })
+
+// 监听分支比较弹窗打开，加载分支列表
+watch(showCompare, (newValue) => {
+  if (newValue) {
+    nextTick(async () => {
+      await loadBranches()
+    })
+    // 重置表单
+    if (currentRepo.value) {
+      compareForm.currentBranch = currentRepo.value.currentBranch
+      compareForm.baseBranch = ''
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -1856,6 +2109,23 @@ watch(showCreateTag, (newValue) => {
 }
 
 .tag-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.compare-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.compare-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-1px);
+}
+
+.compare-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -3371,5 +3641,198 @@ watch(showCreateTag, (newValue) => {
 
 .diff-scroll-container::-webkit-scrollbar {
   display: none; /* Chrome/Safari/WebKit */
+}
+
+/* 分支比较弹窗样式 */
+
+.branch-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.current-branch-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  color: #0369a1;
+  font-size: 12px;
+}
+
+.current-branch-hint i {
+  color: #0284c7;
+  font-size: 11px;
+}
+
+/* GitLab配置样式 */
+.gitlab-config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.config-input {
+  font-size: 13px;
+}
+
+/* URL预览样式 */
+.url-preview {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.preview-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  min-height: 40px;
+}
+
+.preview-box i {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.preview-url {
+  color: #374151;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.copy-url-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.copy-url-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+/* 比较说明样式 */
+.compare-info {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  color: #0369a1;
+}
+
+.compare-info i {
+  color: #0284c7;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.info-content p {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.info-content p:last-child {
+  margin-bottom: 0;
+}
+
+.branch-highlight {
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: rgba(12, 74, 110, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #0c4a6e;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .compare-modal .modal-inner {
+    width: 95vw;
+    max-width: none;
+  }
+  
+  .gitlab-config {
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .url-preview {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .copy-url-btn {
+    width: 100%;
+    height: 36px;
+  }
+  
+  .preview-box {
+    min-height: 50px;
+  }
+  
+  .compare-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .info-content h4 {
+    font-size: 13px;
+  }
+  
+  .info-content p {
+    font-size: 12px;
+  }
 }
 </style>
