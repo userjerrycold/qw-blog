@@ -7,19 +7,38 @@
         最近使用的仓库
       </h3>
       <div class="recent-repos">
-        <div class="recent-repos-list">
-          <div 
-            v-for="repo in recentRepos" 
-            :key="repo.path"
-            class="recent-repo-item"
-            @click="handleLoadFromRecentRepo(repo)"
-            :title="repo.path"
-          >
-            <div class="repo-info">
-              <i class="fas fa-folder-open repo-icon"></i>
-              <span class="repo-name">{{ repo.name }}</span>
+        <div class="recent-repos-container">
+          <div class="recent-repos-list" ref="recentReposScrollContainer">
+            <div 
+              v-for="repo in displayedRecentRepos" 
+              :key="repo.path"
+              class="recent-repo-item"
+              @click="handleLoadFromRecentRepo(repo)"
+              :title="repo.path"
+            >
+              <div class="repo-info">
+                <i class="fas fa-folder-open repo-icon"></i>
+                <span class="repo-name">{{ repo.name }}</span>
+              </div>
+              <span class="repo-time">{{ formatCommitTime(repo.lastAccess) }}</span>
             </div>
-            <span class="repo-time">{{ formatCommitTime(repo.lastAccess) }}</span>
+          </div>
+          <!-- 滚动控制按钮 -->
+          <div class="repos-scroll-controls" v-if="recentRepos.length > 3">
+            <button 
+              class="scroll-btn scroll-up" 
+              @click="scrollRecentRepos('up')"
+              :disabled="recentReposStartIndex === 0"
+            >
+              <i class="fas fa-chevron-up"></i>
+            </button>
+            <button 
+              class="scroll-btn scroll-down" 
+              @click="scrollRecentRepos('down')"
+              :disabled="recentReposStartIndex + 3 >= recentRepos.length"
+            >
+              <i class="fas fa-chevron-down"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -91,24 +110,7 @@
       </div>
     </div>
 
-    <!-- 仓库统计 -->
-    <div class="sidebar-section" v-if="currentRepo">
-      <h3 class="section-title">仓库信息</h3>
-      <div class="repo-stats">
-        <div class="repo-stat-card">
-          <div class="repo-stat-number">{{ currentRepo.currentBranch }}</div>
-          <div class="repo-stat-label">当前分支</div>
-        </div>
-        <div class="repo-stat-card">
-          <div class="repo-stat-number">{{ recentCommits.length }}</div>
-          <div class="repo-stat-label">最近提交</div>
-        </div>
-        <div class="repo-stat-card">
-          <div class="repo-stat-number">{{ currentRepo.remotes.length }}</div>
-          <div class="repo-stat-label">远程仓库</div>
-        </div>
-      </div>
-    </div>
+
 
     <!-- 分支管理 -->
     <div class="sidebar-section" v-if="currentRepo">
@@ -125,11 +127,11 @@
         </div>
         
         <div class="branch-actions">
-          <button class="branch-action-btn" @click="handleCreateBranch" title="创建分支">
+          <button class="branch-action-btn" @click="showCreateBranchModal = true" title="创建分支">
             <i class="fas fa-plus"></i>
             新建分支
           </button>
-          <button class="branch-action-btn" @click="handleSwitchBranch" title="切换分支">
+          <button class="branch-action-btn" @click="showSwitchBranchModal = true" title="切换分支">
             <i class="fas fa-exchange-alt"></i>
             切换分支
           </button>
@@ -241,13 +243,95 @@
       </div>
     </div>
 
+    <!-- 标签管理 -->
+    <div class="sidebar-section" v-if="currentRepo && recentTags.length > 0">
+      <h3 class="section-title">
+        <i class="fas fa-tag"></i>
+        最近标签
+      </h3>
+      <div class="recent-tags">
+        <div class="tag-list">
+          <div 
+            v-for="tag in recentTags" 
+            :key="tag"
+            class="tag-item"
+          >
+            <i class="fas fa-tag tag-icon"></i>
+            <span class="tag-name">{{ tag }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </aside>
+  
+  <!-- 创建分支弹窗 -->
+  <n-modal v-model:show="showCreateBranchModal" :mask-closable="false" class="branch-modal">
+    <div class="modal-container">
+      <div class="modal-inner">
+        <div class="modal-header">
+          <h3>创建新分支</h3>
+          <n-button quaternary circle @click="showCreateBranchModal = false">
+            <n-icon><i class="fas fa-times"></i></n-icon>
+          </n-button>
+        </div>
+        <div class="modal-content">
+          <div class="form-group">
+            <label>分支名称</label>
+            <n-input v-model:value="newBranchName" placeholder="请输入新分支名称" />
+          </div>
+          <div class="form-group">
+            <label>基于</label>
+            <n-select 
+              v-model:value="createBranchBase" 
+              :options="branchBaseOptions" 
+              placeholder="选择基于哪个分支或标签创建"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <n-button @click="showCreateBranchModal = false">取消</n-button>
+          <n-button type="primary" @click="executeCreateBranch" :disabled="!newBranchName.trim()">创建</n-button>
+        </div>
+      </div>
+    </div>
+  </n-modal>
+  
+  <!-- 切换分支弹窗 -->
+  <n-modal v-model:show="showSwitchBranchModal" :mask-closable="false" class="branch-modal">
+    <div class="modal-container">
+      <div class="modal-inner">
+        <div class="modal-header">
+          <h3>切换分支</h3>
+          <n-button quaternary circle @click="showSwitchBranchModal = false">
+            <n-icon><i class="fas fa-times"></i></n-icon>
+          </n-button>
+        </div>
+        <div class="modal-content">
+          <div class="form-group">
+            <label>选择分支</label>
+            <n-select 
+              v-model:value="targetBranch" 
+              :options="branchOptions" 
+              placeholder="选择要切换的分支"
+              filterable
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <n-button @click="showSwitchBranchModal = false">取消</n-button>
+          <n-button type="primary" @click="executeSwitchBranch" :disabled="!targetBranch">切换</n-button>
+        </div>
+      </div>
+    </div>
+  </n-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { NModal, NButton, NIcon, NInput, NSelect } from 'naive-ui'
 import { useGlobalNotification } from '@/services/notification'
+import { gitService } from '@/services/gitService'
 
 // 初始化通知服务
 const notification = useGlobalNotification()
@@ -305,6 +389,7 @@ const props = defineProps<{
   selectedFile: GitFile | null
   recentCommits: GitCommit[]
   recentRepos: RecentRepo[]
+  recentTags: string[]
   isCommitting?: boolean
   isPushing?: boolean
   hasChanges?: boolean
@@ -322,17 +407,131 @@ const commitMessage = ref('')
 const stageAllFiles = ref(true)
 const pushAfterCommit = ref(false)
 
+// 最近仓库滑动相关
+const recentReposStartIndex = ref(0)
+const recentReposScrollContainer = ref<HTMLElement>()
+
+// 分支管理相关
+const showCreateBranchModal = ref(false)
+const showSwitchBranchModal = ref(false)
+const newBranchName = ref('')
+const createBranchBase = ref('')
+const targetBranch = ref('')
+const branches = ref<string[]>([])
+const tags = ref<string[]>([])
+
+// 计算属性
+const displayedRecentRepos = computed(() => {
+  return props.recentRepos.slice(recentReposStartIndex.value, recentReposStartIndex.value + 3)
+})
+
+const branchBaseOptions = computed(() => {
+  const options: Array<{ label: string; value: string; type: string }> = []
+  
+  // 添加分支选项
+  branches.value.forEach(branch => {
+    options.push({
+      label: `分支: ${branch}`,
+      value: branch,
+      type: 'branch'
+    })
+  })
+  
+  // 添加标签选项
+  tags.value.forEach(tag => {
+    options.push({
+      label: `标签: ${tag}`,
+      value: tag,
+      type: 'tag'
+    })
+  })
+  
+  return options
+})
+
+const branchOptions = computed(() => {
+  return branches.value
+    .filter(branch => branch !== props.currentRepo?.currentBranch)
+    .map(branch => ({
+      label: branch,
+      value: branch
+    })) as Array<{ label: string; value: string }>
+})
 
 
 
 
-// 分支管理
-function handleCreateBranch(): void {
-  notification.info('创建分支功能开发中...')
+
+// 滚动最近仓库
+function scrollRecentRepos(direction: 'up' | 'down'): void {
+  if (direction === 'up' && recentReposStartIndex.value > 0) {
+    recentReposStartIndex.value--
+  } else if (direction === 'down' && recentReposStartIndex.value + 3 < props.recentRepos.length) {
+    recentReposStartIndex.value++
+  }
 }
 
-function handleSwitchBranch(): void {
-  notification.info('切换分支功能开发中...')
+// 分支管理
+async function loadBranchesAndTags(): Promise<void> {
+  if (!props.currentRepo) return
+  
+  try {
+    const [branchList, tagList] = await Promise.all([
+      gitService.getBranches(props.currentRepo.path),
+      gitService.getTags(props.currentRepo.path)
+    ])
+    
+    branches.value = branchList
+    tags.value = tagList
+  } catch (error: any) {
+    console.warn('加载分支和标签列表失败:', error.message)
+  }
+}
+
+async function executeCreateBranch(): Promise<void> {
+  if (!props.currentRepo || !newBranchName.value.trim()) return
+  
+  try {
+    // 如果基于标签创建，先checkout到标签，再创建分支
+    if (createBranchBase.value && tags.value.includes(createBranchBase.value)) {
+      await gitService.executeGitCommand(`git checkout ${createBranchBase.value}`, props.currentRepo.path)
+      await gitService.createBranch(props.currentRepo.path, newBranchName.value.trim())
+    } else if (createBranchBase.value) {
+      // 基于分支创建
+      await gitService.executeGitCommand(`git checkout -b ${newBranchName.value.trim()} ${createBranchBase.value}`, props.currentRepo.path)
+    } else {
+      // 基于当前分支创建
+      await gitService.createBranch(props.currentRepo.path, newBranchName.value.trim())
+    }
+    
+    notification.success(`分支 "${newBranchName.value}" 创建成功`)
+    showCreateBranchModal.value = false
+    newBranchName.value = ''
+    createBranchBase.value = ''
+    
+    // 刷新分支列表
+    await loadBranchesAndTags()
+    
+  } catch (error: any) {
+    notification.error(`创建分支失败: ${error.message}`)
+  }
+}
+
+async function executeSwitchBranch(): Promise<void> {
+  if (!props.currentRepo || !targetBranch.value) return
+  
+  try {
+    await gitService.switchBranch(props.currentRepo.path, targetBranch.value)
+    notification.success(`已切换到分支 "${targetBranch.value}"`)
+    showSwitchBranchModal.value = false
+    targetBranch.value = ''
+    
+    // 通知父组件刷新
+    window.location.reload() // 简单的刷新方式，实际应该通过事件通知
+    
+  } catch (error: any) {
+    notification.error(`切换分支失败: ${error.message}`)
+  }
 }
 
 // 文件操作
@@ -438,7 +637,17 @@ function formatCommitTime(timestamp: number): string {
 
 // 初始化
 onMounted(() => {
-  // 可以在这里进行初始化操作
+  // 加载分支和标签列表
+  if (props.currentRepo) {
+    loadBranchesAndTags()
+  }
+})
+
+// 监听currentRepo变化
+computed(() => {
+  if (props.currentRepo) {
+    loadBranchesAndTags()
+  }
 })
 </script>
 
@@ -950,10 +1159,48 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
+.recent-repos-container {
+  position: relative;
+}
+
 .recent-repos-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: transform 0.3s ease;
+}
+
+.repos-scroll-controls {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.scroll-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 10px;
+}
+
+.scroll-btn:hover:not(:disabled) {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.scroll-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .recent-repo-item {
@@ -1213,6 +1460,70 @@ export default {
 .preview-hint i {
   color: #3b82f6;
   font-size: 10px;
+}
+
+
+
+/* 分支弹窗样式 */
+.branch-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.branch-modal .modal-container {
+  position: relative;
+  margin: 0 auto;
+  width: 400px;
+  max-width: 90vw;
+}
+
+.branch-modal .modal-inner {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.branch-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.branch-modal .modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.branch-modal .modal-content {
+  padding: 20px;
+}
+
+.branch-modal .form-group {
+  margin-bottom: 16px;
+}
+
+.branch-modal .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.branch-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
 }
 
 /* 响应式 */

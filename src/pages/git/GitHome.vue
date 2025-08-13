@@ -46,14 +46,14 @@
                   {{ isLoading ? '加载中...' : '加载仓库' }}
                 </button>
                 
-                <button class="action-btn refresh-btn" @click="refreshStatus" :disabled="!currentRepo" title="刷新状态">
-                  <i class="fas fa-redo-alt"></i>
-                  刷新
-                </button>
-                
                 <button class="action-btn quick-commit-btn" @click="showQuickCommit = true" :disabled="!hasChanges" title="快速提交">
                   <i class="fas fa-check-circle"></i>
                   快速提交
+                </button>
+                
+                <button class="action-btn tag-btn" @click="showCreateTag = true" :disabled="!currentRepo" title="新增标签">
+                  <i class="fas fa-tag"></i>
+                  新增标签
                 </button>
               </div>
             </div>
@@ -171,6 +171,7 @@
             :selected-file="selectedFile"
             :recent-commits="recentCommits"
             :recent-repos="recentRepos"
+            :recent-tags="recentTags"
             :is-committing="isCommitting"
             :is-pushing="isPushing"
             :has-changes="hasChanges"
@@ -268,6 +269,92 @@
               <template v-else>
                 {{ commitForm.pushAfterCommit ? '提交并推送' : '提交' }}
               </template>
+            </n-button>
+          </div>
+        </div>
+      </div>
+    </n-modal>
+    
+    <!-- 创建标签弹窗 -->
+    <n-modal v-model:show="showCreateTag" :mask-closable="false" class="git-modal tag-modal" style="width: 55vw; max-width: 650px;">
+      <div class="modal-container">
+        <div class="modal-inner">
+          <div class="modal-header">
+            <div class="modal-title">新增标签</div>
+            <n-button quaternary circle class="close-btn" @click="showCreateTag = false">
+              <n-icon>
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                </svg>
+              </n-icon>
+            </n-button>
+          </div>
+          
+          <div class="modal-content">
+            <!-- 标签名称 -->
+            <div class="form-group">
+              <label class="form-label">标签名称 <span class="required">*</span></label>
+              <div class="tag-input-container">
+                <n-input 
+                  v-model:value="tagForm.name" 
+                  placeholder="标签名称将自动填充"
+                  class="form-control"
+                  maxlength="100"
+                />
+                <button 
+                  class="auto-fill-btn" 
+                  @click="autoFillTagName"
+                  type="button"
+                  title="自动填充标签名称"
+                >
+                  <i class="fas fa-magic"></i>
+                  自动填充
+                </button>
+              </div>
+            </div>
+            
+            <!-- 最近标签 -->
+            <div class="form-group" v-if="recentTags.length > 0">
+              <label class="form-label">最近标签</label>
+              <div class="recent-tags-in-modal">
+                <div class="tags-scroll-container" ref="tagsScrollContainer">
+                  <div 
+                    v-for="tag in recentTags" 
+                    :key="tag"
+                    class="recent-tag-item"
+                    @click="selectRecentTag(tag)"
+                  >
+                    <i class="fas fa-tag tag-icon"></i>
+                    <span class="tag-name">{{ tag }}</span>
+                  </div>
+                </div>
+                <!-- 滚动提示 -->
+                <div class="scroll-hint" v-if="recentTags.length > 5">
+                  <i class="fas fa-mouse"></i>
+                  <span>滚动查看更多标签</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 基于信息 -->
+            <div class="form-group">
+              <div class="tag-base-info">
+                <i class="fas fa-info-circle"></i>
+                <span>标签将基于当前分支 <strong>{{ currentRepo?.currentBranch }}</strong> 的最新提交创建</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <n-button class="cancel-button" @click="showCreateTag = false" :disabled="isCreatingTag">取消</n-button>
+            <n-button 
+              type="primary" 
+              class="save-button" 
+              @click="executeCreateTag" 
+              :disabled="!tagForm.name.trim() || isCreatingTag"
+              :loading="isCreatingTag"
+            >
+              {{ isCreatingTag ? '创建中...' : '创建标签' }}
             </n-button>
           </div>
         </div>
@@ -464,7 +551,7 @@
 defineOptions({
   name: 'GitHome'
 })
-import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { NButton, NModal, NInput, NIcon, NSpin } from 'naive-ui'
 import PageLayout from '@/components/layout/PageLayout.vue'
 import GitRightSidebar from '@/components/layout/GitRightSidebar.vue'
@@ -538,9 +625,11 @@ const isLoading = ref(false)
 
 const showQuickCommit = ref(false)
 const showDiffModal = ref(false)
+const showCreateTag = ref(false)
 const diffFile = ref<GitFile | null>(null)
 const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
+const recentTags = ref<string[]>([])
 const hideWarning = ref(false)
 
 // 提交对比相关状态
@@ -560,6 +649,7 @@ const commitDiffData = ref<{
 const changesExpanded = ref(true)
 const isCommitting = ref(false)
 const isPushing = ref(false)
+const isCreatingTag = ref(false)
 const recentRepos = ref<RecentRepo[]>([])
 
 // 自动刷新定时器
@@ -570,6 +660,12 @@ const commitForm = reactive({
   message: '',
   stageAll: true,
   pushAfterCommit: false
+})
+
+// 标签表单
+const tagForm = reactive({
+  name: '',
+  message: ''
 })
 
 // 计算属性
@@ -678,6 +774,7 @@ async function loadRepository(): Promise<void> {
     currentRepo.value = repo
     await refreshStatus()
     await loadRecentCommits()
+    await loadRecentTags()
     
     // 添加到最近仓库历史
     addToRecentRepos(repoPath.value.trim())
@@ -722,6 +819,52 @@ async function loadRecentCommits(): Promise<void> {
   } catch (error: any) {
     console.warn('加载提交历史失败:', error.message)
   }
+}
+
+// 加载最近标签（按时间倒序，最新的在前）
+async function loadRecentTags(): Promise<void> {
+  if (!currentRepo.value) return
+  
+  try {
+    const tags = await gitService.getTags(currentRepo.value.path)
+    recentTags.value = tags.slice(0, 10) // 获取最新的10个标签用于弹窗滚动
+  } catch (error: any) {
+    console.warn('加载标签列表失败:', error.message)
+  }
+}
+
+// 自动填充标签名称
+function autoFillTagName(): void {
+  if (!currentRepo.value?.currentBranch) return
+  
+  const currentBranch = currentRepo.value.currentBranch
+  let tagPrefix = ''
+  
+  // 处理分支名称，提取版本信息
+  if (currentBranch.startsWith('feature/')) {
+    // feature/PS-6.13.0_GXDX_DP.1.2.2 -> PS-6.13.0_GXDX_DP.1.2.2
+    tagPrefix = currentBranch.replace('feature/', '')
+  } else {
+    // 其他分支直接使用分支名
+    tagPrefix = currentBranch
+  }
+  
+  // 生成当前日期 YYYYMMDD
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const dateStr = `${year}${month}${day}`
+  
+  // 拼接最终标签名：rc_PS-6.13.0_GXDX_DP.1.2.2_20250813
+  const tagName = `rc_${tagPrefix}_${dateStr}`
+  
+  tagForm.name = tagName
+}
+
+// 选择最近标签
+function selectRecentTag(tagName: string): void {
+  tagForm.name = tagName
 }
 
 // 启动自动刷新
@@ -859,8 +1002,8 @@ function addToRecentRepos(path: string): void {
   // 添加到开头
   repos.unshift(newRepo)
   
-  // 只保留最近3个
-  repos = repos.slice(0, 3)
+  // 保留最近20个
+  repos = repos.slice(0, 20)
   
   recentRepos.value = repos
   saveRecentRepos(repos)
@@ -1242,9 +1385,35 @@ async function handleCommit(data: { message: string; files?: string[]; pushAfter
     
     await refreshStatus()
     await loadRecentCommits()
+    await loadRecentTags()
     
   } catch (error: any) {
     gitNotifications.commitError(error.message)
+  }
+}
+
+// 执行创建标签
+async function executeCreateTag(): Promise<void> {
+  if (!currentRepo.value || !tagForm.name.trim()) return
+  
+  isCreatingTag.value = true
+  try {
+    await gitService.createTag(
+      currentRepo.value.path,
+      tagForm.name.trim(),
+      undefined // 不使用描述信息
+    )
+    
+    notification.success(`标签 "${tagForm.name}" 创建成功`)
+    showCreateTag.value = false
+    tagForm.name = ''
+    tagForm.message = ''
+    await loadRecentTags()
+    
+  } catch (error: any) {
+    notification.error(`创建标签失败: ${error.message}`)
+  } finally {
+    isCreatingTag.value = false
   }
 }
 
@@ -1297,6 +1466,15 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopAutoRefresh()
+})
+
+// 监听弹窗打开，自动填充标签名称
+watch(showCreateTag, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      autoFillTagName()
+    })
+  }
 })
 </script>
 
@@ -1535,6 +1713,143 @@ onUnmounted(() => {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+.tag-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+
+.tag-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+}
+
+.tag-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 标签基础信息提示 */
+.tag-base-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  color: #0369a1;
+  font-size: 13px;
+}
+
+.tag-base-info i {
+  color: #0284c7;
+}
+
+/* 标签输入容器 */
+.tag-input-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.auto-fill-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.auto-fill-btn:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+}
+
+/* 弹窗中的最近标签 */
+.recent-tags-in-modal {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tags-scroll-container {
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tags-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.recent-tag-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.recent-tag-item:last-child {
+  border-bottom: none;
+}
+
+.recent-tag-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.recent-tag-item .tag-icon {
+  color: #8b5cf6;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.recent-tag-item .tag-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-tag-item:hover .tag-name {
+  color: #8b5cf6;
+}
+
+.scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.scroll-hint i {
+  font-size: 10px;
 }
 
 

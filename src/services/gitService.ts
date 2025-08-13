@@ -67,7 +67,7 @@ class GitService {
   }
 
   // 执行Git命令的通用方法
-  private async executeGitCommand(command: string, cwd: string): Promise<string> {
+  async executeGitCommand(command: string, cwd: string): Promise<string> {
     if (this.isElectronEnv()) {
       // 在Electron环境中，使用IPC调用主进程执行Git命令
       try {
@@ -538,10 +538,10 @@ origin  https://github.com/user/repo.git (push)`
     }
   }
 
-  // 获取标签列表
+  // 获取标签列表（按时间倒序）
   async getTags(repoPath: string): Promise<string[]> {
     try {
-      const tagOutput = await this.executeGitCommand('git tag', repoPath)
+      const tagOutput = await this.executeGitCommand('git tag --sort=-creatordate', repoPath)
       return tagOutput.split('\n').filter(tag => tag.trim().length > 0)
     } catch (error: any) {
       throw new Error(`获取标签列表失败: ${error.message}`)
