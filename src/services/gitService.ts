@@ -548,6 +548,59 @@ origin  https://github.com/user/repo.git (push)`
     }
   }
 
+  // 获取标签详细信息（标签名+对应提交信息）
+  async getTagsWithCommitInfo(repoPath: string): Promise<Array<{
+    name: string
+    commitHash: string
+    commitMessage: string
+    commitTime: number
+    author: string
+  }>> {
+    try {
+      const tagOutput = await this.executeGitCommand('git tag --sort=-creatordate', repoPath)
+      const tags = tagOutput.split('\n').filter(tag => tag.trim().length > 0)
+      
+      const tagDetails = []
+      
+      for (const tag of tags) {
+        try {
+          // 获取标签对应的提交信息
+          const commitInfo = await this.executeGitCommand(
+            `git log -1 --pretty=format:"%H|%s|%an|%ct" ${tag}`,
+            repoPath
+          )
+          
+          if (commitInfo) {
+            const [hash, message, author, timestamp] = commitInfo.split('|')
+            tagDetails.push({
+              name: tag,
+              commitHash: hash,
+              commitMessage: message,
+              commitTime: parseInt(timestamp) * 1000,
+              author
+            })
+          }
+        } catch (error) {
+          // 如果获取某个标签的提交信息失败，跳过
+          console.warn(`获取标签 ${tag} 的提交信息失败:`, error)
+        }
+      }
+      
+      return tagDetails
+    } catch (error: any) {
+      throw new Error(`获取标签详细信息失败: ${error.message}`)
+    }
+  }
+
+  // 删除标签
+  async deleteTag(repoPath: string, tagName: string): Promise<void> {
+    try {
+      await this.executeGitCommand(`git tag -d "${tagName}"`, repoPath)
+    } catch (error: any) {
+      throw new Error(`删除标签失败: ${error.message}`)
+    }
+  }
+
   // 重置到指定提交
   async reset(repoPath: string, commitHash: string, mode: 'soft' | 'mixed' | 'hard' = 'mixed'): Promise<void> {
     try {

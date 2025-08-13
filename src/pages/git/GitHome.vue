@@ -171,7 +171,7 @@
             :selected-file="selectedFile"
             :recent-commits="recentCommits"
             :recent-repos="recentRepos"
-            :recent-tags="recentTags"
+            :recent-tags="[]"
             :is-committing="isCommitting"
             :is-pushing="isPushing"
             :has-changes="hasChanges"
@@ -313,19 +313,51 @@
               </div>
             </div>
             
-            <!-- 最近标签 -->
-            <div class="form-group" v-if="recentTags.length > 0">
-              <label class="form-label">最近标签</label>
-              <div class="recent-tags-in-modal">
+            <!-- 最近标签按需展示 -->
+            <div class="form-group">
+              <div class="recent-tags-toggle">
+                <button 
+                  class="toggle-tags-btn" 
+                  @click="toggleRecentTags"
+                  :disabled="loadingRecentTags"
+                >
+                  <i class="fas fa-history" v-if="!showRecentTags"></i>
+                  <i class="fas fa-chevron-up" v-else></i>
+                  <span v-if="loadingRecentTags">正在加载标签...</span>
+                  <span v-else-if="!showRecentTags">查看最近标签</span>
+                  <span v-else>隐藏最近标签</span>
+                </button>
+              </div>
+              
+              <!-- 最近标签列表 -->
+              <div class="recent-tags-in-modal" v-if="showRecentTags && recentTags.length > 0">
                 <div class="tags-scroll-container" ref="tagsScrollContainer">
                   <div 
                     v-for="tag in recentTags" 
-                    :key="tag"
+                    :key="tag.name"
                     class="recent-tag-item"
-                    @click="selectRecentTag(tag)"
                   >
-                    <i class="fas fa-tag tag-icon"></i>
-                    <span class="tag-name">{{ tag }}</span>
+                    <div class="tag-header" @click="selectRecentTag(tag.name)">
+                      <div class="tag-main-info">
+                        <i class="fas fa-tag tag-icon"></i>
+                        <span class="tag-name">{{ tag.name }}</span>
+                      </div>
+                      <button 
+                        class="delete-tag-btn" 
+                        @click.stop="deleteTag(tag.name)"
+                        title="删除标签"
+                      >
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                    <div class="tag-commit-info">
+                      <i class="fas fa-circle commit-dot"></i>
+                      <span class="commit-hash">{{ tag.commitHash.substring(0, 8) }}</span>
+                      <span class="commit-separator">·</span>
+                      <span class="commit-message">{{ tag.commitMessage }}</span>
+                      <span class="commit-separator">·</span>
+                      <span class="commit-time">{{ formatTagTime(tag.commitTime) }}</span>
+                    </div>
                   </div>
                 </div>
                 <!-- 滚动提示 -->
@@ -333,6 +365,12 @@
                   <i class="fas fa-mouse"></i>
                   <span>滚动查看更多标签</span>
                 </div>
+              </div>
+              
+              <!-- 无标签提示 -->
+              <div class="no-tags-hint" v-if="showRecentTags && recentTags.length === 0">
+                <i class="fas fa-tag"></i>
+                <span>暂无标签</span>
               </div>
             </div>
             
@@ -629,7 +667,15 @@ const showCreateTag = ref(false)
 const diffFile = ref<GitFile | null>(null)
 const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
-const recentTags = ref<string[]>([])
+const recentTags = ref<Array<{
+  name: string
+  commitHash: string
+  commitMessage: string
+  commitTime: number
+  author: string
+}>>([])
+const showRecentTags = ref(false) // 控制最近标签是否显示
+const loadingRecentTags = ref(false) // 控制标签加载状态
 const hideWarning = ref(false)
 
 // 提交对比相关状态
@@ -774,7 +820,7 @@ async function loadRepository(): Promise<void> {
     currentRepo.value = repo
     await refreshStatus()
     await loadRecentCommits()
-    await loadRecentTags()
+    // 移除自动加载标签，提升仓库加载性能
     
     // 添加到最近仓库历史
     addToRecentRepos(repoPath.value.trim())
@@ -821,15 +867,29 @@ async function loadRecentCommits(): Promise<void> {
   }
 }
 
-// 加载最近标签（按时间倒序，最新的在前）
+// 按需加载最近标签（按时间倒序，最新的在前）
 async function loadRecentTags(): Promise<void> {
-  if (!currentRepo.value) return
+  if (!currentRepo.value || loadingRecentTags.value) return
   
+  loadingRecentTags.value = true
   try {
-    const tags = await gitService.getTags(currentRepo.value.path)
-    recentTags.value = tags.slice(0, 10) // 获取最新的10个标签用于弹窗滚动
+    const tagsWithInfo = await gitService.getTagsWithCommitInfo(currentRepo.value.path)
+    recentTags.value = tagsWithInfo.slice(0, 10) // 获取最新的10个标签用于弹窗滚动
+    showRecentTags.value = true
   } catch (error: any) {
     console.warn('加载标签列表失败:', error.message)
+    notification.error(`加载标签列表失败: ${error.message}`)
+  } finally {
+    loadingRecentTags.value = false
+  }
+}
+
+// 切换最近标签显示状态
+async function toggleRecentTags(): Promise<void> {
+  if (showRecentTags.value) {
+    showRecentTags.value = false
+  } else {
+    await loadRecentTags()
   }
 }
 
@@ -856,8 +916,8 @@ function autoFillTagName(): void {
   const day = String(now.getDate()).padStart(2, '0')
   const dateStr = `${year}${month}${day}`
   
-  // 拼接最终标签名：rc_PS-6.13.0_GXDX_DP.1.2.2_20250813
-  const tagName = `rc_${tagPrefix}_${dateStr}`
+  // 拼接最终标签名：rc_PS-6.13.0_GXDX_DP.1.2.2_20250813.
+  const tagName = `rc_${tagPrefix}_${dateStr}.`
   
   tagForm.name = tagName
 }
@@ -865,6 +925,35 @@ function autoFillTagName(): void {
 // 选择最近标签
 function selectRecentTag(tagName: string): void {
   tagForm.name = tagName
+}
+
+// 删除标签
+async function deleteTag(tagName: string): Promise<void> {
+  if (!currentRepo.value) return
+  
+  try {
+    await gitService.deleteTag(currentRepo.value.path, tagName)
+    notification.success(`标签 "${tagName}" 删除成功`)
+    // 如果当前显示了标签列表，则刷新
+    if (showRecentTags.value) {
+      await loadRecentTags()
+    }
+  } catch (error: any) {
+    notification.error(`删除标签失败: ${error.message}`)
+  }
+}
+
+// 格式化提交时间
+function formatTagTime(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+  
+  if (diff < 60000) return 'just now'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} minutes ago`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`
+  if (diff < 2592000000) return `${Math.floor(diff / 86400000)} days ago`
+  
+  return new Date(timestamp).toLocaleDateString()
 }
 
 // 启动自动刷新
@@ -1408,7 +1497,10 @@ async function executeCreateTag(): Promise<void> {
     showCreateTag.value = false
     tagForm.name = ''
     tagForm.message = ''
-    await loadRecentTags()
+    // 如果当前显示了标签列表，则刷新
+    if (showRecentTags.value) {
+      await loadRecentTags()
+    }
     
   } catch (error: any) {
     notification.error(`创建标签失败: ${error.message}`)
@@ -1468,12 +1560,15 @@ onUnmounted(() => {
   stopAutoRefresh()
 })
 
-// 监听弹窗打开，自动填充标签名称
+// 监听弹窗打开，自动填充标签名称，重置标签显示状态
 watch(showCreateTag, (newValue) => {
   if (newValue) {
     nextTick(() => {
       autoFillTagName()
     })
+    // 重置标签显示状态，提升弹窗打开速度
+    showRecentTags.value = false
+    recentTags.value = []
   }
 })
 </script>
@@ -1798,12 +1893,7 @@ watch(showCreateTag, (newValue) => {
 }
 
 .recent-tag-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  padding: 10px 12px;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -1811,20 +1901,39 @@ watch(showCreateTag, (newValue) => {
   border-bottom: none;
 }
 
-.recent-tag-item:hover {
-  background: rgba(139, 92, 246, 0.1);
-  color: #8b5cf6;
+.tag-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 6px;
 }
 
-.recent-tag-item .tag-icon {
+.tag-header:hover {
+  background: rgba(139, 92, 246, 0.05);
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px 4px -4px;
+}
+
+.tag-main-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-icon {
   color: #8b5cf6;
   font-size: 12px;
   flex-shrink: 0;
 }
 
-.recent-tag-item .tag-name {
+.tag-name {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: #374151;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   overflow: hidden;
@@ -1832,8 +1941,72 @@ watch(showCreateTag, (newValue) => {
   white-space: nowrap;
 }
 
-.recent-tag-item:hover .tag-name {
+.tag-header:hover .tag-name {
   color: #8b5cf6;
+}
+
+.delete-tag-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 10px;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.tag-header:hover .delete-tag-btn {
+  opacity: 1;
+}
+
+.delete-tag-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.tag-commit-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6b7280;
+  margin-left: 20px;
+}
+
+.commit-dot {
+  font-size: 4px;
+  color: #9ca3af;
+}
+
+.commit-hash {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.commit-separator {
+  color: #9ca3af;
+}
+
+.commit-message {
+  color: #374151;
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-time {
+  color: #9ca3af;
+  font-style: italic;
 }
 
 .scroll-hint {
@@ -1850,6 +2023,61 @@ watch(showCreateTag, (newValue) => {
 
 .scroll-hint i {
   font-size: 10px;
+}
+
+/* 标签切换按钮样式 */
+.recent-tags-toggle {
+  margin-bottom: 12px;
+}
+
+.toggle-tags-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-tags-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.toggle-tags-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.toggle-tags-btn i {
+  font-size: 12px;
+  color: #8b5cf6;
+}
+
+/* 无标签提示 */
+.no-tags-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  color: #9ca3af;
+  font-size: 13px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+}
+
+.no-tags-hint i {
+  color: #d1d5db;
 }
 
 
