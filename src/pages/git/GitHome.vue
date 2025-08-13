@@ -335,33 +335,27 @@
                   <div 
                     v-for="tag in recentTags" 
                     :key="tag.name"
-                    class="recent-tag-item"
+                    class="recent-tag-item-simple"
+                    @click="selectRecentTag(tag.name)"
                   >
-                    <div class="tag-header" @click="selectRecentTag(tag.name)">
-                      <div class="tag-main-info">
-                        <i class="fas fa-tag tag-icon"></i>
+                    <div class="tag-info">
+                      <i class="fas fa-tag tag-icon"></i>
+                      <div class="tag-details">
                         <span class="tag-name">{{ tag.name }}</span>
+                        <span class="tag-time">{{ formatTagTime(tag.createTime) }}</span>
                       </div>
-                      <button 
-                        class="delete-tag-btn" 
-                        @click.stop="deleteTag(tag.name)"
-                        title="删除标签"
-                      >
-                        <i class="fas fa-trash-alt"></i>
-                      </button>
                     </div>
-                    <div class="tag-commit-info">
-                      <i class="fas fa-circle commit-dot"></i>
-                      <span class="commit-hash">{{ tag.commitHash.substring(0, 8) }}</span>
-                      <span class="commit-separator">·</span>
-                      <span class="commit-message">{{ tag.commitMessage }}</span>
-                      <span class="commit-separator">·</span>
-                      <span class="commit-time">{{ formatTagTime(tag.commitTime) }}</span>
-                    </div>
+                    <button 
+                      class="delete-tag-btn" 
+                      @click.stop="deleteTag(tag.name)"
+                      title="删除标签"
+                    >
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
                   </div>
                 </div>
                 <!-- 滚动提示 -->
-                <div class="scroll-hint" v-if="recentTags.length > 5">
+                <div class="scroll-hint" v-if="recentTags.length > 8">
                   <i class="fas fa-mouse"></i>
                   <span>滚动查看更多标签</span>
                 </div>
@@ -669,10 +663,7 @@ const diffContent = ref('')
 const recentCommits = ref<GitCommit[]>([])
 const recentTags = ref<Array<{
   name: string
-  commitHash: string
-  commitMessage: string
-  commitTime: number
-  author: string
+  createTime: number
 }>>([])
 const showRecentTags = ref(false) // 控制最近标签是否显示
 const loadingRecentTags = ref(false) // 控制标签加载状态
@@ -867,14 +858,14 @@ async function loadRecentCommits(): Promise<void> {
   }
 }
 
-// 按需加载最近标签（按时间倒序，最新的在前）
+// 按需加载最近标签（按时间倒序，最新的在前）- 性能优化版本
 async function loadRecentTags(): Promise<void> {
   if (!currentRepo.value || loadingRecentTags.value) return
   
   loadingRecentTags.value = true
   try {
-    const tagsWithInfo = await gitService.getTagsWithCommitInfo(currentRepo.value.path)
-    recentTags.value = tagsWithInfo.slice(0, 10) // 获取最新的10个标签用于弹窗滚动
+    const tagsSimpleInfo = await gitService.getTagsSimpleInfo(currentRepo.value.path)
+    recentTags.value = tagsSimpleInfo.slice(0, 15) // 获取最新的15个标签，性能优化后可以显示更多
     showRecentTags.value = true
   } catch (error: any) {
     console.warn('加载标签列表失败:', error.message)
@@ -943,17 +934,17 @@ async function deleteTag(tagName: string): Promise<void> {
   }
 }
 
-// 格式化提交时间
+// 格式化标签创建时间
 function formatTagTime(timestamp: number): string {
   const now = Date.now()
   const diff = now - timestamp
   
-  if (diff < 60000) return 'just now'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} minutes ago`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`
-  if (diff < 2592000000) return `${Math.floor(diff / 86400000)} days ago`
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+  if (diff < 2592000000) return `${Math.floor(diff / 86400000)}天前`
   
-  return new Date(timestamp).toLocaleDateString()
+  return new Date(timestamp).toLocaleDateString('zh-CN')
 }
 
 // 启动自动刷新
@@ -1882,7 +1873,7 @@ watch(showCreateTag, (newValue) => {
 }
 
 .tags-scroll-container {
-  max-height: 120px;
+  max-height: 160px;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1892,35 +1883,29 @@ watch(showCreateTag, (newValue) => {
   display: none;
 }
 
-.recent-tag-item {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.recent-tag-item:last-child {
-  border-bottom: none;
-}
-
-.tag-header {
+/* 简化版标签项样式 */
+.recent-tag-item-simple {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 6px;
 }
 
-.tag-header:hover {
+.recent-tag-item-simple:last-child {
+  border-bottom: none;
+}
+
+.recent-tag-item-simple:hover {
   background: rgba(139, 92, 246, 0.05);
-  border-radius: 4px;
-  padding: 2px 4px;
-  margin: -2px -4px 4px -4px;
 }
 
-.tag-main-info {
+.tag-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
@@ -1929,6 +1914,14 @@ watch(showCreateTag, (newValue) => {
   color: #8b5cf6;
   font-size: 12px;
   flex-shrink: 0;
+}
+
+.tag-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
 .tag-name {
@@ -1941,8 +1934,14 @@ watch(showCreateTag, (newValue) => {
   white-space: nowrap;
 }
 
-.tag-header:hover .tag-name {
+.recent-tag-item-simple:hover .tag-name {
   color: #8b5cf6;
+}
+
+.tag-time {
+  font-size: 10px;
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 .delete-tag-btn {
@@ -1962,51 +1961,13 @@ watch(showCreateTag, (newValue) => {
   flex-shrink: 0;
 }
 
-.tag-header:hover .delete-tag-btn {
+.recent-tag-item-simple:hover .delete-tag-btn {
   opacity: 1;
 }
 
 .delete-tag-btn:hover {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
-}
-
-.tag-commit-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: #6b7280;
-  margin-left: 20px;
-}
-
-.commit-dot {
-  font-size: 4px;
-  color: #9ca3af;
-}
-
-.commit-hash {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  color: #6366f1;
-  font-weight: 500;
-}
-
-.commit-separator {
-  color: #9ca3af;
-}
-
-.commit-message {
-  color: #374151;
-  font-weight: 500;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.commit-time {
-  color: #9ca3af;
-  font-style: italic;
 }
 
 .scroll-hint {
