@@ -1,6 +1,31 @@
 <template>
   <aside class="git-sidebar">
-    <!-- 快速提交区域 - 置顶 -->
+    <!-- 最近使用的仓库 -->
+    <div class="sidebar-section" v-if="recentRepos.length > 0">
+      <h3 class="section-title">
+        <i class="fas fa-history"></i>
+        最近使用的仓库
+      </h3>
+      <div class="recent-repos">
+        <div class="recent-repos-list">
+          <div 
+            v-for="repo in recentRepos" 
+            :key="repo.path"
+            class="recent-repo-item"
+            @click="handleLoadFromRecentRepo(repo)"
+            :title="repo.path"
+          >
+            <div class="repo-info">
+              <i class="fas fa-folder-open repo-icon"></i>
+              <span class="repo-name">{{ repo.name }}</span>
+            </div>
+            <span class="repo-time">{{ formatCommitTime(repo.lastAccess) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速提交区域 -->
     <div class="sidebar-section" v-if="currentRepo">
       <h3 class="section-title">
         <i class="fas fa-rocket"></i>
@@ -243,16 +268,25 @@ interface GitCommit {
   files: string[]
 }
 
+// 最近仓库接口
+interface RecentRepo {
+  path: string
+  name: string
+  lastAccess: number
+}
+
 // Props定义
 const props = defineProps<{
   currentRepo: GitRepo | null
   selectedFile: GitFile | null
   recentCommits: GitCommit[]
+  recentRepos: RecentRepo[]
 }>()
 
 // Emits定义  
 const emit = defineEmits<{
   'commit': [data: { message: string; files?: string[]; pushAfterCommit?: boolean }]
+  'load-repo': [repo: RecentRepo]
 }>()
 
 // 响应式状态
@@ -306,6 +340,11 @@ function executeCommit(): void {
   
   // 清空表单
   commitMessage.value = ''
+}
+
+// 最近仓库管理
+function handleLoadFromRecentRepo(repo: RecentRepo): void {
+  emit('load-repo', repo)
 }
 
 // 远程仓库操作
@@ -868,6 +907,73 @@ export default {
   border-color: #3b82f6;
   color: #3b82f6;
   background: rgba(59, 130, 246, 0.05);
+}
+
+/* 最近仓库样式 */
+.recent-repos {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 
+    0 3px 10px rgba(0, 0, 0, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.recent-repos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-repo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(230, 230, 230, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recent-repo-item:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.recent-repo-item .repo-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.recent-repo-item .repo-icon {
+  color: #10b981;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.recent-repo-item .repo-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-repo-item .repo-time {
+  font-size: 10px;
+  color: #999;
+  flex-shrink: 0;
 }
 
 /* 快速提交样式 */

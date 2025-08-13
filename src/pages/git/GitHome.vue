@@ -58,29 +58,7 @@
               </div>
             </div>
             
-            <!-- 最近使用的仓库 -->
-            <div class="recent-repos" v-if="recentRepos.length > 0">
-              <div class="recent-repos-header">
-                <i class="fas fa-history"></i>
-                <span>最近使用的仓库</span>
-              </div>
-              <div class="recent-repos-list">
-                <div 
-                  v-for="repo in recentRepos" 
-                  :key="repo.path"
-                  class="recent-repo-item"
-                  @click="loadFromRecentRepo(repo)"
-                  :title="repo.path"
-                >
-                  <div class="repo-info">
-                    <i class="fas fa-folder-open repo-icon"></i>
-                    <span class="repo-name">{{ repo.name }}</span>
-                  </div>
-                  <span class="repo-time">{{ formatCommitTime(repo.lastAccess) }}</span>
-                </div>
-              </div>
-            </div>
-            
+
             <!-- 仓库信息栏 -->
             <div class="repo-info" v-if="currentRepo">
               <div class="repo-status">
@@ -181,7 +159,9 @@
           :current-repo="currentRepo"
           :selected-file="selectedFile"
           :recent-commits="recentCommits"
+          :recent-repos="recentRepos"
           @commit="handleCommit"
+          @load-repo="loadFromRecentRepo"
         />
       </template>
     </PageLayout>
@@ -1109,83 +1089,7 @@ onUnmounted(() => {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* 最近仓库样式 */
-.recent-repos {
-  margin-top: 16px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  border: 1px solid rgba(230, 230, 230, 0.7);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
 
-.recent-repos-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-}
-
-.recent-repos-header i {
-  color: #10b981;
-}
-
-.recent-repos-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.recent-repo-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 8px;
-  border: 1px solid rgba(230, 230, 230, 0.5);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.recent-repo-item:hover {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
-}
-
-.recent-repo-item .repo-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.recent-repo-item .repo-icon {
-  color: #10b981;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.recent-repo-item .repo-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.recent-repo-item .repo-time {
-  font-size: 12px;
-  color: #999;
-  flex-shrink: 0;
-}
 
 .browse-btn {
   width: 40px;
