@@ -59,15 +59,7 @@
             </div>
             
 
-            <!-- 仓库信息栏 -->
-            <div class="repo-info" v-if="currentRepo">
-              <div class="repo-status">
-                <div class="branch-info">
-                  <i class="fas fa-code-branch branch-icon"></i>
-                  <span class="branch-name">{{ currentRepo.currentBranch }}</span>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
         
@@ -130,7 +122,7 @@
                       </div>
                       
                       <div class="file-actions">
-                        <button class="file-action-btn" @click.stop="viewDiff(file)" title="查看差异" v-if="file.status !== 'UNTRACKED'">
+                        <button class="file-action-btn" @click.stop="viewDiff(file)" title="查看差异" v-if="['MODIFIED', 'ADDED', 'DELETED', 'UNTRACKED'].includes(file.status)">
                           <i class="fas fa-code-compare"></i>
                         </button>
                         <button class="file-action-btn" @click.stop="toggleStage(file)" :title="file.staged ? '取消暂存' : '添加到暂存'">
@@ -717,9 +709,18 @@ function selectFile(file: GitFile): void {
 
 // 双击文件处理
 async function handleFileDoubleClick(file: GitFile): Promise<void> {
-  if (file.status === 'MODIFIED' && currentRepo.value) {
+  if (currentRepo.value) {
     selectFile(file)
-    await viewDiff(file)  // 触发弹窗显示
+    
+    // 支持多种文件状态的差异查看
+    if (file.status === 'MODIFIED' || file.status === 'ADDED' || file.status === 'DELETED') {
+      await viewDiff(file)  // 触发弹窗显示
+    } else if (file.status === 'UNTRACKED') {
+      // UNTRACKED文件显示为新文件内容
+      await viewDiff(file)
+    } else {
+      notification.info(`${file.status} 状态的文件暂不支持差异查看`)
+    }
   }
 }
 
@@ -1174,42 +1175,7 @@ onUnmounted(() => {
   transform: none;
 }
 
-/* 仓库信息栏 */
-.repo-info {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 12px 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
 
-.repo-status {
-  display: flex;
-  flex-direction: column;
-}
-
-.branch-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.branch-icon {
-  color: #6366f1;
-  font-size: 14px;
-}
-
-.branch-name {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-  background: #f8fafc;
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid #e2e8f0;
-}
 
 
 

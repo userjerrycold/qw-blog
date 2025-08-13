@@ -147,7 +147,7 @@
             </button>
           </div>
           
-          <div class="preview-hint" v-if="selectedFile.status === 'MODIFIED'">
+          <div class="preview-hint" v-if="['MODIFIED', 'ADDED', 'DELETED', 'UNTRACKED'].includes(selectedFile.status)">
             <i class="fas fa-info-circle"></i>
             <span>双击文件查看差异详情</span>
           </div>

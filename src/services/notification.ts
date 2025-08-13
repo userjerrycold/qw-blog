@@ -18,7 +18,7 @@ function notify(notification: any, type: NotificationType, config: string | Noti
 
   // 设置默认值
   const finalOptions = {
-    duration: 3000,
+    duration: 2000,
     keepAliveOnHover: true,
     ...options
   }
@@ -45,67 +45,63 @@ export function useGitNotifications() {
   return {
     repoLoadSuccess: () => notification.success({
       title: '仓库加载成功',
-      content: 'Git仓库已成功加载',
-      meta: '可以开始进行版本控制操作'
+      content: 'Git仓库已加载',
+      duration: 2000
     }),
     
     repoLoadSuccessDemo: () => notification.warning({
-      title: '仓库加载成功（演示模式）',
-      content: '浏览器环境下显示模拟数据',
-      meta: '要使用真实Git功能请在Electron环境下运行',
-      duration: 5000
+      title: '演示模式',
+      content: '浏览器环境显示模拟数据',
+      duration: 3000
     }),
     
     commitSuccess: () => notification.success({
       title: '提交成功',
-      content: '代码变更已成功提交到本地仓库',
-      meta: '可以选择推送到远程仓库'
+      content: '代码已提交到本地仓库',
+      duration: 2000
     }),
     
     pushSuccess: () => notification.success({
       title: '推送成功',
-      content: '代码已成功推送到远程仓库',
-      meta: '团队成员现在可以获取到最新代码'
+      content: '代码已推送到远程仓库',
+      duration: 2000
     }),
     
     stageFileSuccess: (fileName: string) => notification.success({
-      title: '文件已暂存',
-      content: `已添加到暂存区: ${fileName}`,
-      meta: '可以进行提交操作'
+      title: '暂存成功',
+      content: `${fileName} 已添加到暂存区`,
+      duration: 2000
     }),
     
     unstageFileSuccess: (fileName: string) => notification.success({
       title: '取消暂存',
-      content: `已从暂存区移除: ${fileName}`,
-      meta: '文件回到工作区状态'
+      content: `${fileName} 已移出暂存区`,
+      duration: 2000
     }),
     
     discardSuccess: (fileName: string) => notification.success({
-      title: '撤销更改成功',
-      content: `已撤销文件更改: ${fileName}`,
-      meta: '文件恢复到上次提交状态'
+      title: '撤销成功',
+      content: `${fileName} 已恢复到上次提交`,
+      duration: 2000
     }),
     
     // 错误通知
     repoLoadError: (error: string) => notification.error({
-      title: '仓库加载失败',
+      title: '加载失败',
       content: error,
-      meta: '请检查路径是否正确或仓库是否存在',
-      duration: 5000
+      duration: 3000
     }),
     
     commitError: (error: string) => notification.error({
       title: '提交失败',
       content: error,
-      meta: '请检查提交信息或文件状态',
-      duration: 5000
+      duration: 3000
     }),
     
     pushError: (error: string) => notification.error({
       title: '推送失败',
       content: error,
-      meta: '请检查网络连接或远程仓库权限',
-      duration: 5000
+      duration: 3000
     })
   }
 }
