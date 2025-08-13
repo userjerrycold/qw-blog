@@ -141,29 +141,23 @@
             
             <!-- 当没有变更时显示的状态 -->
             <div class="no-changes-state" v-else>
-              <div class="no-changes-illustration">
-                <i class="fas fa-check-circle"></i>
-              </div>
-              <h3 class="no-changes-title">工作目录是干净的</h3>
-              <div class="no-changes-info">
-                <p class="repo-info">
-                  <i class="fas fa-folder"></i>
-                  <span class="repo-path">{{ currentRepo?.path }}</span>
-                </p>
-                <p class="branch-info">
-                  <i class="fas fa-code-branch"></i>
-                  <span class="branch-name">{{ currentRepo?.currentBranch }}</span>
-                </p>
-                <p class="status-message">所有更改已提交，没有新的修改需要暂存</p>
-              </div>
-              <div class="suggestions">
-                <div class="suggestion-item">
-                  <i class="fas fa-edit"></i>
-                  <span>开始编辑文件来创建新的更改</span>
+              <div class="clean-status-card">
+                <div class="status-icon">
+                  <i class="fas fa-check-circle"></i>
                 </div>
-                <div class="suggestion-item">
-                  <i class="fas fa-download"></i>
-                  <span>或者从远程仓库拉取最新更改</span>
+                <div class="status-content">
+                  <h3 class="status-title">工作区干净</h3>
+                  <div class="repo-info">
+                    <div class="info-item">
+                      <i class="fas fa-code-branch"></i>
+                      <span>{{ currentRepo?.currentBranch }}</span>
+                    </div>
+                    <div class="info-item">
+                      <i class="fas fa-folder-open"></i>
+                      <span>{{ currentRepo?.name || currentRepo?.path.split('/').pop() }}</span>
+                    </div>
+                  </div>
+                  <p class="status-message">所有更改已提交</p>
                 </div>
               </div>
             </div>
@@ -1570,154 +1564,131 @@ onUnmounted(() => {
 /* 无变更状态样式 */
 .no-changes-state {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  margin: 20px 0;
+  padding: 80px 20px;
   min-height: 50vh;
 }
 
-.no-changes-illustration {
-  width: 96px;
-  height: 96px;
+.clean-status-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 40px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-width: 500px;
+  transition: all 0.3s ease;
+}
+
+.clean-status-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.status-icon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border-radius: 50%;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.no-changes-illustration i {
-  font-size: 48px;
+.status-icon i {
+  font-size: 32px;
   color: white;
 }
 
-.no-changes-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 20px;
-  text-align: center;
+.status-content {
+  flex: 1;
+  text-align: left;
 }
 
-.no-changes-info {
+.status-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.repo-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 32px;
-  text-align: center;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.repo-info, .branch-info {
+.info-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.repo-info i, .branch-info i {
+  font-size: 14px;
   color: #6b7280;
-  font-size: 16px;
 }
 
-.repo-path {
+.info-item i {
+  color: #9ca3af;
+  width: 16px;
+  text-align: center;
+}
+
+.info-item span {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  background: #f3f4f6;
-  padding: 4px 8px;
-  border-radius: 6px;
   font-size: 13px;
-  color: #4b5563;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.branch-name {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
+.info-item:first-child span {
+  background: #dbeafe;
+  color: #1e40af;
+  font-weight: 500;
 }
 
 .status-message {
-  color: #6b7280;
   font-size: 14px;
-  margin-top: 8px;
-  font-style: italic;
-}
-
-.suggestions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-}
-
-.suggestion-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  color: #4b5563;
-  font-size: 14px;
+  color: #10b981;
+  margin: 0;
   font-weight: 500;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-  max-width: 320px;
-}
-
-.suggestion-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #d1d5db;
-}
-
-.suggestion-item i {
-  color: #3b82f6;
-  font-size: 16px;
-  flex-shrink: 0;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .no-changes-state {
     padding: 40px 16px;
-    margin: 16px 0;
     min-height: 40vh;
   }
   
-  .no-changes-illustration {
-    width: 72px;
-    height: 72px;
-    margin-bottom: 20px;
+  .clean-status-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+    gap: 16px;
+    max-width: 100%;
   }
   
-  .no-changes-illustration i {
-    font-size: 36px;
+  .status-icon {
+    width: 56px;
+    height: 56px;
   }
   
-  .no-changes-title {
-    font-size: 20px;
-    margin-bottom: 16px;
+  .status-icon i {
+    font-size: 28px;
   }
   
-  .suggestions {
-    width: 100%;
+  .status-content {
+    text-align: center;
+  }
+  
+  .status-title {
+    font-size: 18px;
+    margin-bottom: 12px;
   }
   
   .suggestion-item {
